@@ -11,10 +11,10 @@ export async function getDashboardData() {
   const now = new Date()
   const currentMonth = format(startOfMonth(now), 'yyyy-MM-dd')
 
-  const [salaryRes, deductionsRes, paymentsRes] = await Promise.all([
+  const [salaryRes, deductionsRes, paymentsRes, investmentTxRes, backupTxRes] = await Promise.all([
     supabase
       .from('salaries')
-      .select('*')
+      .select('amount')
       .eq('user_id', user.id)
       .eq('month', currentMonth)
       .maybeSingle(),
@@ -31,24 +31,44 @@ export async function getDashboardData() {
       .select('*')
       .eq('user_id', user.id)
       .eq('month', currentMonth),
+
+    supabase
+      .from('investment_transactions')
+      .select('type, amount')
+      .eq('user_id', user.id),
+
+    supabase
+      .from('backup_fund_transactions')
+      .select('type, amount')
+      .eq('user_id', user.id),
   ])
 
   const salary = salaryRes.data
   const deductions = deductionsRes.data ?? []
   const payments = paymentsRes.data ?? []
+  const investmentTx = investmentTxRes.data ?? []
+  const backupTx = backupTxRes.data ?? []
 
-  const totalExpected = deductions.reduce((sum, d) => sum + Number(d.expected_amount), 0)
+  const totalLiabilities = deductions.reduce((sum, d) => sum + Number(d.expected_amount), 0)
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.paid_amount), 0)
-  const totalUnpaid = totalExpected - totalPaid
-  const remainingBalance = salary ? Number(salary.amount) - totalPaid : null
+  const totalUnpaid = totalLiabilities - totalPaid
+  const freeBalance = salary ? Number(salary.amount) - totalLiabilities : null
+
+  const totalInvested = investmentTx
+    .filter(t => t.type === 'buy').reduce((s, t) => s + Number(t.amount), 0)
+  const totalDivested = investmentTx
+    .filter(t => t.type === 'sell').reduce((s, t) => s + Number(t.amount), 0)
+  const netInvested = totalInvested - totalDivested
+
+  const backupDeposits = backupTx
+    .filter(t => t.type === 'deposit').reduce((s, t) => s + Number(t.amount), 0)
+  const backupWithdrawals = backupTx
+    .filter(t => t.type === 'withdrawal').reduce((s, t) => s + Number(t.amount), 0)
+  const backupBalance = backupDeposits - backupWithdrawals
 
   const deductionsWithStatus = deductions.map((d) => {
     const payment = payments.find((p) => p.deduction_id === d.id)
-    return {
-      ...d,
-      payment: payment ?? null,
-      isPaid: !!payment,
-    }
+    return { ...d, payment: payment ?? null, isPaid: !!payment }
   })
 
   return {
@@ -56,10 +76,12 @@ export async function getDashboardData() {
     currentMonth: format(now, 'MMMM yyyy'),
     deductionsWithStatus,
     summary: {
-      totalExpected,
+      totalLiabilities,
       totalPaid,
       totalUnpaid,
-      remainingBalance,
+      freeBalance,
+      netInvested,
+      backupBalance,
     },
   }
 }
