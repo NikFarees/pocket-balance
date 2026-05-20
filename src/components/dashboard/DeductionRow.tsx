@@ -71,7 +71,7 @@ export function DeductionRow({ deduction }: Props) {
           <Badge variant="secondary">Unpaid</Badge>
         )}
       </TableCell>
-      <TableCell className="text-right text-sm">
+      <TableCell className="text-right text-sm hidden sm:table-cell">
         {deduction.payment ? (
           <div>
             <div>RM {Number(deduction.payment.paid_amount).toFixed(2)}</div>
