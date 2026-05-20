@@ -6,11 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Plus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 export function CreateInvestmentForm() {
+  const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
@@ -29,9 +31,20 @@ export function CreateInvestmentForm() {
     setLoading(false)
   }
 
+  if (!open) {
+    return (
+      <Button variant="outline" onClick={() => setOpen(true)} className="w-full">
+        <Plus className="size-4 mr-2" /> New Investment Account
+      </Button>
+    )
+  }
+
   return (
     <Card>
-      <CardHeader><CardTitle>Add Investment Account</CardTitle></CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between py-4">
+        <CardTitle>Add Investment Account</CardTitle>
+        <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="size-4" /></Button>
+      </CardHeader>
       <CardContent>
         <form ref={formRef} action={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

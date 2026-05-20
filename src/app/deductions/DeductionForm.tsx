@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Plus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -23,6 +24,7 @@ type Props = {
 }
 
 export function DeductionForm({ editing, onCancel }: Props) {
+  const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -36,16 +38,27 @@ export function DeductionForm({ editing, onCancel }: Props) {
       toast.error(result.error)
     } else {
       toast.success(editing ? 'Deduction updated' : 'Deduction added')
+      setOpen(false)
       router.refresh()
       onCancel?.()
     }
     setLoading(false)
   }
 
+  // In edit mode, always show inline (controlled by parent)
+  if (!editing && !open) {
+    return (
+      <Button variant="outline" onClick={() => setOpen(true)} className="w-full">
+        <Plus className="size-4 mr-2" /> Add Deduction
+      </Button>
+    )
+  }
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between py-4">
         <CardTitle>{editing ? 'Edit Deduction' : 'Add Deduction'}</CardTitle>
+        <Button variant="ghost" size="icon" onClick={() => { setOpen(false); onCancel?.() }}><X className="size-4" /></Button>
       </CardHeader>
       <CardContent>
         <form action={handleSubmit} className="space-y-4">
@@ -100,16 +113,9 @@ export function DeductionForm({ editing, onCancel }: Props) {
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving…' : editing ? 'Update' : 'Add Deduction'}
-            </Button>
-            {onCancel && (
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
-            )}
-          </div>
+          <Button type="submit" disabled={loading}>
+            {loading ? 'Saving…' : editing ? 'Update' : 'Add Deduction'}
+          </Button>
         </form>
       </CardContent>
     </Card>
