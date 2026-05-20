@@ -32,7 +32,7 @@ export default async function ExpensesPage({
     return (
       <div className="min-h-screen bg-background">
         <AppHeader />
-        <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h2 className="text-xl font-semibold">Daily Expenses</h2>
@@ -45,7 +45,7 @@ export default async function ExpensesPage({
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Daily Target</p>
-                <p className="text-xl font-bold mt-1">{dailyTarget !== null ? `RM ${dailyTarget.toFixed(2)}` : '—'}</p>
+                <p className="text-2xl font-bold mt-1">{dailyTarget !== null ? `RM ${dailyTarget.toFixed(2)}` : '—'}</p>
                 {dailyTarget === null && (
                   <Link href="/settings" className="text-xs underline text-muted-foreground hover:text-foreground">Set target</Link>
                 )}
@@ -55,7 +55,7 @@ export default async function ExpensesPage({
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Effective Target</p>
-                <p className="text-xl font-bold mt-1">{effectiveTarget !== null ? `RM ${effectiveTarget.toFixed(2)}` : '—'}</p>
+                <p className="text-2xl font-bold mt-1">{effectiveTarget !== null ? `RM ${effectiveTarget.toFixed(2)}` : '—'}</p>
                 {yesterdayOverspend > 0 && (
                   <p className="text-xs text-orange-500 mt-1">−RM {yesterdayOverspend.toFixed(2)} carry-forward</p>
                 )}
@@ -65,7 +65,7 @@ export default async function ExpensesPage({
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Spent Today</p>
-                <p className="text-xl font-bold mt-1">RM {todayTotal.toFixed(2)}</p>
+                <p className="text-2xl font-bold mt-1">RM {todayTotal.toFixed(2)}</p>
               </CardContent>
             </Card>
 
@@ -74,7 +74,7 @@ export default async function ExpensesPage({
                 <p className={cn('text-xs', isOver ? 'text-destructive' : 'text-green-600 dark:text-green-400')}>
                   {isOver ? 'Over Budget' : 'Remaining'}
                 </p>
-                <p className={cn('text-xl font-bold mt-1', isOver ? 'text-destructive' : remaining !== null ? 'text-green-600 dark:text-green-400' : '')}>
+                <p className={cn('text-2xl font-bold mt-1', isOver ? 'text-destructive' : remaining !== null ? 'text-green-600 dark:text-green-400' : '')}>
                   {remaining !== null ? `RM ${Math.abs(remaining).toFixed(2)}` : '—'}
                 </p>
               </CardContent>
@@ -111,7 +111,7 @@ export default async function ExpensesPage({
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <h2 className="text-xl font-semibold">Expenses</h2>
           <MonthNav month={selectedMonth} />
@@ -121,13 +121,13 @@ export default async function ExpensesPage({
           <Card>
             <CardContent className="pt-4 pb-4 px-4">
               <p className="text-xs text-muted-foreground">Total Spent</p>
-              <p className="text-xl font-bold mt-1">RM {total.toFixed(2)}</p>
+              <p className="text-2xl font-bold mt-1">RM {total.toFixed(2)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4 px-4">
               <p className="text-xs text-muted-foreground">Entries</p>
-              <p className="text-xl font-bold mt-1">{expenses.length}</p>
+              <p className="text-2xl font-bold mt-1">{expenses.length}</p>
             </CardContent>
           </Card>
         </div>

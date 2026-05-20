@@ -10,7 +10,7 @@ export default async function InvestmentsPage() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         <h2 className="text-xl font-semibold">Investments</h2>
         <CreateInvestmentForm />
         <Card>
