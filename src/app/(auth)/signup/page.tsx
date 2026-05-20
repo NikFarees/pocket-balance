@@ -24,13 +24,10 @@ export default function SignupPage() {
     const result = await signup(formData)
     if (result?.error) {
       setError(result.error)
-      setLoading(false)
     } else if (result?.success) {
-      // Auto sign-in failed but account was created
       setSuccess(true)
-      setLoading(false)
     }
-    // On redirect (success + auto sign-in), loading stays true until page navigates
+    setLoading(false)
   }
 
   return (
@@ -43,13 +40,15 @@ export default function SignupPage() {
       {success ? (
         <Card>
           <CardContent className="px-6 pt-8 pb-8 text-center space-y-3">
-            <p className="text-lg font-semibold">Account created!</p>
-            <p className="text-sm text-muted-foreground">
-              You can now sign in with your credentials.
+            <div className="text-4xl mb-3">📬</div>
+            <p className="text-lg font-semibold">Check your email</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We sent a confirmation link to your email address. Click it to activate your account.
             </p>
-            <Link href="/login" className="text-foreground font-medium hover:underline text-sm">
-              Sign in
-            </Link>
+            <p className="text-xs text-muted-foreground pt-3">
+              Already confirmed?{' '}
+              <Link href="/login" className="text-foreground font-medium hover:underline">Sign in</Link>
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -61,11 +60,6 @@ export default function SignupPage() {
 
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-5 px-6">
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input id="username" name="username" type="text" required autoComplete="username" placeholder="e.g. johndoe" />
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" name="email" type="email" required autoComplete="email" />

@@ -1,11 +1,11 @@
 'use client'
 
-import { resetPasswordByEmail } from '@/app/actions/auth'
+import { forgotPassword } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -13,16 +13,14 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [showNew, setShowNew] = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     setLoading(true)
     const formData = new FormData(e.currentTarget)
-    const result = await resetPasswordByEmail(formData)
-    if (result.error) {
+    const result = await forgotPassword(formData)
+    if (result?.error) {
       setError(result.error)
     } else {
       setSuccess(true)
@@ -40,20 +38,21 @@ export default function ForgotPasswordPage() {
       {success ? (
         <Card>
           <CardContent className="px-6 pt-8 pb-8 text-center space-y-3">
-            <p className="text-lg font-semibold">Password updated</p>
-            <p className="text-sm text-muted-foreground">
-              Your password has been reset. You can now sign in.
+            <div className="text-4xl mb-3">📬</div>
+            <p className="text-lg font-semibold">Check your email</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We sent a password reset link to your email. Click the link to set a new password.
             </p>
-            <Link href="/login" className="text-foreground font-medium hover:underline text-sm block pt-2">
-              Back to sign in
-            </Link>
+            <p className="text-xs text-muted-foreground pt-3">
+              <Link href="/login" className="text-foreground font-medium hover:underline">Back to sign in</Link>
+            </p>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl">Reset password</CardTitle>
-            <CardDescription>Enter your email and a new password</CardDescription>
+            <CardTitle className="text-xl">Forgot password?</CardTitle>
+            <CardDescription>Enter your email and we&apos;ll send you a reset link</CardDescription>
           </CardHeader>
 
           <form onSubmit={handleSubmit}>
@@ -70,51 +69,6 @@ export default function ForgotPasswordPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <div className="relative">
-                  <Input
-                    id="newPassword"
-                    name="newPassword"
-                    type={showNew ? 'text' : 'password'}
-                    required
-                    autoComplete="new-password"
-                    minLength={6}
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowNew(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    tabIndex={-1}
-                  >
-                    {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirm ? 'text' : 'password'}
-                    required
-                    autoComplete="new-password"
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirm(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    tabIndex={-1}
-                  >
-                    {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
               {error && (
                 <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>
               )}
@@ -123,11 +77,13 @@ export default function ForgotPasswordPage() {
             <CardFooter className="flex flex-col gap-6 px-6 pt-6 pb-8 border-0 bg-transparent">
               <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Updating…</>
-                ) : 'Reset Password'}
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending…</>
+                ) : 'Send Reset Link'}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
-                <Link href="/login" className="text-foreground font-medium hover:underline">Back to sign in</Link>
+                <Link href="/login" className="text-foreground font-medium hover:underline">
+                  Back to sign in
+                </Link>
               </p>
             </CardFooter>
           </form>
