@@ -1,6 +1,5 @@
 'use client'
 
-import { logout } from '@/app/actions/auth'
 import { Button, buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -8,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { cn } from '@/lib/utils'
 import { ChevronDown, Menu, X } from 'lucide-react'
@@ -99,11 +99,15 @@ export function AppHeader() {
           </DropdownMenu>
         </nav>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <ThemeToggle />
-          <form action={logout} className="hidden md:block">
-            <Button variant="ghost" size="sm" type="submit">Sign out</Button>
-          </form>
+          <Link href="/profile" className="hidden md:flex">
+            <Avatar size="sm" className="cursor-pointer hover:opacity-80 transition-opacity">
+              <AvatarFallback>
+                <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+              </AvatarFallback>
+            </Avatar>
+          </Link>
           {/* Mobile hamburger */}
           <Button
             variant="ghost"
@@ -195,11 +199,17 @@ export function AppHeader() {
             </div>
           )}
 
-          <form action={logout}>
-            <Button variant="ghost" size="sm" type="submit" className="justify-start w-full">
-              Sign out
-            </Button>
-          </form>
+          <Link
+            href="/profile"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              buttonVariants({ variant: 'ghost', size: 'sm' }),
+              'justify-start w-full',
+              pathname === '/profile' && 'bg-muted font-medium'
+            )}
+          >
+            Profile
+          </Link>
         </div>
       )}
     </header>
