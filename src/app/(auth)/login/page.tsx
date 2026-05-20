@@ -23,20 +23,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="w-full max-w-sm">
-      <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold tracking-tight">PocketBalance</h1>
-        <p className="text-sm text-muted-foreground mt-1">Your daily financial tracker</p>
+    <div className="w-full max-w-md">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold tracking-tight">PocketBalance</h1>
+        <p className="text-sm text-muted-foreground mt-2">Your daily financial tracker</p>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Sign in</CardTitle>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-xl">Sign in</CardTitle>
           <CardDescription>Enter your email and password to continue</CardDescription>
         </CardHeader>
 
         <form action={handleSubmit}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5 px-6">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -52,7 +52,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground">
+                <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                   Forgot password?
                 </Link>
               </div>
@@ -73,8 +73,8 @@ export default function LoginPage() {
             )}
           </CardContent>
 
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={loading}>
+          <CardFooter className="flex flex-col gap-5 px-6 pt-2 pb-6">
+            <Button type="submit" className="w-full h-11" disabled={loading}>
               {loading ? 'Signing in…' : 'Sign in'}
             </Button>
             <p className="text-sm text-muted-foreground text-center">

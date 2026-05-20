@@ -15,9 +15,11 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     setError(null)
     setLoading(true)
+    const formData = new FormData(e.currentTarget)
     const result = await resetPassword(formData)
     if (result?.error) {
       setError(result.error)
@@ -29,31 +31,31 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="w-full max-w-sm">
-      <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold tracking-tight">PocketBalance</h1>
-        <p className="text-sm text-muted-foreground mt-1">Your daily financial tracker</p>
+    <div className="w-full max-w-md">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold tracking-tight">PocketBalance</h1>
+        <p className="text-sm text-muted-foreground mt-2">Your daily financial tracker</p>
       </div>
 
       {success ? (
         <Card>
-          <CardContent className="pt-6 pb-6 text-center space-y-2">
-            <div className="text-3xl mb-2">✅</div>
+          <CardContent className="px-6 pt-8 pb-8 text-center space-y-3">
+            <div className="text-4xl mb-3">✅</div>
             <p className="text-lg font-semibold">Password updated</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Your password has been changed. Redirecting you to the dashboard…
             </p>
           </CardContent>
         </Card>
       ) : (
         <Card>
-          <CardHeader>
-            <CardTitle>Set new password</CardTitle>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl">Set new password</CardTitle>
             <CardDescription>Choose a strong password for your account</CardDescription>
           </CardHeader>
 
-          <form action={handleSubmit}>
-            <CardContent className="space-y-4">
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-5 px-6">
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
                 <Input
@@ -85,8 +87,8 @@ export default function ResetPasswordPage() {
               )}
             </CardContent>
 
-            <CardFooter className="flex flex-col gap-4">
-              <Button type="submit" className="w-full" disabled={loading}>
+            <CardFooter className="flex flex-col gap-5 px-6 pt-2 pb-6">
+              <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? 'Updating…' : 'Update Password'}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
