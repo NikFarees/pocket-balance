@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -73,9 +74,11 @@ export default function ForgotPasswordPage() {
               )}
             </CardContent>
 
-            <CardFooter className="flex flex-col gap-5 px-6 pt-2 pb-6">
+            <CardFooter className="flex flex-col gap-6 px-6 pt-6 pb-8 border-0 bg-transparent">
               <Button type="submit" className="w-full h-11" disabled={loading}>
-                {loading ? 'Sending…' : 'Send Reset Link'}
+                {loading ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Sending…</>
+                ) : 'Send Reset Link'}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
                 <Link href="/login" className="text-foreground font-medium hover:underline">
