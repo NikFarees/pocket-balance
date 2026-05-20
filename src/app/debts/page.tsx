@@ -23,7 +23,7 @@ export default async function DebtsPage() {
         <h2 className="text-xl font-semibold">Debts</h2>
 
         {/* Summary cards */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Card>
             <CardContent className="pt-4 pb-4 px-4">
               <p className="text-xs text-muted-foreground uppercase tracking-wide">Owed to Me</p>

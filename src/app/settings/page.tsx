@@ -2,7 +2,6 @@ import { getAllDailyTargets, getDailyTarget } from '@/app/actions/settings'
 import { AppHeader } from '@/components/AppHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import { ChangePasswordForm } from './ChangePasswordForm'
 import { TargetForm } from './TargetForm'
 import { TargetHistory } from './TargetHistory'
 
@@ -38,13 +37,6 @@ export default async function SettingsPage() {
           </CardContent>
         </Card>
 
-        <div className="border-t pt-6 space-y-3">
-          <div>
-            <h3 className="text-base font-semibold">Account</h3>
-            <p className="text-sm text-muted-foreground">Manage your account settings</p>
-          </div>
-          <ChangePasswordForm />
-        </div>
       </main>
     </div>
   )
