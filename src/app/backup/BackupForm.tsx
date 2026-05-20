@@ -6,11 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { format } from 'date-fns'
+import { Plus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 export function BackupForm() {
+  const [open, setOpen] = useState(false)
   const [type, setType] = useState<'deposit' | 'withdrawal'>('deposit')
   const [loading, setLoading] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
@@ -24,14 +26,26 @@ export function BackupForm() {
     } else {
       toast.success(type === 'deposit' ? 'Deposit recorded' : 'Withdrawal recorded')
       formRef.current?.reset()
+      setOpen(false)
       router.refresh()
     }
     setLoading(false)
   }
 
+  if (!open) {
+    return (
+      <Button variant="outline" onClick={() => setOpen(true)} className="w-full">
+        <Plus className="size-4 mr-2" /> Add Transaction
+      </Button>
+    )
+  }
+
   return (
     <Card>
-      <CardHeader><CardTitle>Add Transaction</CardTitle></CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between py-4">
+        <CardTitle>Add Transaction</CardTitle>
+        <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="size-4" /></Button>
+      </CardHeader>
       <CardContent>
         <form ref={formRef} action={handleSubmit} className="space-y-4">
           <div className="flex rounded-lg border overflow-hidden w-fit">

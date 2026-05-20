@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { format } from 'date-fns'
+import { Plus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 export function SalaryForm() {
+  const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -24,15 +26,25 @@ export function SalaryForm() {
       toast.error(result.error)
     } else {
       toast.success('Salary saved')
+      setOpen(false)
       router.refresh()
     }
     setLoading(false)
   }
 
+  if (!open) {
+    return (
+      <Button variant="outline" onClick={() => setOpen(true)} className="w-full">
+        <Plus className="size-4 mr-2" /> Add / Update Salary
+      </Button>
+    )
+  }
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between py-4">
         <CardTitle>Add / Update Salary</CardTitle>
+        <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="size-4" /></Button>
       </CardHeader>
       <CardContent>
         <form action={handleSubmit} className="space-y-4">
