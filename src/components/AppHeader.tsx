@@ -16,6 +16,7 @@ const navLinks = [
   { href: '/deductions', label: 'Deductions' },
   { href: '/investments', label: 'Investments' },
   { href: '/backup', label: 'Backup Fund' },
+  { href: '/debts', label: 'Debts' },
   { href: '/settings', label: 'Daily Target' },
 ]
 
