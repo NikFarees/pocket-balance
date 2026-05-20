@@ -19,7 +19,7 @@ export default async function DebtsPage() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         <h2 className="text-xl font-semibold">Debts</h2>
 
         {/* Summary cards */}
@@ -27,21 +27,21 @@ export default async function DebtsPage() {
           <Card>
             <CardContent className="pt-4 pb-4 px-4">
               <p className="text-xs text-muted-foreground uppercase tracking-wide">Owed to Me</p>
-              <p className="text-xl font-bold text-green-600 mt-1">RM {fmt(totalTheyOwe)}</p>
+              <p className="text-2xl font-bold text-green-600 mt-1">RM {fmt(totalTheyOwe)}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{theyOwe.filter(d => !d.is_settled).length} pending</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4 px-4">
               <p className="text-xs text-muted-foreground uppercase tracking-wide">I Owe</p>
-              <p className="text-xl font-bold text-destructive mt-1">RM {fmt(totalIOwe)}</p>
+              <p className="text-2xl font-bold text-destructive mt-1">RM {fmt(totalIOwe)}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{iOwe.filter(d => !d.is_settled).length} pending</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4 px-4">
               <p className="text-xs text-muted-foreground uppercase tracking-wide">Net Position</p>
-              <p className={`text-xl font-bold mt-1 ${netPosition >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+              <p className={`text-2xl font-bold mt-1 ${netPosition >= 0 ? 'text-green-600' : 'text-destructive'}`}>
                 {netPosition >= 0 ? '+' : '−'}RM {fmt(Math.abs(netPosition))}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">{netPosition >= 0 ? 'in your favour' : 'you owe more'}</p>

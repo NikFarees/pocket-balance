@@ -23,7 +23,7 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-background">
       <AppHeader />
 
-      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         <div>
           <h2 className="text-xl font-semibold">{currentMonth}</h2>
           <p className="text-sm text-muted-foreground">Monthly overview</p>
@@ -42,7 +42,7 @@ export default async function DashboardPage() {
                 </p>
               ) : (
                 <div>
-                  <p className="text-2xl font-bold text-muted-foreground">—</p>
+                  <p className="text-3xl font-bold text-muted-foreground">—</p>
                   <Link href="/salary" className="text-xs text-muted-foreground underline hover:text-foreground">Set salary</Link>
                 </div>
               )}
@@ -55,7 +55,7 @@ export default async function DashboardPage() {
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Monthly Liabilities</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4 space-y-2">
-              <p className="text-2xl font-bold">RM {fmt(totalLiabilities)}</p>
+              <p className="text-3xl font-bold">RM {fmt(totalLiabilities)}</p>
               <div className="space-y-1">
                 <Progress value={paidPercent} className="h-1.5" />
                 <p className="text-xs text-muted-foreground">RM {fmt(totalPaid)} paid</p>
@@ -69,7 +69,7 @@ export default async function DashboardPage() {
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Investments</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <p className="text-2xl font-bold">RM {fmt(netInvested)}</p>
+              <p className="text-3xl font-bold">RM {fmt(netInvested)}</p>
               <p className="text-xs text-muted-foreground mt-0.5">net invested</p>
             </CardContent>
           </Card>
@@ -80,7 +80,7 @@ export default async function DashboardPage() {
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Backup Fund</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              <p className="text-2xl font-bold">RM {fmt(backupBalance)}</p>
+              <p className="text-3xl font-bold">RM {fmt(backupBalance)}</p>
               <p className="text-xs text-muted-foreground mt-0.5">balance</p>
             </CardContent>
           </Card>

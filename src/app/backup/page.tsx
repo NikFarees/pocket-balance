@@ -14,7 +14,7 @@ export default async function BackupFundPage() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         <h2 className="text-xl font-semibold">Backup Fund</h2>
 
         {/* Balance cards */}
@@ -22,19 +22,19 @@ export default async function BackupFundPage() {
           <Card>
             <CardContent className="pt-4 pb-4 px-4">
               <p className="text-xs text-muted-foreground">Total Deposited</p>
-              <p className="text-xl font-bold text-green-600 mt-1">RM {totalDeposited.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-green-600 mt-1">RM {totalDeposited.toFixed(2)}</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4 px-4">
               <p className="text-xs text-muted-foreground">Total Withdrawn</p>
-              <p className="text-xl font-bold text-destructive mt-1">RM {totalWithdrawn.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-destructive mt-1">RM {totalWithdrawn.toFixed(2)}</p>
             </CardContent>
           </Card>
           <Card className={cn(balance > 0 ? 'border-green-200 bg-green-50 dark:bg-green-950/20' : '')}>
             <CardContent className="pt-4 pb-4 px-4">
               <p className="text-xs text-muted-foreground">Current Balance</p>
-              <p className={cn('text-xl font-bold mt-1', balance > 0 ? 'text-green-600' : balance < 0 ? 'text-destructive' : '')}>
+              <p className={cn('text-2xl font-bold mt-1', balance > 0 ? 'text-green-600' : balance < 0 ? 'text-destructive' : '')}>
                 RM {balance.toFixed(2)}
               </p>
             </CardContent>
