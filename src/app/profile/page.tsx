@@ -8,14 +8,22 @@ import { createClient } from '@/lib/supabase/server'
 import { LogOut } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { ChangePasswordForm } from '../settings/ChangePasswordForm'
+import { EditUsernameForm } from './EditUsernameForm'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('username')
+    .eq('user_id', user.id)
+    .single()
+
   const email = user.email ?? ''
-  const initial = email.charAt(0).toUpperCase()
+  const username = profile?.username ?? null
+  const initial = (username ?? email).charAt(0).toUpperCase()
 
   return (
     <div className="min-h-screen bg-background">
@@ -29,12 +37,18 @@ export default async function ProfilePage() {
             <Avatar size="lg" className="size-14 text-lg">
               <AvatarFallback>{initial}</AvatarFallback>
             </Avatar>
-            <div>
-              <p className="font-medium">{email}</p>
-              <p className="text-sm text-muted-foreground">Your account email</p>
+            <div className="flex-1 min-w-0">
+              <p className="font-medium">{username ?? <span className="text-muted-foreground italic">No username</span>}</p>
+              <p className="text-sm text-muted-foreground truncate">{email}</p>
             </div>
           </CardContent>
         </Card>
+
+        {/* Edit username */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-muted-foreground px-0.5">Username</p>
+          <EditUsernameForm currentUsername={username} />
+        </div>
 
         {/* Change password */}
         <ChangePasswordForm />
