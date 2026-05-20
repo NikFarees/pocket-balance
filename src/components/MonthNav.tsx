@@ -20,7 +20,7 @@ export function MonthNav({ month, paramName = 'month' }: { month: string; paramN
     if (nextStr > maxMonth) return
     const params = new URLSearchParams(searchParams.toString())
     params.set(paramName, nextStr)
-    router.push(`${pathname}?${params.toString()}`)
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
   return (

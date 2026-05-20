@@ -49,7 +49,7 @@ export function MonthlyExpenseList({
     const params = new URLSearchParams(searchParams.toString())
     params.set('page', String(p))
     params.set('month', month)
-    router.push(`${pathname}?${params.toString()}`)
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
   if (expenses.length === 0) {
