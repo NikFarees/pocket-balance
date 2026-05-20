@@ -2,6 +2,7 @@ import { getExpensesPageData, getMonthExpensesData } from '@/app/actions/expense
 import { AppHeader } from '@/components/AppHeader'
 import { MonthNav } from '@/components/MonthNav'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { serverNow } from '@/lib/server-date'
 import { cn } from '@/lib/utils'
 import { format, startOfMonth } from 'date-fns'
 import Link from 'next/link'
@@ -18,7 +19,7 @@ export default async function ExpensesPage({
   searchParams: Promise<{ month?: string; page?: string }>
 }) {
   const { month: monthParam, page: pageParam } = await searchParams
-  const currentMonth = format(startOfMonth(new Date()), 'yyyy-MM-dd')
+  const currentMonth = format(startOfMonth(await serverNow()), 'yyyy-MM-dd')
   const selectedMonth = monthParam ?? currentMonth
   const isCurrentMonth = selectedMonth >= currentMonth
   const page = Math.max(1, parseInt(pageParam ?? '1', 10))

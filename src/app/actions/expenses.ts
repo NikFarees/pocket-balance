@@ -1,5 +1,6 @@
 'use server'
 
+import { serverNow, serverToday } from '@/lib/server-date'
 import { createClient } from '@/lib/supabase/server'
 import { endOfMonth, format, parseISO, startOfMonth, subDays } from 'date-fns'
 import { revalidatePath } from 'next/cache'
@@ -9,7 +10,7 @@ export async function getExpensesPageData() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const today = new Date()
+  const today = await serverNow()
   const yesterday = subDays(today, 1)
   const todayStr = format(today, 'yyyy-MM-dd')
   const yesterdayStr = format(yesterday, 'yyyy-MM-dd')
@@ -104,7 +105,7 @@ export async function addExpense(formData: FormData) {
   const amount = parseFloat(formData.get('amount') as string)
   const description = (formData.get('description') as string).trim()
   const category = (formData.get('category') as string).trim() || null
-  const expense_date = (formData.get('expense_date') as string) || format(new Date(), 'yyyy-MM-dd')
+  const expense_date = (formData.get('expense_date') as string) || await serverToday()
 
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
   if (!description) return { error: 'Description is required' }
