@@ -3,7 +3,7 @@
 import { updateUsername } from '@/app/actions/profile'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Pencil, X } from 'lucide-react'
+import { Loader2, Pencil, X } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -36,7 +36,7 @@ export function EditUsernameForm({ currentUsername }: { currentUsername: string 
           autoFocus
         />
         <Button type="submit" size="sm" className="h-8 text-xs px-3" disabled={loading}>
-          {loading ? 'Saving…' : 'Save'}
+          {loading ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Saving…</> : 'Save'}
         </Button>
         <Button
           type="button"
