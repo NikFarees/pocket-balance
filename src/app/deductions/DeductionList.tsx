@@ -185,7 +185,7 @@ export function DeductionList({ deductions }: { deductions: Deduction[] }) {
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Deduction</DialogTitle></DialogHeader>
           {editItem && (
-            <form ref={editFormRef} action={handleEdit} className="space-y-4">
+            <form ref={editFormRef} onSubmit={e => { e.preventDefault(); handleEdit(new FormData(e.currentTarget)) }} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2 sm:col-span-1">
                   <Label htmlFor="ded_name">Name</Label>

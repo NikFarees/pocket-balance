@@ -133,7 +133,7 @@ export function InvestmentList({ investments }: { investments: Investment[] }) {
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Investment</DialogTitle></DialogHeader>
           {editItem && (
-            <form ref={editFormRef} action={handleEdit} className="space-y-4">
+            <form ref={editFormRef} onSubmit={e => { e.preventDefault(); handleEdit(new FormData(e.currentTarget)) }} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="inv_name">Name</Label>
                 <Input id="inv_name" name="name" defaultValue={editItem.name} required />

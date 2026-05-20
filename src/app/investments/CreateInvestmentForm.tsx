@@ -46,7 +46,7 @@ export function CreateInvestmentForm() {
         <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="size-4" /></Button>
       </CardHeader>
       <CardContent>
-        <form ref={formRef} action={handleSubmit} className="space-y-4">
+        <form ref={formRef} onSubmit={e => { e.preventDefault(); handleSubmit(new FormData(e.currentTarget)) }} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2 col-span-2 sm:col-span-1">
               <Label htmlFor="name">Account Name</Label>

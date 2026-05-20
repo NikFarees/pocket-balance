@@ -13,7 +13,7 @@ function PasswordInput({ id, name, autoComplete }: { id: string; name: string; a
   const [show, setShow] = useState(false)
   return (
     <div className="relative">
-      <Input id={id} name={name} type={show ? 'text' : 'password'} placeholder="••••••••" required autoComplete={autoComplete} className="pr-10" />
+      <Input id={id} name={name} type={show ? 'text' : 'password'} required autoComplete={autoComplete} className="pr-10" />
       <button type="button" tabIndex={-1} onClick={() => setShow(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
         {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
       </button>
@@ -54,7 +54,7 @@ export function ChangePasswordForm() {
         <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="size-4" /></Button>
       </CardHeader>
       <CardContent>
-        <form ref={formRef} action={handleSubmit} className="space-y-4">
+        <form ref={formRef} onSubmit={e => { e.preventDefault(); handleSubmit(new FormData(e.currentTarget)) }} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="currentPassword">Current Password</Label>
             <PasswordInput id="currentPassword" name="currentPassword" autoComplete="current-password" />

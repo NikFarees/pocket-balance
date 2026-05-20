@@ -35,7 +35,7 @@ export function TargetForm() {
         <CardTitle>Set Daily Target</CardTitle>
       </CardHeader>
       <CardContent>
-        <form ref={formRef} action={handleSubmit} className="space-y-4">
+        <form ref={formRef} onSubmit={e => { e.preventDefault(); handleSubmit(new FormData(e.currentTarget)) }} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="daily_amount">Daily Amount (RM)</Label>

@@ -47,7 +47,7 @@ export function DebtForm() {
         <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="size-4" /></Button>
       </CardHeader>
       <CardContent>
-        <form ref={formRef} action={handleSubmit} className="space-y-4">
+        <form ref={formRef} onSubmit={e => { e.preventDefault(); handleSubmit(new FormData(e.currentTarget)) }} className="space-y-4">
           {/* Type toggle */}
           <div className="flex rounded-lg border overflow-hidden w-fit">
             <button

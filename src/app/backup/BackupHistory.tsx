@@ -208,7 +208,7 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Transaction</DialogTitle></DialogHeader>
           {editTx && (
-            <form ref={editFormRef} action={handleEdit} className="space-y-4">
+            <form ref={editFormRef} onSubmit={e => { e.preventDefault(); handleEdit(new FormData(e.currentTarget)) }} className="space-y-4">
               <div className="flex rounded-lg border overflow-hidden w-fit">
                 <button type="button" onClick={() => setEditType('deposit')}
                   className={`px-4 py-1.5 text-sm font-medium transition-colors ${editType === 'deposit' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>

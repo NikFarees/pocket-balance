@@ -226,7 +226,7 @@ export function TransactionList({
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Transaction</DialogTitle></DialogHeader>
           {editItem && (
-            <form ref={editFormRef} action={handleEdit} className="space-y-4">
+            <form ref={editFormRef} onSubmit={e => { e.preventDefault(); handleEdit(new FormData(e.currentTarget)) }} className="space-y-4">
               <div className="flex rounded-lg border overflow-hidden w-fit">
                 <button type="button" onClick={() => setEditType('buy')}
                   className={`px-4 py-1.5 text-sm font-medium transition-colors ${editType === 'buy' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>
