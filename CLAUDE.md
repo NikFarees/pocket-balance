@@ -4,14 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PocketBalance is a personal daily financial tracker. Users log their monthly salary, set up recurring deductions (bills, subscriptions), record daily expenses, and see a running balance with carry-forward overspend logic.
+PocketBalance is a personal daily financial tracker. Users log monthly salary, set up recurring deductions (bills, subscriptions), record daily expenses, track debts, manage investments, and maintain a backup/emergency fund — with a running daily balance and carry-forward overspend logic.
 
-## Tech Stack
-
-- **Next.js** (App Router, TypeScript)
-- **Supabase** — PostgreSQL database + Auth (email/password)
-- **Tailwind CSS**
-- **Deployment**: Vercel via GitHub
+**Currency**: All amounts displayed as Malaysian Ringgit (`RM`).
 
 ## Commands
 
@@ -29,65 +24,84 @@ Required in `.env.local`:
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_SITE_URL=   # used for auth email redirect (e.g. https://yourdomain.com)
 ```
 
 ## Architecture
 
-### Auth
+### Auth Flow
 
-Supabase Auth handles sign-up/login. A `useUser` hook (or context) exposes the current session. All app routes under `app/(protected)/` require an authenticated session — middleware redirects unauthenticated users to `/login`.
+Auth is handled by `src/proxy.ts`, which is imported and re-exported by `src/app/middleware.ts`. It uses `@supabase/ssr` to refresh sessions via cookies and redirects unauthenticated users to `/login`. Auth routes (`/login`, `/signup`, `/forgot-password`, `/reset-password`) redirect authenticated users to `/`. The email confirmation callback is at `src/app/auth/callback/route.ts`.
+
+Supabase clients:
+- `src/lib/supabase/server.ts` — for Server Components and Server Actions (cookie-based)
+- `src/lib/supabase/client.ts` — for Client Components (`createBrowserClient`)
 
 ### Database Schema
 
-Six tables, all with `user_id` foreign keys for row-level security:
+All tables use `user_id UUID REFERENCES auth.users` with RLS (`FOR ALL USING (auth.uid() = user_id)`).
 
 | Table | Purpose |
 |---|---|
-| `salaries` | One record per user per month (`month` = first day of month) |
-| `deductions` | Recurring deduction templates (car payment, insurance, etc.) |
-| `deduction_payments` | Per-month payment records against a deduction |
-| `expenses` | Daily expense entries |
-| `daily_targets` | User's daily spending target (RM amount), with `effective_from` date |
+| `salaries` | One record per user per month (`month` = first day of month as DATE) |
+| `deductions` | Recurring deduction templates (car, insurance, etc.) with `is_active` flag |
+| `deduction_payments` | Per-month payment records against a deduction; `month` = first day of month |
+| `expenses` | Daily expense entries with `expense_date` DATE and `created_at` TIMESTAMPTZ |
+| `daily_targets` | Daily spending limit with `effective_from` DATE; most recent on/before today is active |
+| `investments` | Investment account templates (name, type, is_active) |
+| `investment_transactions` | Buy/sell transactions per investment; optional `quantity` and `price_per_unit` |
+| `backup_fund_transactions` | Deposit/withdrawal to emergency fund |
+| `debts` | Debts with `type` ('i_owe'/'they_owe'), `is_settled`, and `settled_date` |
+| `profiles` | User profile; `username` (nullable); upserted on conflict of `user_id` |
 
-Supabase Auth manages the `users` table via `auth.users`.
+Migrations live in `supabase/migrations/`. Username entered at signup is stored in `auth.users.raw_user_meta_data` via `options.data` and synced to `profiles` when edited via the profile page.
 
 ### Key Business Logic
 
-**Monthly deduction tracking**: `deductions` are templates. Each month the user marks them paid via `deduction_payments`. There is no carry-over — unpaid deductions from last month do not appear as paid this month.
+**Daily budget with carry-forward** (computed in `src/app/actions/dashboard.ts`):
+1. Monthly budget = salary − total active deductions
+2. For each day from month start to yesterday: `carryForward = max(0, carryForward + spent − dailyTarget)`
+3. Today's effective spend displayed as `carryForward + todaySpend` vs `dailyTarget`
 
-**Daily budget with carry-forward**:
-1. Monthly budget = salary − total paid deductions
-2. Daily target = monthly budget / remaining days in month
-3. If yesterday's spending exceeded the target, overspend carries forward: today's effective target = daily_target − yesterday's overspend
+**Deduction tracking**: `deductions` are templates; `deduction_payments` records which ones are paid each month. No cross-month carry-over.
 
-**Currency**: All amounts displayed as Malaysian Ringgit (`RM`).
-
-### Route Structure (App Router)
+### Route Structure
 
 ```
-app/
-  (auth)/
-    login/          # Sign in page
-    signup/         # Register page
-  (protected)/      # Requires auth (middleware-gated)
-    page.tsx        # Dashboard — salary overview + deduction status table
-    expenses/       # Daily expense view with quick-add form
-    salary/         # Salary management (add/edit per month)
-    deductions/     # Deduction template management
-    settings/       # Daily target configuration
+src/app/
+  (auth)/               # Unauthenticated routes — redirects to / if logged in
+    login/
+    signup/
+    forgot-password/
+    reset-password/
+  auth/callback/        # Supabase email confirmation handler (exchanges code for session)
+  page.tsx              # Dashboard — summary cards + monthly liabilities table
+  expenses/             # Daily expenses: QuickAddForm + ExpenseList (today) or MonthlyExpenseList
+  salary/               # SalaryForm + SalaryHistory
+  deductions/           # DeductionForm + DeductionList + payment history by month
+  debts/                # DebtForm + DebtList (tabbed: they owe / I owe)
+  investments/          # CreateInvestmentForm + InvestmentList
+  investments/[id]/     # Single investment: TransactionForm + TransactionList
+  backup/               # BackupForm + BackupHistory
+  settings/             # TargetForm + TargetHistory + ChangePasswordForm
+  profile/              # EditUsernameForm + ChangePasswordForm + SignOutButton
 ```
 
-### Data Flow
+### Server Actions
 
-- Supabase client is instantiated in `lib/supabase.ts` (browser) and `lib/supabase-server.ts` (server components/actions)
-- Server Actions (Next.js) handle all mutations — no separate API routes
-- RLS policies on all tables ensure users can only read/write their own rows
+All mutations go through Server Actions in `src/app/actions/`. No API routes. Each action:
+1. Calls `createClient()` from `lib/supabase/server`
+2. Verifies `supabase.auth.getUser()` before any DB operation
+3. Returns `{ error: string }` on failure or `{ success: true }` (sometimes with data) on success
 
-## Supabase Setup
+### Component Patterns
 
-SQL to create tables lives in `supabase/migrations/`. Run via Supabase dashboard SQL editor or `supabase db push`. Enable RLS on all tables and add policies like:
+**List components** (ExpenseList, DebtList, SalaryHistory, etc.) follow a consistent dual-view pattern:
+- Mobile (`sm:hidden`): card list with `divide-y`, inline action buttons
+- Desktop (`hidden sm:block`): `overflow-x-auto` table
+- View detail dialog + edit dialog with inline form
+- `loadingId` state for per-row delete/action spinners; `editLoading` for modal save spinner
 
-```sql
-CREATE POLICY "Users own their data" ON expenses
-  FOR ALL USING (auth.uid() = user_id);
-```
+**Forms** always use `onSubmit={e => { e.preventDefault(); handler(new FormData(e.currentTarget)) }}` — **never** `action={handler}`. Using `action=` wraps the call in a React transition which prevents loading spinners from showing.
+
+**Dashboard liabilities table** uses `src/components/dashboard/DeductionTable.tsx` (client component) instead of a plain server-rendered table, because each row needs Mark Paid / Undo buttons with per-row loading state.
