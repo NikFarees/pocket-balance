@@ -4,7 +4,7 @@ import { deleteSalary, upsertSalary } from '@/app/actions/salary'
 import { Paginator } from '@/components/Paginator'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -66,41 +66,79 @@ export function SalaryHistory({ salaries }: { salaries: Salary[] }) {
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Month</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead className="hidden sm:table-cell">Notes</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {paged.map((s) => (
-            <TableRow key={s.id} className="cursor-pointer" onClick={() => setViewItem(s)}>
-              <TableCell className="font-medium">{format(parseISO(s.month), 'MMMM yyyy')}</TableCell>
-              <TableCell className="text-right">RM {Number(s.amount).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</TableCell>
-              <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{s.notes ?? '—'}</TableCell>
-              <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
-                <div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      onClick={(ev) => ev.stopPropagation()}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <Settings2 className="size-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEditItem(s)}>Edit</DropdownMenuItem>
-                      <DropdownMenuItem variant="destructive" onClick={() => handleDelete(s.id)} disabled={loadingId === s.id}>Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </TableCell>
+      {/* Mobile card list */}
+      <div className="sm:hidden divide-y">
+        {paged.map((s) => (
+          <div
+            key={s.id}
+            className="px-4 py-3 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/50 transition-colors"
+            onClick={() => setViewItem(s)}
+          >
+            <div className="min-w-0">
+              <p className="font-medium text-sm">{format(parseISO(s.month), 'MMMM yyyy')}</p>
+              {s.notes && <p className="text-xs text-muted-foreground mt-0.5">{s.notes}</p>}
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="font-semibold text-sm">RM {Number(s.amount).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</p>
+              <div onClick={(ev) => ev.stopPropagation()}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+                  >
+                    <Settings2 className="size-3.5" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setEditItem(s)}>Edit</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem variant="destructive" onClick={() => handleDelete(s.id)} disabled={loadingId === s.id}>Delete</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Month</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+              <TableHead>Notes</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {paged.map((s) => (
+              <TableRow key={s.id} className="cursor-pointer" onClick={() => setViewItem(s)}>
+                <TableCell className="font-medium">{format(parseISO(s.month), 'MMMM yyyy')}</TableCell>
+                <TableCell className="text-right">RM {Number(s.amount).toLocaleString('en-MY', { minimumFractionDigits: 2 })}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{s.notes ?? '—'}</TableCell>
+                <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
+                  <div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        onClick={(ev) => ev.stopPropagation()}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <Settings2 className="size-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditItem(s)}>Edit</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem variant="destructive" onClick={() => handleDelete(s.id)} disabled={loadingId === s.id}>Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
       <Paginator page={safePage} totalPages={totalPages} onPageChange={setPage} />
 
       {/* View detail modal */}

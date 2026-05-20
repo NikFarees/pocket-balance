@@ -70,51 +70,98 @@ export function DeductionList({ deductions }: { deductions: Deduction[] }) {
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead className="hidden sm:table-cell">Category</TableHead>
-            <TableHead>Due</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {deductions.map((d) => (
-            <TableRow key={d.id} className={`cursor-pointer ${!d.is_active ? 'opacity-50' : ''}`} onClick={() => setViewItem(d)}>
-              <TableCell className="font-medium">{d.name}</TableCell>
-              <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">{d.category ?? '—'}</TableCell>
-              <TableCell className="text-sm">{d.due_date ? `${d.due_date}th` : '—'}</TableCell>
-              <TableCell className="text-right">RM {Number(d.expected_amount).toFixed(2)}</TableCell>
-              <TableCell>
-                {d.is_active ? <Badge variant="default">Active</Badge> : <Badge variant="secondary">Inactive</Badge>}
-              </TableCell>
-              <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
-                <div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      onClick={(ev) => ev.stopPropagation()}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <Settings2 className="size-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setEditItem(d)}>Edit</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleToggle(d.id, d.is_active)} disabled={loadingId === d.id}>
-                        {d.is_active ? 'Deactivate' : 'Activate'}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem variant="destructive" onClick={() => handleDelete(d.id, d.name)} disabled={loadingId === d.id}>Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+      {/* Mobile card list */}
+      <div className="sm:hidden divide-y">
+        {deductions.map((d) => (
+          <div
+            key={d.id}
+            className={`px-4 py-3 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/50 transition-colors ${!d.is_active ? 'opacity-50' : ''}`}
+            onClick={() => setViewItem(d)}
+          >
+            <div className="min-w-0">
+              <p className="font-medium text-sm">{d.name}</p>
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                {d.category && <p className="text-xs text-muted-foreground">{d.category}</p>}
+                {d.due_date && <p className="text-xs text-muted-foreground">Due {d.due_date}th</p>}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="text-right">
+                <p className="font-semibold text-sm">RM {Number(d.expected_amount).toFixed(2)}</p>
+                <div className="mt-0.5">
+                  {d.is_active ? <Badge variant="default" className="text-xs">Active</Badge> : <Badge variant="secondary" className="text-xs">Inactive</Badge>}
                 </div>
-              </TableCell>
+              </div>
+              <div onClick={(ev) => ev.stopPropagation()}>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+                  >
+                    <Settings2 className="size-3.5" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setEditItem(d)}>Edit</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleToggle(d.id, d.is_active)} disabled={loadingId === d.id}>
+                      {d.is_active ? 'Deactivate' : 'Activate'}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem variant="destructive" onClick={() => handleDelete(d.id, d.name)} disabled={loadingId === d.id}>Delete</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Due</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {deductions.map((d) => (
+              <TableRow key={d.id} className={`cursor-pointer ${!d.is_active ? 'opacity-50' : ''}`} onClick={() => setViewItem(d)}>
+                <TableCell className="font-medium">{d.name}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">{d.category ?? '—'}</TableCell>
+                <TableCell className="text-sm">{d.due_date ? `${d.due_date}th` : '—'}</TableCell>
+                <TableCell className="text-right">RM {Number(d.expected_amount).toFixed(2)}</TableCell>
+                <TableCell>
+                  {d.is_active ? <Badge variant="default">Active</Badge> : <Badge variant="secondary">Inactive</Badge>}
+                </TableCell>
+                <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
+                  <div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        onClick={(ev) => ev.stopPropagation()}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <Settings2 className="size-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setEditItem(d)}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleToggle(d.id, d.is_active)} disabled={loadingId === d.id}>
+                          {d.is_active ? 'Deactivate' : 'Activate'}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem variant="destructive" onClick={() => handleDelete(d.id, d.name)} disabled={loadingId === d.id}>Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
       {/* View detail modal */}
       <Dialog open={!!viewItem} onOpenChange={(open) => { if (!open) setViewItem(null) }}>
