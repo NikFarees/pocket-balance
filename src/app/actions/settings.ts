@@ -1,7 +1,7 @@
 'use server'
 
+import { serverToday } from '@/lib/server-date'
 import { createClient } from '@/lib/supabase/server'
-import { format } from 'date-fns'
 import { revalidatePath } from 'next/cache'
 
 export async function getDailyTarget() {
@@ -9,7 +9,7 @@ export async function getDailyTarget() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const today = format(new Date(), 'yyyy-MM-dd')
+  const today = await serverToday()
 
   const { data } = await supabase
     .from('daily_targets')
@@ -43,7 +43,7 @@ export async function setDailyTarget(formData: FormData) {
   if (!user) return { error: 'Not authenticated' }
 
   const daily_amount = parseFloat(formData.get('daily_amount') as string)
-  const effective_from = (formData.get('effective_from') as string) || format(new Date(), 'yyyy-MM-dd')
+  const effective_from = (formData.get('effective_from') as string) || await serverToday()
 
   if (isNaN(daily_amount) || daily_amount <= 0) return { error: 'Enter a valid amount' }
 

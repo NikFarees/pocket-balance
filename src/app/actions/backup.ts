@@ -1,7 +1,7 @@
 'use server'
 
+import { serverToday } from '@/lib/server-date'
 import { createClient } from '@/lib/supabase/server'
-import { format } from 'date-fns'
 import { revalidatePath } from 'next/cache'
 
 export async function getBackupData() {
@@ -31,7 +31,7 @@ export async function addBackupTransaction(formData: FormData) {
   const type = formData.get('type') as 'deposit' | 'withdrawal'
   const amount = parseFloat(formData.get('amount') as string)
   const description = (formData.get('description') as string).trim() || null
-  const transaction_date = (formData.get('transaction_date') as string) || format(new Date(), 'yyyy-MM-dd')
+  const transaction_date = (formData.get('transaction_date') as string) || await serverToday()
 
   if (!['deposit', 'withdrawal'].includes(type)) return { error: 'Invalid type' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }

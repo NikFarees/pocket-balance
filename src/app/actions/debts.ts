@@ -1,7 +1,7 @@
 'use server'
 
+import { serverToday } from '@/lib/server-date'
 import { createClient } from '@/lib/supabase/server'
-import { format } from 'date-fns'
 import { revalidatePath } from 'next/cache'
 
 export async function getDebts() {
@@ -55,7 +55,7 @@ export async function settleDebt(id: string) {
 
   const { error } = await supabase
     .from('debts')
-    .update({ is_settled: true, settled_date: format(new Date(), 'yyyy-MM-dd') })
+    .update({ is_settled: true, settled_date: await serverToday() })
     .eq('id', id)
     .eq('user_id', user.id)
 

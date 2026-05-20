@@ -1,5 +1,6 @@
 'use server'
 
+import { serverNow } from '@/lib/server-date'
 import { createClient } from '@/lib/supabase/server'
 import { addDays, format, startOfMonth, subDays } from 'date-fns'
 
@@ -8,7 +9,7 @@ export async function getDashboardData() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const now = new Date()
+  const now = await serverNow()
   const currentMonth = format(startOfMonth(now), 'yyyy-MM-dd')
 
   const todayStr = format(now, 'yyyy-MM-dd')
@@ -155,7 +156,7 @@ export async function markDeductionPaid(deductionId: string, amount: number) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const now = new Date()
+  const now = await serverNow()
   const currentMonth = format(startOfMonth(now), 'yyyy-MM-dd')
 
   const { error } = await supabase.from('deduction_payments').insert({
