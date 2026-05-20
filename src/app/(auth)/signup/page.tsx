@@ -26,20 +26,21 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="w-full max-w-sm">
-      <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold tracking-tight">PocketBalance</h1>
-        <p className="text-sm text-muted-foreground mt-1">Your daily financial tracker</p>
+    <div className="w-full max-w-md">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold tracking-tight">PocketBalance</h1>
+        <p className="text-sm text-muted-foreground mt-2">Your daily financial tracker</p>
       </div>
 
       {success ? (
         <Card>
-          <CardContent className="pt-6 pb-6 text-center space-y-2">
+          <CardContent className="px-6 pt-8 pb-8 text-center space-y-3">
+            <div className="text-4xl mb-3">📬</div>
             <p className="text-lg font-semibold">Check your email</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               We sent a confirmation link to your email address. Click it to activate your account.
             </p>
-            <p className="text-xs text-muted-foreground pt-2">
+            <p className="text-xs text-muted-foreground pt-3">
               Already confirmed?{' '}
               <Link href="/login" className="text-foreground font-medium hover:underline">Sign in</Link>
             </p>
@@ -47,13 +48,13 @@ export default function SignupPage() {
         </Card>
       ) : (
         <Card>
-          <CardHeader>
-            <CardTitle>Create account</CardTitle>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl">Create account</CardTitle>
             <CardDescription>Sign up to start tracking your finances</CardDescription>
           </CardHeader>
 
           <form action={handleSubmit}>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-5 px-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" name="email" type="email" placeholder="you@example.com" required autoComplete="email" />
@@ -75,8 +76,8 @@ export default function SignupPage() {
               )}
             </CardContent>
 
-            <CardFooter className="flex flex-col gap-4">
-              <Button type="submit" className="w-full" disabled={loading}>
+            <CardFooter className="flex flex-col gap-5 px-6 pt-2 pb-6">
+              <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? 'Creating account…' : 'Create account'}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
