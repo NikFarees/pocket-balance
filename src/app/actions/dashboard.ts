@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { startOfMonth, format } from 'date-fns'
+import { addDays, format, startOfMonth, subDays } from 'date-fns'
 
 export async function getDashboardData() {
   const supabase = await createClient()
@@ -11,7 +11,9 @@ export async function getDashboardData() {
   const now = new Date()
   const currentMonth = format(startOfMonth(now), 'yyyy-MM-dd')
 
-  const [salaryRes, deductionsRes, paymentsRes, investmentTxRes, backupTxRes] = await Promise.all([
+  const todayStr = format(now, 'yyyy-MM-dd')
+
+  const [salaryRes, deductionsRes, paymentsRes, investmentTxRes, backupTxRes, dailyTargetRes, monthExpensesRes] = await Promise.all([
     supabase
       .from('salaries')
       .select('amount')
@@ -41,6 +43,22 @@ export async function getDashboardData() {
       .from('backup_fund_transactions')
       .select('type, amount')
       .eq('user_id', user.id),
+
+    supabase
+      .from('daily_targets')
+      .select('daily_amount')
+      .eq('user_id', user.id)
+      .lte('effective_from', todayStr)
+      .order('effective_from', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+
+    supabase
+      .from('expenses')
+      .select('expense_date, amount')
+      .eq('user_id', user.id)
+      .gte('expense_date', currentMonth)
+      .lte('expense_date', todayStr),
   ])
 
   const salary = salaryRes.data
@@ -48,11 +66,35 @@ export async function getDashboardData() {
   const payments = paymentsRes.data ?? []
   const investmentTx = investmentTxRes.data ?? []
   const backupTx = backupTxRes.data ?? []
+  const dailyTarget = dailyTargetRes.data ? Number(dailyTargetRes.data.daily_amount) : null
+  const monthExpenses = monthExpensesRes.data ?? []
 
   const totalLiabilities = deductions.reduce((sum, d) => sum + Number(d.expected_amount), 0)
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.paid_amount), 0)
   const totalUnpaid = totalLiabilities - totalPaid
   const freeBalance = salary ? Number(salary.amount) - totalLiabilities : null
+
+  // Build a map of spend per date
+  const spendByDate: Record<string, number> = {}
+  for (const e of monthExpenses) {
+    spendByDate[e.expense_date] = (spendByDate[e.expense_date] ?? 0) + Number(e.amount)
+  }
+
+  const todaySpend = spendByDate[todayStr] ?? 0
+
+  // Cumulative carry-forward: iterate each day from month start up to yesterday
+  let carryForward = 0
+  if (dailyTarget !== null) {
+    const monthStart = startOfMonth(now)
+    const yesterday = subDays(now, 1)
+    let d = monthStart
+    while (d <= yesterday) {
+      const dStr = format(d, 'yyyy-MM-dd')
+      const spent = spendByDate[dStr] ?? 0
+      carryForward = Math.max(0, carryForward + spent - dailyTarget)
+      d = addDays(d, 1)
+    }
+  }
 
   const totalInvested = investmentTx
     .filter(t => t.type === 'buy').reduce((s, t) => s + Number(t.amount), 0)
@@ -82,6 +124,9 @@ export async function getDashboardData() {
       freeBalance,
       netInvested,
       backupBalance,
+      dailyTarget,
+      todaySpend,
+      carryForward,
     },
   }
 }

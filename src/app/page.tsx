@@ -13,7 +13,7 @@ export default async function DashboardPage() {
   if (!data) return null
 
   const { salary, currentMonth, deductionsWithStatus, summary } = data
-  const { totalLiabilities, totalPaid, freeBalance, netInvested, backupBalance } = summary
+  const { totalLiabilities, totalPaid, freeBalance, netInvested, backupBalance, dailyTarget, todaySpend, carryForward } = summary
 
   const paidPercent = totalLiabilities > 0 ? Math.min(100, (totalPaid / totalLiabilities) * 100) : 0
 
@@ -30,20 +30,27 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {/* Free Balance — full width on mobile */}
+          {/* Today's Spending — full width on mobile */}
           <Card className="col-span-2 sm:col-span-1">
             <CardHeader className="pb-1 pt-4 px-4">
-              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Free Balance</CardTitle>
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Today&apos;s Spending</CardTitle>
             </CardHeader>
             <CardContent className="px-4 pb-4">
-              {freeBalance !== null ? (
-                <p className={cn('text-2xl font-bold', freeBalance < 0 && 'text-destructive')}>
-                  RM {fmt(freeBalance)}
-                </p>
+              {dailyTarget !== null ? (
+                <div>
+                  <p className={cn('text-2xl font-bold', (carryForward + todaySpend) > dailyTarget && 'text-destructive')}>
+                    RM {fmt(carryForward + todaySpend)}<span className="text-base font-normal text-muted-foreground"> / RM {fmt(dailyTarget)}</span>
+                  </p>
+                  {carryForward > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      includes RM {fmt(carryForward)} carried forward from previous days
+                    </p>
+                  )}
+                </div>
               ) : (
                 <div>
                   <p className="text-3xl font-bold text-muted-foreground">—</p>
-                  <Link href="/salary" className="text-xs text-muted-foreground underline hover:text-foreground">Set salary</Link>
+                  <Link href="/settings" className="text-xs text-muted-foreground underline hover:text-foreground">Set daily target</Link>
                 </div>
               )}
             </CardContent>
