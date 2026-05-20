@@ -42,7 +42,7 @@ function DeductionRowActions({ deduction, className }: { deduction: DashboardDed
   }
 
   return deduction.isPaid ? (
-    <Button variant="ghost" size="sm" className={className} onClick={handleUnmark} disabled={loading}>
+    <Button variant="outline" size="sm" className={className} onClick={handleUnmark} disabled={loading}>
       {loading ? <><Loader2 className="mr-1.5 size-3.5 animate-spin" />Undoing…</> : 'Undo'}
     </Button>
   ) : (
