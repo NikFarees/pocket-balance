@@ -51,15 +51,6 @@ export async function logout() {
   redirect('/login')
 }
 
-export async function checkEmailExists(formData: FormData) {
-  const supabase = await createClient()
-  const email = (formData.get('email') as string).trim().toLowerCase()
-  if (!email) return { exists: false }
-  const { data, error } = await supabase.rpc('check_email_exists', { p_email: email })
-  if (error) return { exists: false, error: error.message }
-  return { exists: data as boolean }
-}
-
 export async function resetPasswordByEmail(formData: FormData) {
   const supabase = await createClient()
   const email = (formData.get('email') as string).trim().toLowerCase()
