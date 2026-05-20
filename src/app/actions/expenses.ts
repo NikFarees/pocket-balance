@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { format, startOfMonth, subDays } from 'date-fns'
+import { endOfMonth, format, parseISO, startOfMonth, subDays } from 'date-fns'
 import { revalidatePath } from 'next/cache'
 
 export async function getExpensesPageData() {
@@ -59,6 +59,29 @@ export async function getExpensesPageData() {
     effectiveTarget,
     remaining,
     todayLabel: format(today, 'EEEE, d MMMM yyyy'),
+  }
+}
+
+export async function getMonthExpensesData(month: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const monthStart = parseISO(month)
+  const { data } = await supabase
+    .from('expenses')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('expense_date', format(monthStart, 'yyyy-MM-dd'))
+    .lte('expense_date', format(endOfMonth(monthStart), 'yyyy-MM-dd'))
+    .order('expense_date', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  const expenses = data ?? []
+  return {
+    expenses,
+    total: expenses.reduce((sum, e) => sum + Number(e.amount), 0),
+    monthLabel: format(monthStart, 'MMMM yyyy'),
   }
 }
 

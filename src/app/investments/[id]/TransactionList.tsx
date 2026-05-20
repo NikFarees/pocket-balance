@@ -1,6 +1,7 @@
 'use client'
 
 import { deleteTransaction } from '@/app/actions/investments'
+import { Paginator } from '@/components/Paginator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -8,6 +9,8 @@ import { format, parseISO } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
+
+const PAGE_SIZE = 10
 
 type Transaction = {
   id: string
@@ -29,7 +32,12 @@ export function TransactionList({
   hasQuantity: boolean
 }) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
   const router = useRouter()
+
+  const totalPages = Math.max(1, Math.ceil(transactions.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paged = transactions.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   async function handleDelete(id: string) {
     setDeletingId(id)
@@ -61,7 +69,7 @@ export function TransactionList({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {transactions.map((t) => (
+          {paged.map((t) => (
             <TableRow key={t.id}>
               <TableCell className="text-sm">{format(parseISO(t.transaction_date), 'dd MMM yyyy')}</TableCell>
               <TableCell>
@@ -102,6 +110,7 @@ export function TransactionList({
           ))}
         </TableBody>
       </Table>
+      <Paginator page={safePage} totalPages={totalPages} onPageChange={setPage} />
     </div>
   )
 }

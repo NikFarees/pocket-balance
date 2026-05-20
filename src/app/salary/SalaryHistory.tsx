@@ -1,12 +1,15 @@
 'use client'
 
 import { deleteSalary } from '@/app/actions/salary'
+import { Paginator } from '@/components/Paginator'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { format, parseISO } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
+
+const PAGE_SIZE = 10
 
 type Salary = {
   id: string
@@ -17,7 +20,12 @@ type Salary = {
 
 export function SalaryHistory({ salaries }: { salaries: Salary[] }) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
   const router = useRouter()
+
+  const totalPages = Math.max(1, Math.ceil(salaries.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paged = salaries.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   async function handleDelete(id: string) {
     setDeletingId(id)
@@ -40,6 +48,7 @@ export function SalaryHistory({ salaries }: { salaries: Salary[] }) {
   }
 
   return (
+    <>
     <Table>
       <TableHeader>
         <TableRow>
@@ -50,7 +59,7 @@ export function SalaryHistory({ salaries }: { salaries: Salary[] }) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {salaries.map((s) => (
+        {paged.map((s) => (
           <TableRow key={s.id}>
             <TableCell className="font-medium">
               {format(parseISO(s.month), 'MMMM yyyy')}
@@ -76,5 +85,7 @@ export function SalaryHistory({ salaries }: { salaries: Salary[] }) {
         ))}
       </TableBody>
     </Table>
+    <Paginator page={safePage} totalPages={totalPages} onPageChange={setPage} />
+    </>
   )
 }
