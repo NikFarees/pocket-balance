@@ -13,9 +13,11 @@ export default function ForgotPasswordPage() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
     setError(null)
     setLoading(true)
+    const formData = new FormData(e.currentTarget)
     const result = await forgotPassword(formData)
     if (result?.error) {
       setError(result.error)
@@ -26,34 +28,34 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="w-full max-w-sm">
-      <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold tracking-tight">PocketBalance</h1>
-        <p className="text-sm text-muted-foreground mt-1">Your daily financial tracker</p>
+    <div className="w-full max-w-md">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-bold tracking-tight">PocketBalance</h1>
+        <p className="text-sm text-muted-foreground mt-2">Your daily financial tracker</p>
       </div>
 
       {success ? (
         <Card>
-          <CardContent className="pt-6 pb-6 text-center space-y-2">
-            <div className="text-3xl mb-2">📬</div>
+          <CardContent className="px-6 pt-8 pb-8 text-center space-y-3">
+            <div className="text-4xl mb-3">📬</div>
             <p className="text-lg font-semibold">Check your email</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               We sent a password reset link to your email. Click the link to set a new password.
             </p>
-            <p className="text-xs text-muted-foreground pt-2">
+            <p className="text-xs text-muted-foreground pt-3">
               <Link href="/login" className="text-foreground font-medium hover:underline">Back to sign in</Link>
             </p>
           </CardContent>
         </Card>
       ) : (
         <Card>
-          <CardHeader>
-            <CardTitle>Forgot password?</CardTitle>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-xl">Forgot password?</CardTitle>
             <CardDescription>Enter your email and we&apos;ll send you a reset link</CardDescription>
           </CardHeader>
 
-          <form action={handleSubmit}>
-            <CardContent className="space-y-4">
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-5 px-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -71,8 +73,8 @@ export default function ForgotPasswordPage() {
               )}
             </CardContent>
 
-            <CardFooter className="flex flex-col gap-4">
-              <Button type="submit" className="w-full" disabled={loading}>
+            <CardFooter className="flex flex-col gap-5 px-6 pt-2 pb-6">
+              <Button type="submit" className="w-full h-11" disabled={loading}>
                 {loading ? 'Sending…' : 'Send Reset Link'}
               </Button>
               <p className="text-sm text-muted-foreground text-center">
