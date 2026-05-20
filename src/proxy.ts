@@ -34,7 +34,6 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/signup') ||
     pathname.startsWith('/forgot-password') ||
-    pathname.startsWith('/reset-password') ||
     pathname.startsWith('/auth/')
 
   if (!user && !isAuthRoute) {
