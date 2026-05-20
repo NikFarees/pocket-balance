@@ -20,7 +20,7 @@ type DashboardDeduction = {
   payment: { id: string; paid_amount: number; payment_date: string } | null
 }
 
-function DeductionRowActions({ deduction }: { deduction: DashboardDeduction }) {
+function DeductionRowActions({ deduction, className }: { deduction: DashboardDeduction; className?: string }) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -42,12 +42,12 @@ function DeductionRowActions({ deduction }: { deduction: DashboardDeduction }) {
   }
 
   return deduction.isPaid ? (
-    <Button variant="ghost" size="sm" onClick={handleUnmark} disabled={loading}>
-      {loading ? <Loader2 className="size-3.5 animate-spin" /> : 'Undo'}
+    <Button variant="ghost" size="sm" className={className} onClick={handleUnmark} disabled={loading}>
+      {loading ? <><Loader2 className="mr-1.5 size-3.5 animate-spin" />Undoing…</> : 'Undo'}
     </Button>
   ) : (
-    <Button variant="outline" size="sm" onClick={handleMarkPaid} disabled={loading}>
-      {loading ? <Loader2 className="size-3.5 animate-spin" /> : 'Mark Paid'}
+    <Button variant="outline" size="sm" className={className} onClick={handleMarkPaid} disabled={loading}>
+      {loading ? <><Loader2 className="mr-1.5 size-3.5 animate-spin" />Marking…</> : 'Mark Paid'}
     </Button>
   )
 }
@@ -82,7 +82,9 @@ export function DeductionTable({ deductions }: { deductions: DashboardDeduction[
                 Paid RM {Number(d.payment.paid_amount).toFixed(2)} on {format(parseISO(d.payment.payment_date), 'dd MMM')}
               </p>
             )}
-            <DeductionRowActions deduction={d} />
+            <div onClick={e => e.stopPropagation()}>
+              <DeductionRowActions deduction={d} className="text-xs h-7 w-full" />
+            </div>
           </div>
         ))}
       </div>

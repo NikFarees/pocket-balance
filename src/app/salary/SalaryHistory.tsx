@@ -161,7 +161,7 @@ export function SalaryHistory({ salaries }: { salaries: Salary[] }) {
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Salary</DialogTitle></DialogHeader>
           {editItem && (
-            <form ref={editFormRef} action={handleEdit} className="space-y-4">
+            <form ref={editFormRef} onSubmit={e => { e.preventDefault(); handleEdit(new FormData(e.currentTarget)) }} className="space-y-4">
               <input type="hidden" name="month" value={editItem.month.slice(0, 7)} />
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Month</p>

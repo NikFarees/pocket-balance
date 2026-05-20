@@ -185,7 +185,7 @@ export function MonthlyExpenseList({
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Expense</DialogTitle></DialogHeader>
           {editItem && (
-            <form ref={editFormRef} action={handleEdit} className="space-y-4">
+            <form ref={editFormRef} onSubmit={e => { e.preventDefault(); handleEdit(new FormData(e.currentTarget)) }} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="medit_desc">Description</Label>
                 <Input id="medit_desc" name="description" defaultValue={editItem.description} required />
