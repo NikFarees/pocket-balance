@@ -86,6 +86,25 @@ export async function getDashboardData() {
   }
 }
 
+export async function getDeductionHistoryForMonth(month: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const [deductionsRes, paymentsRes] = await Promise.all([
+    supabase.from('deductions').select('*').eq('user_id', user.id).order('name'),
+    supabase.from('deduction_payments').select('*').eq('user_id', user.id).eq('month', month),
+  ])
+
+  const deductions = deductionsRes.data ?? []
+  const payments = paymentsRes.data ?? []
+
+  return deductions.map((d) => {
+    const payment = payments.find((p) => p.deduction_id === d.id)
+    return { ...d, payment: payment ?? null, isPaid: !!payment }
+  })
+}
+
 export async function markDeductionPaid(deductionId: string, amount: number) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

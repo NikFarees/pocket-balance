@@ -1,6 +1,7 @@
 'use client'
 
 import { deleteExpense, updateExpense } from '@/app/actions/expenses'
+import { Paginator } from '@/components/Paginator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +10,8 @@ import { format, parseISO } from 'date-fns'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
+
+const PAGE_SIZE = 10
 
 type Expense = {
   id: string
@@ -22,7 +25,12 @@ type Expense = {
 export function ExpenseList({ expenses }: { expenses: Expense[] }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
   const router = useRouter()
+
+  const totalPages = Math.max(1, Math.ceil(expenses.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const paged = expenses.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   async function handleDelete(id: string, description: string) {
     setLoadingId(id)
@@ -56,6 +64,7 @@ export function ExpenseList({ expenses }: { expenses: Expense[] }) {
   }
 
   return (
+    <>
     <Table>
       <TableHeader>
         <TableRow>
@@ -67,7 +76,7 @@ export function ExpenseList({ expenses }: { expenses: Expense[] }) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {expenses.map((e) => (
+        {paged.map((e) => (
           editingId === e.id
             ? (
               <TableRow key={e.id}>
@@ -128,5 +137,7 @@ export function ExpenseList({ expenses }: { expenses: Expense[] }) {
         ))}
       </TableBody>
     </Table>
+    <Paginator page={safePage} totalPages={totalPages} onPageChange={setPage} />
+    </>
   )
 }
