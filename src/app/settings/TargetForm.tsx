@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { format } from 'date-fns'
+import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -63,7 +64,7 @@ export function TargetForm() {
             The most recent target on or before today is used as your current limit.
           </p>
           <Button type="submit" disabled={loading}>
-            {loading ? 'Saving…' : 'Save Target'}
+            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</> : 'Save Target'}
           </Button>
         </form>
       </CardContent>

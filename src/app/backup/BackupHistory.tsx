@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { format, parseISO } from 'date-fns'
-import { Settings2 } from 'lucide-react'
+import { Loader2, Settings2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -237,7 +237,7 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
               <div className="flex gap-2 justify-end">
                 <Button type="button" variant="outline" onClick={() => setEditTx(null)}>Cancel</Button>
                 <Button type="submit" disabled={editLoading} variant={editType === 'withdrawal' ? 'destructive' : 'default'}>
-                  {editLoading ? 'Saving…' : 'Save'}
+                  {editLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</> : 'Save'}
                 </Button>
               </div>
             </form>

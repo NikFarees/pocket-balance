@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { format, parseISO } from 'date-fns'
+import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -71,7 +72,7 @@ export function TargetHistory({ targets, currentId }: { targets: Target[]; curre
                 onClick={() => handleDelete(t.id)}
                 disabled={deletingId === t.id}
               >
-                {deletingId === t.id ? 'Deleting…' : 'Delete'}
+                {deletingId === t.id ? <><Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />Deleting…</> : 'Delete'}
               </Button>
             </TableCell>
           </TableRow>

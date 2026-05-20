@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { format } from 'date-fns'
-import { Plus, X } from 'lucide-react'
+import { Loader2, Plus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -90,7 +90,7 @@ export function TransactionForm({ investmentId }: { investmentId: string }) {
             <Input id="notes" name="notes" placeholder="e.g. Monthly savings purchase" />
           </div>
           <Button type="submit" disabled={loading} variant={type === 'sell' ? 'destructive' : 'default'}>
-            {loading ? 'Saving…' : `Record ${type === 'buy' ? 'Purchase' : 'Sale'}`}
+            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</> : `Record ${type === 'buy' ? 'Purchase' : 'Sale'}`}
           </Button>
         </form>
       </CardContent>

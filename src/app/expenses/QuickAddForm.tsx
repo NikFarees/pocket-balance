@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { format } from 'date-fns'
-import { Plus, X } from 'lucide-react'
+import { Loader2, Plus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -89,7 +89,7 @@ export function QuickAddForm() {
             />
           </div>
           <Button type="submit" disabled={loading}>
-            {loading ? 'Adding…' : 'Add Expense'}
+            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Adding…</> : 'Add Expense'}
           </Button>
         </form>
       </CardContent>
