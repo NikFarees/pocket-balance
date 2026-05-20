@@ -4,11 +4,15 @@ import { deleteExpense, updateExpense } from '@/app/actions/expenses'
 import { Paginator } from '@/components/Paginator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { format, parseISO } from 'date-fns'
+import { format } from 'date-fns'
+import { Settings2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 const PAGE_SIZE = 10
@@ -23,9 +27,12 @@ type Expense = {
 }
 
 export function ExpenseList({ expenses }: { expenses: Expense[] }) {
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const [viewItem, setViewItem] = useState<Expense | null>(null)
+  const [editItem, setEditItem] = useState<Expense | null>(null)
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [editLoading, setEditLoading] = useState(false)
   const [page, setPage] = useState(1)
+  const editFormRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
 
   const totalPages = Math.max(1, Math.ceil(expenses.length / PAGE_SIZE))
@@ -43,101 +50,114 @@ export function ExpenseList({ expenses }: { expenses: Expense[] }) {
     setLoadingId(null)
   }
 
-  async function handleUpdate(id: string, formData: FormData) {
-    setLoadingId(id)
-    const result = await updateExpense(id, formData)
+  async function handleEdit(formData: FormData) {
+    if (!editItem) return
+    setEditLoading(true)
+    const result = await updateExpense(editItem.id, formData)
     if (result.error) toast.error(result.error)
     else {
       toast.success('Expense updated')
-      setEditingId(null)
+      setEditItem(null)
       router.refresh()
     }
-    setLoadingId(null)
+    setEditLoading(false)
   }
 
   if (expenses.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground text-center py-8">
-        No expenses logged today yet.
-      </p>
-    )
+    return <p className="text-sm text-muted-foreground text-center py-8">No expenses logged today yet.</p>
   }
 
   return (
     <>
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Description</TableHead>
-          <TableHead>Category</TableHead>
-          <TableHead>Time</TableHead>
-          <TableHead className="text-right">Amount</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {paged.map((e) => (
-          editingId === e.id
-            ? (
-              <TableRow key={e.id}>
-                <TableCell colSpan={5}>
-                  <form
-                    action={(formData) => handleUpdate(e.id, formData)}
-                    className="flex gap-2 items-end flex-wrap"
-                  >
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs text-muted-foreground">Amount</span>
-                      <Input name="amount" type="number" step="0.01" defaultValue={e.amount} className="w-28" required />
-                    </div>
-                    <div className="flex flex-col gap-1 flex-1 min-w-40">
-                      <span className="text-xs text-muted-foreground">Description</span>
-                      <Input name="description" defaultValue={e.description} required />
-                    </div>
-                    <div className="flex flex-col gap-1 w-32">
-                      <span className="text-xs text-muted-foreground">Category</span>
-                      <Input name="category" defaultValue={e.category ?? ''} placeholder="optional" />
-                    </div>
-                    <Button type="submit" size="sm" disabled={loadingId === e.id}>Save</Button>
-                    <Button type="button" size="sm" variant="outline" onClick={() => setEditingId(null)}>Cancel</Button>
-                  </form>
-                </TableCell>
-              </TableRow>
-            )
-            : (
-              <TableRow key={e.id}>
-                <TableCell className="font-medium">{e.description}</TableCell>
-                <TableCell>
-                  {e.category
-                    ? <Badge variant="secondary">{e.category}</Badge>
-                    : <span className="text-muted-foreground text-sm">—</span>
-                  }
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {format(new Date(e.created_at), 'h:mm a')}
-                </TableCell>
-                <TableCell className="text-right font-medium">
-                  RM {Number(e.amount).toFixed(2)}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => setEditingId(e.id)}>Edit</Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(e.id, e.description)}
-                      disabled={loadingId === e.id}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Description</TableHead>
+            <TableHead className="hidden sm:table-cell">Category</TableHead>
+            <TableHead className="hidden sm:table-cell">Time</TableHead>
+            <TableHead className="text-right">Amount</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {paged.map((e) => (
+            <TableRow key={e.id} className="cursor-pointer" onClick={() => setViewItem(e)}>
+              <TableCell className="font-medium">{e.description}</TableCell>
+              <TableCell className="hidden sm:table-cell">
+                {e.category
+                  ? <Badge variant="secondary">{e.category}</Badge>
+                  : <span className="text-muted-foreground text-sm">—</span>
+                }
+              </TableCell>
+              <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
+                {format(new Date(e.created_at), 'h:mm a')}
+              </TableCell>
+              <TableCell className="text-right font-medium">RM {Number(e.amount).toFixed(2)}</TableCell>
+              <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
+                <div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      onClick={(ev) => ev.stopPropagation()}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                     >
-                      Delete
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )
-        ))}
-      </TableBody>
-    </Table>
-    <Paginator page={safePage} totalPages={totalPages} onPageChange={setPage} />
+                      <Settings2 className="size-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditItem(e)}>Edit</DropdownMenuItem>
+                      <DropdownMenuItem variant="destructive" onClick={() => handleDelete(e.id, e.description)} disabled={loadingId === e.id}>Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <Paginator page={safePage} totalPages={totalPages} onPageChange={setPage} />
+
+      {/* View detail modal */}
+      <Dialog open={!!viewItem} onOpenChange={(open) => { if (!open) setViewItem(null) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Expense Detail</DialogTitle></DialogHeader>
+          {viewItem && (
+            <div className="space-y-3">
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Description</span><span className="text-sm font-medium">{viewItem.description}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Amount</span><span className="text-sm font-semibold">RM {Number(viewItem.amount).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Category</span><span className="text-sm">{viewItem.category ? <Badge variant="secondary">{viewItem.category}</Badge> : '—'}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Date</span><span className="text-sm">{format(new Date(viewItem.expense_date), 'dd MMM yyyy')}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Time</span><span className="text-sm">{format(new Date(viewItem.created_at), 'h:mm a')}</span></div>
+              <Button variant="outline" className="w-full mt-2" onClick={() => setViewItem(null)}>Close</Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit modal */}
+      <Dialog open={!!editItem} onOpenChange={(open) => { if (!open) setEditItem(null) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Expense</DialogTitle></DialogHeader>
+          {editItem && (
+            <form ref={editFormRef} action={handleEdit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_desc">Description</Label>
+                <Input id="edit_desc" name="description" defaultValue={editItem.description} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_amount">Amount (RM)</Label>
+                <Input id="edit_amount" name="amount" type="number" step="0.01" min="0" defaultValue={Number(editItem.amount).toFixed(2)} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_cat">Category <span className="text-muted-foreground">(optional)</span></Label>
+                <Input id="edit_cat" name="category" defaultValue={editItem.category ?? ''} placeholder="optional" />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button type="button" variant="outline" onClick={() => setEditItem(null)}>Cancel</Button>
+                <Button type="submit" disabled={editLoading}>{editLoading ? 'Saving…' : 'Save'}</Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

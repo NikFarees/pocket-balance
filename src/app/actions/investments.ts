@@ -171,6 +171,36 @@ export async function addTransaction(investmentId: string, formData: FormData) {
   return { success: true }
 }
 
+export async function updateTransaction(id: string, investmentId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const type = formData.get('type') as 'buy' | 'sell'
+  const amount = parseFloat(formData.get('amount') as string)
+  const quantityRaw = formData.get('quantity') as string
+  const priceRaw = formData.get('price_per_unit') as string
+  const quantity = quantityRaw ? parseFloat(quantityRaw) : null
+  const price_per_unit = priceRaw ? parseFloat(priceRaw) : null
+  const transaction_date = formData.get('transaction_date') as string
+  const notes = (formData.get('notes') as string).trim() || null
+
+  if (!['buy', 'sell'].includes(type)) return { error: 'Invalid type' }
+  if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
+  if (!transaction_date) return { error: 'Date is required' }
+
+  const { error } = await supabase
+    .from('investment_transactions')
+    .update({ type, amount, quantity, price_per_unit, transaction_date, notes })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/investments/${investmentId}`)
+  return { success: true }
+}
+
 export async function deleteTransaction(id: string, investmentId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

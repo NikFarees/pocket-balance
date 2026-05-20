@@ -37,7 +37,6 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
     if (result.error) toast.error(result.error)
     else {
       toast.success('Transaction deleted')
-      setViewTx(null)
       router.refresh()
     }
     setDeletingId(null)
@@ -52,9 +51,9 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
       {/* Mobile card list */}
       <div className="sm:hidden divide-y">
         {paged.map((t) => (
-          <button
+          <div
             key={t.id}
-            className="w-full px-4 py-3 flex items-center justify-between gap-3 text-left hover:bg-muted/50 transition-colors"
+            className="w-full px-4 py-3 flex items-center justify-between gap-3 cursor-pointer hover:bg-muted/50 transition-colors"
             onClick={() => setViewTx(t)}
           >
             <div className="min-w-0">
@@ -66,15 +65,13 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
                 {t.type === 'deposit' ? '+' : '−'}RM {Number(t.amount).toFixed(2)}
               </p>
               <div className="mt-0.5">
-                <Badge
-                  variant={t.type === 'deposit' ? 'default' : 'destructive'}
-                  className={`text-xs ${t.type === 'deposit' ? 'bg-green-500 hover:bg-green-600' : ''}`}
-                >
+                <Badge variant={t.type === 'deposit' ? 'default' : 'destructive'}
+                  className={`text-xs ${t.type === 'deposit' ? 'bg-green-500 hover:bg-green-600' : ''}`}>
                   {t.type === 'deposit' ? 'Deposit' : 'Withdrawal'}
                 </Badge>
               </div>
             </div>
-          </button>
+          </div>
         ))}
       </div>
 
@@ -95,10 +92,8 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
               <TableRow key={t.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setViewTx(t)}>
                 <TableCell className="text-sm">{format(parseISO(t.transaction_date), 'dd MMM yyyy')}</TableCell>
                 <TableCell>
-                  <Badge
-                    variant={t.type === 'deposit' ? 'default' : 'destructive'}
-                    className={t.type === 'deposit' ? 'bg-green-500 hover:bg-green-600' : ''}
-                  >
+                  <Badge variant={t.type === 'deposit' ? 'default' : 'destructive'}
+                    className={t.type === 'deposit' ? 'bg-green-500 hover:bg-green-600' : ''}>
                     {t.type === 'deposit' ? 'Deposit' : 'Withdrawal'}
                   </Badge>
                 </TableCell>
@@ -109,11 +104,8 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
                   </span>
                 </TableCell>
                 <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    variant="ghost" size="sm" className="text-destructive hover:text-destructive"
-                    onClick={() => handleDelete(t.id)}
-                    disabled={deletingId === t.id}
-                  >
+                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(t.id)} disabled={deletingId === t.id}>
                     Delete
                   </Button>
                 </TableCell>
@@ -125,51 +117,28 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
 
       <Paginator page={safePage} totalPages={totalPages} onPageChange={setPage} />
 
-      {/* Detail modal */}
+      {/* View detail modal (no delete) */}
       <Dialog open={!!viewTx} onOpenChange={(open) => { if (!open) setViewTx(null) }}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Transaction Detail</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Transaction Detail</DialogTitle></DialogHeader>
           {viewTx && (
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Type</span>
-                  <Badge
-                    variant={viewTx.type === 'deposit' ? 'default' : 'destructive'}
-                    className={viewTx.type === 'deposit' ? 'bg-green-500 hover:bg-green-600' : ''}
-                  >
-                    {viewTx.type === 'deposit' ? 'Deposit' : 'Withdrawal'}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Amount</span>
-                  <span className={`font-semibold ${viewTx.type === 'deposit' ? 'text-green-600' : 'text-destructive'}`}>
-                    {viewTx.type === 'deposit' ? '+' : '−'}RM {Number(viewTx.amount).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Date</span>
-                  <span className="text-sm">{format(parseISO(viewTx.transaction_date), 'dd MMM yyyy')}</span>
-                </div>
-                {viewTx.description && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Description</span>
-                    <span className="text-sm">{viewTx.description}</span>
-                  </div>
-                )}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center"><span className="text-sm text-muted-foreground">Type</span>
+                <Badge variant={viewTx.type === 'deposit' ? 'default' : 'destructive'}
+                  className={viewTx.type === 'deposit' ? 'bg-green-500 hover:bg-green-600' : ''}>
+                  {viewTx.type === 'deposit' ? 'Deposit' : 'Withdrawal'}
+                </Badge>
               </div>
-              <div className="flex justify-between pt-2">
-                <Button
-                  variant="outline" size="sm" className="text-destructive hover:text-destructive"
-                  onClick={() => handleDelete(viewTx.id)}
-                  disabled={deletingId === viewTx.id}
-                >
-                  {deletingId === viewTx.id ? 'Deleting…' : 'Delete'}
-                </Button>
-                <Button variant="outline" onClick={() => setViewTx(null)}>Close</Button>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Amount</span>
+                <span className={`font-semibold ${viewTx.type === 'deposit' ? 'text-green-600' : 'text-destructive'}`}>
+                  {viewTx.type === 'deposit' ? '+' : '−'}RM {Number(viewTx.amount).toFixed(2)}
+                </span>
               </div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Date</span><span className="text-sm">{format(parseISO(viewTx.transaction_date), 'dd MMM yyyy')}</span></div>
+              {viewTx.description && (
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Description</span><span className="text-sm">{viewTx.description}</span></div>
+              )}
+              <Button variant="outline" className="w-full mt-2" onClick={() => setViewTx(null)}>Close</Button>
             </div>
           )}
         </DialogContent>
