@@ -19,9 +19,11 @@ export async function login(formData: FormData) {
 export async function signup(formData: FormData) {
   const supabase = await createClient()
 
+  const username = (formData.get('username') as string)?.trim()
   const password = formData.get('password') as string
   const confirmPassword = formData.get('confirmPassword') as string
 
+  if (!username) return { error: 'Username is required' }
   if (password !== confirmPassword) return { error: 'Passwords do not match' }
   if (password.length < 6) return { error: 'Password must be at least 6 characters' }
 
@@ -31,6 +33,7 @@ export async function signup(formData: FormData) {
     email: formData.get('email') as string,
     password,
     options: {
+      data: { username },
       emailRedirectTo: `${siteUrl}/auth/callback`,
     },
   })

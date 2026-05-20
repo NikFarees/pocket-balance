@@ -19,7 +19,7 @@ export default async function ProfilePage() {
     .single()
 
   const email = user.email ?? ''
-  const username = profile?.username ?? null
+  const username = profile?.username ?? (user.user_metadata?.username as string | undefined) ?? null
 
   return (
     <div className="min-h-screen bg-background">
