@@ -1,13 +1,18 @@
 'use client'
 
-import { deleteExpense } from '@/app/actions/expenses'
+import { deleteExpense, updateExpense } from '@/app/actions/expenses'
+import { Paginator } from '@/components/Paginator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Paginator } from '@/components/Paginator'
 import { format, parseISO } from 'date-fns'
+import { Settings2 } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 type Expense = {
@@ -29,20 +34,37 @@ export function MonthlyExpenseList({
   totalPages: number
   month: string
 }) {
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [viewItem, setViewItem] = useState<Expense | null>(null)
+  const [editItem, setEditItem] = useState<Expense | null>(null)
+  const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [editLoading, setEditLoading] = useState(false)
+  const editFormRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
   async function handleDelete(id: string, description: string) {
-    setDeletingId(id)
+    setLoadingId(id)
     const result = await deleteExpense(id)
     if (result.error) toast.error(result.error)
     else {
       toast.success(`"${description}" deleted`)
       router.refresh()
     }
-    setDeletingId(null)
+    setLoadingId(null)
+  }
+
+  async function handleEdit(formData: FormData) {
+    if (!editItem) return
+    setEditLoading(true)
+    const result = await updateExpense(editItem.id, formData)
+    if (result.error) toast.error(result.error)
+    else {
+      toast.success('Expense updated')
+      setEditItem(null)
+      router.refresh()
+    }
+    setEditLoading(false)
   }
 
   function handlePageChange(p: number) {
@@ -65,12 +87,12 @@ export function MonthlyExpenseList({
             <TableHead>Description</TableHead>
             <TableHead className="hidden sm:table-cell">Category</TableHead>
             <TableHead className="text-right">Amount</TableHead>
-            <TableHead className="text-right">Action</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {expenses.map((e) => (
-            <TableRow key={e.id}>
+            <TableRow key={e.id} className="cursor-pointer" onClick={() => setViewItem(e)}>
               <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                 {format(parseISO(e.expense_date), 'dd MMM')}
               </TableCell>
@@ -79,22 +101,70 @@ export function MonthlyExpenseList({
                 {e.category ? <Badge variant="secondary">{e.category}</Badge> : <span className="text-muted-foreground">—</span>}
               </TableCell>
               <TableCell className="text-right font-medium">RM {Number(e.amount).toFixed(2)}</TableCell>
-              <TableCell className="text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => handleDelete(e.id, e.description)}
-                  disabled={deletingId === e.id}
-                >
-                  Delete
-                </Button>
+              <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
+                <div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      onClick={(ev) => ev.stopPropagation()}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <Settings2 className="size-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditItem(e)}>Edit</DropdownMenuItem>
+                      <DropdownMenuItem variant="destructive" onClick={() => handleDelete(e.id, e.description)} disabled={loadingId === e.id}>Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
       <Paginator page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+
+      {/* View detail modal */}
+      <Dialog open={!!viewItem} onOpenChange={(open) => { if (!open) setViewItem(null) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Expense Detail</DialogTitle></DialogHeader>
+          {viewItem && (
+            <div className="space-y-3">
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Description</span><span className="text-sm font-medium">{viewItem.description}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Amount</span><span className="text-sm font-semibold">RM {Number(viewItem.amount).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Category</span><span className="text-sm">{viewItem.category ? <Badge variant="secondary">{viewItem.category}</Badge> : '—'}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Date</span><span className="text-sm">{format(parseISO(viewItem.expense_date), 'dd MMM yyyy')}</span></div>
+              <Button variant="outline" className="w-full mt-2" onClick={() => setViewItem(null)}>Close</Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit modal */}
+      <Dialog open={!!editItem} onOpenChange={(open) => { if (!open) setEditItem(null) }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Expense</DialogTitle></DialogHeader>
+          {editItem && (
+            <form ref={editFormRef} action={handleEdit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="medit_desc">Description</Label>
+                <Input id="medit_desc" name="description" defaultValue={editItem.description} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="medit_amount">Amount (RM)</Label>
+                <Input id="medit_amount" name="amount" type="number" step="0.01" min="0" defaultValue={Number(editItem.amount).toFixed(2)} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="medit_cat">Category <span className="text-muted-foreground">(optional)</span></Label>
+                <Input id="medit_cat" name="category" defaultValue={editItem.category ?? ''} placeholder="optional" />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button type="button" variant="outline" onClick={() => setEditItem(null)}>Cancel</Button>
+                <Button type="submit" disabled={editLoading}>{editLoading ? 'Saving…' : 'Save'}</Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
