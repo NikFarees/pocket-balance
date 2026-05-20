@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { format } from 'date-fns'
-import { Plus, X } from 'lucide-react'
+import { Loader2, Plus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -81,7 +81,7 @@ export function BackupForm() {
             <Input id="description" name="description" placeholder="e.g. Monthly backup savings" />
           </div>
           <Button type="submit" disabled={loading} variant={type === 'withdrawal' ? 'destructive' : 'default'}>
-            {loading ? 'Saving…' : `Record ${type === 'deposit' ? 'Deposit' : 'Withdrawal'}`}
+            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</> : `Record ${type === 'deposit' ? 'Deposit' : 'Withdrawal'}`}
           </Button>
         </form>
       </CardContent>

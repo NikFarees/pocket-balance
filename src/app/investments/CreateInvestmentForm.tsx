@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, X } from 'lucide-react'
+import { Loader2, Plus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -62,7 +62,7 @@ export function CreateInvestmentForm() {
             <Textarea id="notes" name="notes" placeholder="Any notes about this investment" rows={2} />
           </div>
           <Button type="submit" disabled={loading}>
-            {loading ? 'Creating…' : 'Create Account'}
+            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating…</> : 'Create Account'}
           </Button>
         </form>
       </CardContent>

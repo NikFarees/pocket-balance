@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import { Settings2 } from 'lucide-react'
+import { Loader2, Settings2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
@@ -148,7 +148,7 @@ export function InvestmentList({ investments }: { investments: Investment[] }) {
               </div>
               <div className="flex gap-2 justify-end">
                 <Button type="button" variant="outline" onClick={() => setEditItem(null)}>Cancel</Button>
-                <Button type="submit" disabled={editLoading}>{editLoading ? 'Saving…' : 'Save'}</Button>
+                <Button type="submit" disabled={editLoading}>{editLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</> : 'Save'}</Button>
               </div>
             </form>
           )}

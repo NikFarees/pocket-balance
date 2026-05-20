@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, X } from 'lucide-react'
+import { Loader2, Plus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -114,7 +114,7 @@ export function DeductionForm({ editing, onCancel }: Props) {
           </div>
 
           <Button type="submit" disabled={loading}>
-            {loading ? 'Saving…' : editing ? 'Update' : 'Add Deduction'}
+            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</> : editing ? 'Update' : 'Add Deduction'}
           </Button>
         </form>
       </CardContent>
