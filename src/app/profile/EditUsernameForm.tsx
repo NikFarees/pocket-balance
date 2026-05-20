@@ -24,31 +24,46 @@ export function EditUsernameForm({ currentUsername }: { currentUsername: string 
     setLoading(false)
   }
 
-  if (!editing) {
+  if (editing) {
     return (
-      <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="gap-1.5">
-        <Pencil className="size-3.5" />
-        {currentUsername ? 'Edit username' : 'Set username'}
-      </Button>
+      <form onSubmit={handleSubmit} className="flex items-center gap-2 py-3">
+        <Input
+          name="username"
+          defaultValue={currentUsername ?? ''}
+          placeholder="Enter username"
+          required
+          className="h-8 text-sm flex-1"
+          autoFocus
+        />
+        <Button type="submit" size="sm" className="h-8 text-xs px-3" disabled={loading}>
+          {loading ? 'Saving…' : 'Save'}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          onClick={() => setEditing(false)}
+        >
+          <X className="size-3.5" />
+        </Button>
+      </form>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-2">
-      <Input
-        name="username"
-        defaultValue={currentUsername ?? ''}
-        placeholder="Enter username"
-        required
-        className="h-9 w-48"
-        autoFocus
-      />
-      <Button type="submit" size="sm" disabled={loading}>
-        {loading ? 'Saving…' : 'Save'}
-      </Button>
-      <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setEditing(false)}>
-        <X className="size-4" />
-      </Button>
-    </form>
+    <div className="flex items-center justify-between py-3">
+      <span className="text-sm">
+        {currentUsername ?? <span className="text-muted-foreground italic">Not set</span>}
+      </span>
+      <button
+        type="button"
+        onClick={() => setEditing(true)}
+        className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
+        aria-label="Edit username"
+      >
+        <Pencil className="size-3.5" />
+      </button>
+    </div>
   )
 }
