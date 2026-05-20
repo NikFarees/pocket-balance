@@ -1,65 +1,125 @@
-import Image from "next/image";
+import { getDashboardData } from '@/app/actions/dashboard'
+import { AppHeader } from '@/components/AppHeader'
+import { DeductionRow } from '@/components/dashboard/DeductionRow'
+import { buttonVariants } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { cn } from '@/lib/utils'
+import Link from 'next/link'
 
-export default function Home() {
+export default async function DashboardPage() {
+  const data = await getDashboardData()
+  if (!data) return null
+
+  const { salary, currentMonth, deductionsWithStatus, summary } = data
+  const { totalLiabilities, totalPaid, freeBalance, netInvested, backupBalance } = summary
+
+  const paidPercent = totalLiabilities > 0 ? Math.min(100, (totalPaid / totalLiabilities) * 100) : 0
+
+  const fmt = (n: number) => n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-background">
+      <AppHeader />
+
+      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+        <div>
+          <h2 className="text-xl font-semibold">{currentMonth}</h2>
+          <p className="text-sm text-muted-foreground">Monthly overview</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="grid grid-cols-2 gap-3">
+          {/* Free Balance — full width on mobile */}
+          <Card className="col-span-2 sm:col-span-1">
+            <CardHeader className="pb-1 pt-4 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Free Balance</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              {freeBalance !== null ? (
+                <p className={cn('text-2xl font-bold', freeBalance < 0 && 'text-destructive')}>
+                  RM {fmt(freeBalance)}
+                </p>
+              ) : (
+                <div>
+                  <p className="text-2xl font-bold text-muted-foreground">—</p>
+                  <Link href="/salary" className="text-xs text-muted-foreground underline hover:text-foreground">Set salary</Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Monthly Liabilities */}
+          <Card className="col-span-2 sm:col-span-1">
+            <CardHeader className="pb-1 pt-4 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Monthly Liabilities</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 space-y-2">
+              <p className="text-2xl font-bold">RM {fmt(totalLiabilities)}</p>
+              <div className="space-y-1">
+                <Progress value={paidPercent} className="h-1.5" />
+                <p className="text-xs text-muted-foreground">RM {fmt(totalPaid)} paid</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Investments */}
+          <Card>
+            <CardHeader className="pb-1 pt-4 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Investments</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <p className="text-2xl font-bold">RM {fmt(netInvested)}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">net invested</p>
+            </CardContent>
+          </Card>
+
+          {/* Backup Fund */}
+          <Card>
+            <CardHeader className="pb-1 pt-4 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Backup Fund</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <p className="text-2xl font-bold">RM {fmt(backupBalance)}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">balance</p>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Monthly Liabilities table */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between py-4 px-4">
+            <CardTitle className="text-sm font-semibold">Monthly Liabilities — {currentMonth}</CardTitle>
+            <Link href="/deductions" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'text-xs')}>Manage</Link>
+          </CardHeader>
+          <CardContent className="p-0 overflow-x-auto">
+            {deductionsWithStatus.length === 0 ? (
+              <div className="px-6 py-10 text-center text-sm text-muted-foreground">
+                No liabilities set up yet.{' '}
+                <Link href="/deductions" className="underline">Add one</Link>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead className="hidden sm:table-cell">Due</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right hidden sm:table-cell">Paid</TableHead>
+                    <TableHead className="text-right">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {deductionsWithStatus.map((d) => (
+                    <DeductionRow key={d.id} deduction={d} />
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       </main>
     </div>
-  );
+  )
 }

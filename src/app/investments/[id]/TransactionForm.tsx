@@ -1,0 +1,99 @@
+'use client'
+
+import { addTransaction } from '@/app/actions/investments'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { format } from 'date-fns'
+import { Plus, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useRef, useState } from 'react'
+import { toast } from 'sonner'
+
+export function TransactionForm({ investmentId }: { investmentId: string }) {
+  const [open, setOpen] = useState(false)
+  const [type, setType] = useState<'buy' | 'sell'>('buy')
+  const [loading, setLoading] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  const router = useRouter()
+
+  async function handleSubmit(formData: FormData) {
+    setLoading(true)
+    const result = await addTransaction(investmentId, formData)
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success(`${type === 'buy' ? 'Purchase' : 'Sale'} recorded`)
+      formRef.current?.reset()
+      setOpen(false)
+      router.refresh()
+    }
+    setLoading(false)
+  }
+
+  if (!open) {
+    return (
+      <Button variant="outline" onClick={() => setOpen(true)} className="w-full">
+        <Plus className="size-4 mr-2" /> Add Transaction
+      </Button>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between py-4">
+        <CardTitle>Add Transaction</CardTitle>
+        <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><X className="size-4" /></Button>
+      </CardHeader>
+      <CardContent>
+        <form ref={formRef} action={handleSubmit} className="space-y-4">
+          {/* Type toggle */}
+          <div className="flex rounded-lg border overflow-hidden w-fit">
+            <button
+              type="button"
+              onClick={() => setType('buy')}
+              className={`px-4 py-1.5 text-sm font-medium transition-colors ${type === 'buy' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+            >
+              Buy / Deposit
+            </button>
+            <button
+              type="button"
+              onClick={() => setType('sell')}
+              className={`px-4 py-1.5 text-sm font-medium transition-colors ${type === 'sell' ? 'bg-destructive text-destructive-foreground' : 'hover:bg-muted'}`}
+            >
+              Sell / Withdraw
+            </button>
+          </div>
+          <input type="hidden" name="type" value={type} />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount (RM)</Label>
+              <Input id="amount" name="amount" type="number" step="0.01" min="0" placeholder="0.00" required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="transaction_date">Date</Label>
+              <Input id="transaction_date" name="transaction_date" type="date" defaultValue={format(new Date(), 'yyyy-MM-dd')} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Quantity <span className="text-muted-foreground">(optional, e.g. grams)</span></Label>
+              <Input id="quantity" name="quantity" type="number" step="0.000001" min="0" placeholder="e.g. 1.5" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="price_per_unit">Price per unit <span className="text-muted-foreground">(optional)</span></Label>
+              <Input id="price_per_unit" name="price_per_unit" type="number" step="0.0001" min="0" placeholder="e.g. 380.00" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes <span className="text-muted-foreground">(optional)</span></Label>
+            <Input id="notes" name="notes" placeholder="e.g. Monthly savings purchase" />
+          </div>
+          <Button type="submit" disabled={loading} variant={type === 'sell' ? 'destructive' : 'default'}>
+            {loading ? 'Saving…' : `Record ${type === 'buy' ? 'Purchase' : 'Sale'}`}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  )
+}
