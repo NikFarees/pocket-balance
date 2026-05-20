@@ -1,10 +1,9 @@
 import { getDashboardData } from '@/app/actions/dashboard'
 import { AppHeader } from '@/components/AppHeader'
-import { DeductionRow } from '@/components/dashboard/DeductionRow'
+import { DeductionTable } from '@/components/dashboard/DeductionTable'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -99,30 +98,14 @@ export default async function DashboardPage() {
             <CardTitle className="text-sm font-semibold">Monthly Liabilities — {currentMonth}</CardTitle>
             <Link href="/deductions" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'text-xs')}>Manage</Link>
           </CardHeader>
-          <CardContent className="p-0 overflow-x-auto">
+          <CardContent className="p-0">
             {deductionsWithStatus.length === 0 ? (
               <div className="px-6 py-10 text-center text-sm text-muted-foreground">
                 No liabilities set up yet.{' '}
                 <Link href="/deductions" className="underline">Add one</Link>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Due</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right hidden sm:table-cell">Paid</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {deductionsWithStatus.map((d) => (
-                    <DeductionRow key={d.id} deduction={d} />
-                  ))}
-                </TableBody>
-              </Table>
+              <DeductionTable deductions={deductionsWithStatus} />
             )}
           </CardContent>
         </Card>

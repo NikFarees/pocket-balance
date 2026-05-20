@@ -5,9 +5,21 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Plus, X } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Plus, X } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
+
+function PasswordInput({ id, name, autoComplete }: { id: string; name: string; autoComplete: string }) {
+  const [show, setShow] = useState(false)
+  return (
+    <div className="relative">
+      <Input id={id} name={name} type={show ? 'text' : 'password'} placeholder="••••••••" required autoComplete={autoComplete} className="pr-10" />
+      <button type="button" tabIndex={-1} onClick={() => setShow(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+        {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+      </button>
+    </div>
+  )
+}
 
 export function ChangePasswordForm() {
   const [open, setOpen] = useState(false)
@@ -45,16 +57,15 @@ export function ChangePasswordForm() {
         <form ref={formRef} action={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="currentPassword">Current Password</Label>
-            <Input id="currentPassword" name="currentPassword" type="password" placeholder="••••••••" required autoComplete="current-password" />
+            <PasswordInput id="currentPassword" name="currentPassword" autoComplete="current-password" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="newPassword">New Password</Label>
-            <Input id="newPassword" name="newPassword" type="password" placeholder="••••••••" required autoComplete="new-password" minLength={6} />
-            <p className="text-xs text-muted-foreground">Minimum 6 characters</p>
+            <PasswordInput id="newPassword" name="newPassword" autoComplete="new-password" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm New Password</Label>
-            <Input id="confirmPassword" name="confirmPassword" type="password" placeholder="••••••••" required autoComplete="new-password" />
+            <PasswordInput id="confirmPassword" name="confirmPassword" autoComplete="new-password" />
           </div>
           <Button type="submit" disabled={loading}>
             {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Changing…</> : 'Change Password'}
