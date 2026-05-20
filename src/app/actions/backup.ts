@@ -50,6 +50,32 @@ export async function addBackupTransaction(formData: FormData) {
   return { success: true }
 }
 
+export async function updateBackupTransaction(id: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const type = formData.get('type') as 'deposit' | 'withdrawal'
+  const amount = parseFloat(formData.get('amount') as string)
+  const description = (formData.get('description') as string).trim() || null
+  const transaction_date = formData.get('transaction_date') as string
+
+  if (!['deposit', 'withdrawal'].includes(type)) return { error: 'Invalid type' }
+  if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
+  if (!transaction_date) return { error: 'Date is required' }
+
+  const { error } = await supabase
+    .from('backup_fund_transactions')
+    .update({ type, amount, description, transaction_date })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/backup')
+  return { success: true }
+}
+
 export async function deleteBackupTransaction(id: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
