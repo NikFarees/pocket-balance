@@ -11,7 +11,7 @@ export default async function SettingsPage() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         <h2 className="text-xl font-semibold">Daily Target</h2>
 
         <Card className={cn(current ? 'border-green-200 bg-green-50 dark:bg-green-950/20' : '')}>
