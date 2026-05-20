@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { format, startOfMonth } from 'date-fns'
 import Link from 'next/link'
+import { AllExpensesCard } from './AllExpensesCard'
 import { ExpenseList } from './ExpenseList'
 import { MonthlyExpenseList } from './MonthlyExpenseList'
 import { QuickAddForm } from './QuickAddForm'
@@ -26,7 +27,7 @@ export default async function ExpensesPage({
     const data = await getExpensesPageData()
     if (!data) return null
 
-    const { todayExpenses, todayTotal, dailyTarget, yesterdayOverspend, effectiveTarget, remaining, todayLabel } = data
+    const { todayExpenses, monthExpenses, todayTotal, dailyTarget, yesterdayOverspend, effectiveTarget, remaining, todayLabel } = data
     const isOver = remaining !== null && remaining < 0
 
     return (
@@ -94,6 +95,8 @@ export default async function ExpensesPage({
               <ExpenseList expenses={todayExpenses} />
             </CardContent>
           </Card>
+
+          <AllExpensesCard expenses={monthExpenses} />
         </main>
       </div>
     )

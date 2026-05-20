@@ -15,7 +15,7 @@ export async function getExpensesPageData() {
   const yesterdayStr = format(yesterday, 'yyyy-MM-dd')
   const currentMonth = format(startOfMonth(today), 'yyyy-MM-dd')
 
-  const [todayExpensesRes, yesterdayExpensesRes, targetRes] = await Promise.all([
+  const [todayExpensesRes, yesterdayExpensesRes, targetRes, monthExpensesRes] = await Promise.all([
     supabase
       .from('expenses')
       .select('*')
@@ -37,6 +37,15 @@ export async function getExpensesPageData() {
       .order('effective_from', { ascending: false })
       .limit(1)
       .maybeSingle(),
+
+    supabase
+      .from('expenses')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('expense_date', currentMonth)
+      .lte('expense_date', todayStr)
+      .order('expense_date', { ascending: false })
+      .order('created_at', { ascending: false }),
   ])
 
   const todayExpenses = todayExpensesRes.data ?? []
@@ -44,6 +53,7 @@ export async function getExpensesPageData() {
     (sum, e) => sum + Number(e.amount), 0
   )
   const target = targetRes.data
+  const monthExpenses = monthExpensesRes.data ?? []
 
   const todayTotal = todayExpenses.reduce((sum, e) => sum + Number(e.amount), 0)
   const dailyTarget = target ? Number(target.daily_amount) : null
@@ -53,6 +63,7 @@ export async function getExpensesPageData() {
 
   return {
     todayExpenses,
+    monthExpenses,
     todayTotal,
     dailyTarget,
     yesterdayOverspend,
