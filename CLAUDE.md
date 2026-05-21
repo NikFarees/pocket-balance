@@ -12,11 +12,11 @@ PocketBalance is a personal daily financial tracker. Users log income (salary, s
 
 ```bash
 npm run dev      # Start dev server (localhost:3000)
-npm run build    # Production build
+npm run build    # Production build (also surfaces TypeScript errors — no separate type-check script)
 npm run lint     # ESLint
 ```
 
-There is no `type-check` script — use `npm run build` to surface TypeScript errors.
+**Dev server cache**: if routes return 404 unexpectedly after file changes, kill the server, run `rm -rf .next`, then restart.
 
 ## Environment Variables
 
@@ -32,7 +32,9 @@ NEXT_PUBLIC_SITE_URL=   # used for auth email redirect (e.g. https://yourdomain.
 
 ### Auth Flow
 
-Auth is handled by `src/proxy.ts`. Despite not being named `middleware.ts`, Turbopack treats it as middleware because it exports a `config.matcher`. It uses `@supabase/ssr` to refresh sessions via cookies and redirects unauthenticated users to `/login`. Public (unauthenticated) routes are `/login`, `/signup`, `/forgot-password`, and anything under `/auth/` — all others require a session. Authenticated users hitting public routes are redirected to `/`. The email confirmation callback is at `src/app/auth/callback/route.ts`.
+Auth is handled by `src/proxy.ts`. Despite not being named `middleware.ts`, Turbopack treats it as middleware because it exports a `config.matcher`. It uses `@supabase/ssr` to refresh sessions via cookies and redirects unauthenticated users to `/login`. Public (unauthenticated) routes are `/login`, `/signup`, `/forgot-password`, and anything under `/auth/` — all others require a session. Authenticated users hitting public routes are redirected to `/`.
+
+The email confirmation callback is at `src/app/auth/callback/route.ts`.
 
 Supabase clients:
 - `src/lib/supabase/server.ts` — for Server Components and Server Actions (cookie-based)
@@ -40,11 +42,11 @@ Supabase clients:
 
 ### Database Schema
 
-All tables use `user_id UUID REFERENCES auth.users` with RLS (`FOR ALL USING (auth.uid() = user_id)`).
+All tables use `user_id UUID REFERENCES auth.users` with RLS (`FOR ALL USING (auth.uid() = user_id)`). Migrations live in `supabase/migrations/`.
 
 | Table | Purpose |
 |---|---|
-| `incomes` | Multi-row income log; `amount` (can be negative for adjustments), free-text `source`, `income_date` DATE |
+| `incomes` | Multi-row income log. `amount` stores **net take-home** (can be negative for adjustments). Free-text `source`, `income_date` DATE. Optional statutory columns: `gross_amount`, `epf_employee/employer`, `socso_employee/employer`, `eis_employee/employer`, `tax_pcb` (all nullable NUMERIC). `other_deductions JSONB` stores `[{label, amount}]` for dynamic deductions (unpaid leave etc.). |
 | `deductions` | Recurring deduction templates (car, insurance, etc.) with `is_active` flag |
 | `deduction_payments` | Per-month payment records against a deduction; `month` = first day of month |
 | `expenses` | Daily expense entries with `expense_date` DATE and `created_at` TIMESTAMPTZ |
@@ -55,14 +57,18 @@ All tables use `user_id UUID REFERENCES auth.users` with RLS (`FOR ALL USING (au
 | `debts` | Debts with `type` ('i_owe'/'they_owe'), `is_settled`, and `settled_date` |
 | `profiles` | User profile; `username` (nullable); upserted on conflict of `user_id` |
 
-Migrations live in `supabase/migrations/`. Username is stored in `profiles.username` and updated via `src/app/actions/profile.ts` (`updateUsername`). The signup form has a username field but the `signup` server action does not yet persist it — it would need `options.data: { username }` added to `supabase.auth.signUp` and a separate `profiles` upsert.
+**Signup gap**: the signup form has a username field but the `signup` action does not persist it — would need `options.data: { username }` in `supabase.auth.signUp` plus a `profiles` upsert.
 
 ### Key Business Logic
 
-**Daily budget with carry-forward** (computed in `src/app/actions/dashboard.ts`):
-1. Monthly budget = sum of incomes for the month − total active deductions
+**Daily budget with carry-forward** (`src/app/actions/dashboard.ts`):
+1. Monthly budget = sum of `incomes.amount` for the month − total active deductions
 2. For each day from month start to yesterday: `carryForward = max(0, carryForward + spent − dailyTarget)`
-3. Today's effective spend displayed as `carryForward + todaySpend` vs `dailyTarget`
+3. Today's effective spend = `carryForward + todaySpend` vs `dailyTarget`
+
+**Income / Adjustment toggle**: same `incomes` table; adjustment entries have a negative `amount` and no `gross_amount`. The Income form applies `−Math.abs(amount)` before submit when type is `adjustment`.
+
+**Statutory contributions** (`src/lib/statutory.ts`): When a salary entry has a `gross_amount`, the form auto-calculates EPF (11%/13%≤5k or 12%), SOCSO (0.5%/1.75%), EIS (0.2%/0.2%) and lets the user enter PCB manually. `calcNet(gross, contributions, otherDeductionsTotal?)` computes net take-home, which is what gets stored in `amount`. Dashboard budget is unaffected — it always sums `amount` (the net).
 
 **Deduction tracking**: `deductions` are templates; `deduction_payments` records which ones are paid each month. No cross-month carry-over.
 
@@ -75,10 +81,10 @@ src/app/
     signup/
     forgot-password/
     reset-password/
-  auth/callback/        # Supabase email confirmation handler (exchanges code for session)
+  auth/callback/        # Supabase email confirmation handler
   page.tsx              # Dashboard — summary cards + monthly liabilities table
-  expenses/             # Daily expenses: QuickAddForm + ExpenseList (today) or MonthlyExpenseList
-  income/               # IncomeForm + IncomeHistory (multi-source, supports Income/Adjustment toggle)
+  expenses/             # Daily expenses: QuickAddForm + ExpenseList / MonthlyExpenseList
+  income/               # IncomeForm + IncomeHistory (multi-source, Income/Adjustment toggle, statutory contributions)
   deductions/           # DeductionForm + DeductionList + payment history by month
   debts/                # DebtForm + DebtList (tabbed: they owe / I owe)
   investments/          # CreateInvestmentForm + InvestmentList
@@ -104,5 +110,7 @@ All mutations go through Server Actions in `src/app/actions/`. No API routes. Ea
 - `loadingId` state for per-row delete/action spinners; `editLoading` for modal save spinner
 
 **Forms** always use `onSubmit={e => { e.preventDefault(); handler(new FormData(e.currentTarget)) }}` — **never** `action={handler}`. Using `action=` wraps the call in a React transition which prevents loading spinners from showing.
+
+**Editable number inputs in forms**: use `type="text"` + `inputMode="decimal"` with string state, **not** `type="number"` with `.toFixed(2)` as the controlled value. The `.toFixed(2)` pattern reformats on every keystroke and breaks free typing. Store raw strings in state; parse to float only for calculations and on submit.
 
 **Dashboard liabilities table** uses `src/components/dashboard/DeductionTable.tsx` (client component) instead of a plain server-rendered table, because each row needs Mark Paid / Undo buttons with per-row loading state.

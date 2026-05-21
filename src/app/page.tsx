@@ -12,11 +12,14 @@ export default async function DashboardPage() {
   if (!data) return null
 
   const { currentMonth, deductionsWithStatus, summary } = data
-  const { totalLiabilities, totalPaid, freeBalance, netInvested, backupBalance, dailyTarget, todaySpend, carryForward } = summary
+  const { totalLiabilities, totalPaid, freeBalance, netInvested, backupBalance, dailyTarget, todaySpend, carryForward, epfTotal } = summary
 
   const paidPercent = totalLiabilities > 0 ? Math.min(100, (totalPaid / totalLiabilities) * 100) : 0
 
   const fmt = (n: number) => n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+  const cardLink = 'block group cursor-pointer'
+  const cardHover = 'transition-colors group-hover:border-primary/50 group-hover:shadow-sm h-full'
 
   return (
     <div className="min-h-screen bg-background">
@@ -29,67 +32,97 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {/* Today's Spending — full width on mobile */}
-          <Card className="col-span-2 sm:col-span-1">
-            <CardHeader className="pb-1 pt-4 px-4">
-              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Today&apos;s Spending</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              {dailyTarget !== null ? (
-                <div>
-                  <p className={cn('text-2xl font-bold', (carryForward + todaySpend) > dailyTarget && 'text-destructive')}>
-                    RM {fmt(carryForward + todaySpend)}<span className="text-base font-normal text-muted-foreground"> / RM {fmt(dailyTarget)}</span>
-                  </p>
-                  {carryForward > 0 && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      includes RM {fmt(carryForward)} carried forward from previous days
+          {/* Today's Spending — full width */}
+          <Link href="/expenses" className={cn(cardLink, 'col-span-2')}>
+            <Card className={cardHover}>
+              <CardHeader className="pb-1 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Today&apos;s Spending</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                {dailyTarget !== null ? (
+                  <div>
+                    <p className={cn('text-2xl font-bold', (carryForward + todaySpend) > dailyTarget && 'text-destructive')}>
+                      RM {fmt(carryForward + todaySpend)}<span className="text-base font-normal text-muted-foreground"> / RM {fmt(dailyTarget)}</span>
                     </p>
-                  )}
-                </div>
-              ) : (
-                <div>
-                  <p className="text-3xl font-bold text-muted-foreground">—</p>
-                  <Link href="/settings" className="text-xs text-muted-foreground underline hover:text-foreground">Set daily target</Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    {carryForward > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        includes RM {fmt(carryForward)} carried forward from previous days
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-3xl font-bold text-muted-foreground">—</p>
+                    <span className="text-xs text-muted-foreground underline">Set daily target in settings</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
 
           {/* Monthly Liabilities */}
-          <Card className="col-span-2 sm:col-span-1">
-            <CardHeader className="pb-1 pt-4 px-4">
-              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Monthly Liabilities</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 space-y-2">
-              <p className="text-3xl font-bold">RM {fmt(totalLiabilities)}</p>
-              <div className="space-y-1">
-                <Progress value={paidPercent} className="h-1.5" />
-                <p className="text-xs text-muted-foreground">RM {fmt(totalPaid)} paid</p>
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/deductions" className={cardLink}>
+            <Card className={cardHover}>
+              <CardHeader className="pb-1 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Liabilities</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 space-y-2">
+                <p className="text-3xl font-bold">RM {fmt(totalLiabilities)}</p>
+                <div className="space-y-1">
+                  <Progress value={paidPercent} className="h-1.5" />
+                  <p className="text-xs text-muted-foreground">RM {fmt(totalPaid)} paid</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          {/* KWSP / EPF */}
+          <Link href="/income" className={cardLink}>
+            <Card className={cardHover}>
+              <CardHeader className="pb-1 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">EPF / KWSP</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                {epfTotal > 0 ? (
+                  <>
+                    <p className="text-3xl font-bold">RM {fmt(epfTotal)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">accumulated</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-3xl font-bold text-muted-foreground">—</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">no contributions yet</p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
 
           {/* Investments */}
-          <Card>
-            <CardHeader className="pb-1 pt-4 px-4">
-              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Investments</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <p className="text-3xl font-bold">RM {fmt(netInvested)}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">net invested</p>
-            </CardContent>
-          </Card>
+          <Link href="/investments" className={cardLink}>
+            <Card className={cardHover}>
+              <CardHeader className="pb-1 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Investments</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <p className="text-3xl font-bold">RM {fmt(netInvested)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">net invested</p>
+              </CardContent>
+            </Card>
+          </Link>
 
           {/* Backup Fund */}
-          <Card>
-            <CardHeader className="pb-1 pt-4 px-4">
-              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Backup Fund</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <p className="text-3xl font-bold">RM {fmt(backupBalance)}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">balance</p>
-            </CardContent>
-          </Card>
+          <Link href="/backup" className={cardLink}>
+            <Card className={cardHover}>
+              <CardHeader className="pb-1 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Backup Fund</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <p className="text-3xl font-bold">RM {fmt(backupBalance)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">balance</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Monthly Liabilities table */}

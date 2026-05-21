@@ -70,7 +70,7 @@ export function AllExpensesCard({ expenses }: { expenses: Expense[] }) {
       <CardHeader className="py-4 px-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <CardTitle className="text-base">All Expenses This Month</CardTitle>
+            <CardTitle className="text-base">Expenses History</CardTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
               {filtered.length} {filtered.length === 1 ? 'entry' : 'entries'} · RM {filteredTotal.toFixed(2)}
             </p>
