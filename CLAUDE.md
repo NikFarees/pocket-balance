@@ -51,8 +51,8 @@ All tables use `user_id UUID REFERENCES auth.users` with RLS (`FOR ALL USING (au
 | `deduction_payments` | Per-month payment records against a deduction; `month` = first day of month |
 | `expenses` | Daily expense entries with `expense_date` DATE and `created_at` TIMESTAMPTZ |
 | `daily_targets` | Daily spending limit with `effective_from` DATE; most recent on/before today is active |
-| `investments` | Investment account templates (name, type, is_active) |
-| `investment_transactions` | Buy/sell transactions per investment; optional `quantity` and `price_per_unit` |
+| `investments` | Investment account templates. `category` TEXT enum: `'trading'` (gold/stocks — buy/sell), `'unit_trust'` (ASNB — save/redeem/dividend), `'savings'` (Tabung Haji — deposit/withdraw/dividend). `is_active` flag. |
+| `investment_transactions` | Transactions per investment. `type`: `'buy'` \| `'sell'` \| `'dividend'`. `'dividend'` always has null `quantity`/`price_per_unit`. Optional `quantity` and `price_per_unit` used only for `trading` category. |
 | `backup_fund_transactions` | Deposit/withdrawal to emergency fund |
 | `debts` | Debts with `type` ('i_owe'/'they_owe'), `is_settled`, and `settled_date` |
 | `profiles` | User profile; `username` (nullable); upserted on conflict of `user_id` |
@@ -114,3 +114,17 @@ All mutations go through Server Actions in `src/app/actions/`. No API routes. Ea
 **Editable number inputs in forms**: use `type="text"` + `inputMode="decimal"` with string state, **not** `type="number"` with `.toFixed(2)` as the controlled value. The `.toFixed(2)` pattern reformats on every keystroke and breaks free typing. Store raw strings in state; parse to float only for calculations and on submit.
 
 **Dashboard liabilities table** uses `src/components/dashboard/DeductionTable.tsx` (client component) instead of a plain server-rendered table, because each row needs Mark Paid / Undo buttons with per-row loading state.
+
+**Investment category behaviour**: `category` on the `investments` table drives terminology, visible fields, and transaction types for all investment UI. `trading` → Buy/Sell + qty/price fields; `unit_trust` → Save/Redeem/Dividend, no qty/price; `savings` → Deposit/Withdraw/Dividend, no qty/price. Summary cards also vary per category (Net Invested vs Balance + Dividends). Always pass `category` down from the server page to `TransactionForm` and `TransactionList`.
+
+### Timezone Handling
+
+"Today" is always the user's device date, not the server's. The flow:
+
+1. `<TimezoneSync />` (mounted in root layout as a client component) writes the device IANA timezone into a `tz` cookie on first render.
+2. Server Components and Actions call `serverToday()` / `serverNow()` from `src/lib/server-date.ts`, which reads that cookie and uses `src/lib/date.ts` to compute the correct date string.
+3. Never use `new Date()` directly on the server for "today" — use `serverToday()` / `serverNow()`.
+
+### Month Navigation
+
+Pages with month-scoped data (expenses, deductions, income history) accept a `?month=yyyy-MM-dd` search param (first of month). The `<MonthNav month={month} />` component in `src/components/MonthNav.tsx` renders prev/next arrows and updates the URL param. Server pages read the param via `searchParams`, defaulting to the current month via `serverToday()`.
