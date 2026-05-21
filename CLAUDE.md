@@ -11,11 +11,12 @@ PocketBalance is a personal daily financial tracker. Users log monthly salary, s
 ## Commands
 
 ```bash
-npm run dev          # Start dev server (localhost:3000)
-npm run build        # Production build
-npm run lint         # ESLint
-npm run type-check   # tsc --noEmit
+npm run dev      # Start dev server (localhost:3000)
+npm run build    # Production build
+npm run lint     # ESLint
 ```
+
+There is no `type-check` script — use `npm run build` to surface TypeScript errors.
 
 ## Environment Variables
 
@@ -31,7 +32,7 @@ NEXT_PUBLIC_SITE_URL=   # used for auth email redirect (e.g. https://yourdomain.
 
 ### Auth Flow
 
-Auth is handled by `src/proxy.ts`, which is imported and re-exported by `src/app/middleware.ts`. It uses `@supabase/ssr` to refresh sessions via cookies and redirects unauthenticated users to `/login`. Auth routes (`/login`, `/signup`, `/forgot-password`, `/reset-password`) redirect authenticated users to `/`. The email confirmation callback is at `src/app/auth/callback/route.ts`.
+Auth is handled by `src/proxy.ts`. Despite not being named `middleware.ts`, Turbopack treats it as middleware because it exports a `config.matcher`. It uses `@supabase/ssr` to refresh sessions via cookies and redirects unauthenticated users to `/login`. Public (unauthenticated) routes are `/login`, `/signup`, `/forgot-password`, and anything under `/auth/` — all others require a session. Authenticated users hitting public routes are redirected to `/`. The email confirmation callback is at `src/app/auth/callback/route.ts`.
 
 Supabase clients:
 - `src/lib/supabase/server.ts` — for Server Components and Server Actions (cookie-based)
@@ -54,7 +55,7 @@ All tables use `user_id UUID REFERENCES auth.users` with RLS (`FOR ALL USING (au
 | `debts` | Debts with `type` ('i_owe'/'they_owe'), `is_settled`, and `settled_date` |
 | `profiles` | User profile; `username` (nullable); upserted on conflict of `user_id` |
 
-Migrations live in `supabase/migrations/`. Username entered at signup is stored in `auth.users.raw_user_meta_data` via `options.data` and synced to `profiles` when edited via the profile page.
+Migrations live in `supabase/migrations/`. Username is stored in `profiles.username` and updated via `src/app/actions/profile.ts` (`updateUsername`). The signup form has a username field but the `signup` server action does not yet persist it — it would need `options.data: { username }` added to `supabase.auth.signUp` and a separate `profiles` upsert.
 
 ### Key Business Logic
 
