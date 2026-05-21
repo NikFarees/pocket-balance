@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { calcNet } from '@/lib/statutory'
 import { endOfMonth, format, parseISO, startOfMonth } from 'date-fns'
 import { revalidatePath } from 'next/cache'
 
@@ -42,21 +43,45 @@ export async function createIncome(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const amount = parseFloat(formData.get('amount') as string)
   const source = (formData.get('source') as string)?.trim()
   const income_date = formData.get('income_date') as string
   const notes = (formData.get('notes') as string) || null
 
-  if (isNaN(amount) || amount === 0) return { error: 'Enter a valid amount' }
   if (!source) return { error: 'Enter a source' }
   if (!income_date) return { error: 'Select a date' }
 
+  const grossRaw = formData.get('gross_amount') as string | null
+  const hasContributions = !!grossRaw && grossRaw !== ''
+
+  let amount: number
+  let contributionFields: Record<string, number | null> = {
+    gross_amount: null, epf_employee: null, epf_employer: null,
+    socso_employee: null, socso_employer: null,
+    eis_employee: null, eis_employer: null, tax_pcb: null,
+  }
+
+  if (hasContributions) {
+    const gross = parseFloat(grossRaw!)
+    if (isNaN(gross) || gross <= 0) return { error: 'Enter a valid gross amount' }
+
+    const epf_employee   = parseFloat(formData.get('epf_employee') as string) || 0
+    const epf_employer   = parseFloat(formData.get('epf_employer') as string) || 0
+    const socso_employee = parseFloat(formData.get('socso_employee') as string) || 0
+    const socso_employer = parseFloat(formData.get('socso_employer') as string) || 0
+    const eis_employee   = parseFloat(formData.get('eis_employee') as string) || 0
+    const eis_employer   = parseFloat(formData.get('eis_employer') as string) || 0
+    const tax_pcb        = parseFloat(formData.get('tax_pcb') as string) || 0
+
+    amount = calcNet(gross, { epf_employee, socso_employee, eis_employee, tax_pcb })
+    contributionFields = { gross_amount: gross, epf_employee, epf_employer, socso_employee, socso_employer, eis_employee, eis_employer, tax_pcb }
+  } else {
+    const amountRaw = parseFloat(formData.get('amount') as string)
+    if (isNaN(amountRaw) || amountRaw === 0) return { error: 'Enter a valid amount' }
+    amount = amountRaw
+  }
+
   const { error } = await supabase.from('incomes').insert({
-    user_id: user.id,
-    amount,
-    source,
-    income_date,
-    notes,
+    user_id: user.id, amount, source, income_date, notes, ...contributionFields,
   })
 
   if (error) return { error: error.message }
@@ -71,18 +96,46 @@ export async function updateIncome(id: string, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const amount = parseFloat(formData.get('amount') as string)
   const source = (formData.get('source') as string)?.trim()
   const income_date = formData.get('income_date') as string
   const notes = (formData.get('notes') as string) || null
 
-  if (isNaN(amount) || amount === 0) return { error: 'Enter a valid amount' }
   if (!source) return { error: 'Enter a source' }
   if (!income_date) return { error: 'Select a date' }
 
+  const grossRaw = formData.get('gross_amount') as string | null
+  const hasContributions = !!grossRaw && grossRaw !== ''
+
+  let amount: number
+  let contributionFields: Record<string, number | null> = {
+    gross_amount: null, epf_employee: null, epf_employer: null,
+    socso_employee: null, socso_employer: null,
+    eis_employee: null, eis_employer: null, tax_pcb: null,
+  }
+
+  if (hasContributions) {
+    const gross = parseFloat(grossRaw!)
+    if (isNaN(gross) || gross <= 0) return { error: 'Enter a valid gross amount' }
+
+    const epf_employee   = parseFloat(formData.get('epf_employee') as string) || 0
+    const epf_employer   = parseFloat(formData.get('epf_employer') as string) || 0
+    const socso_employee = parseFloat(formData.get('socso_employee') as string) || 0
+    const socso_employer = parseFloat(formData.get('socso_employer') as string) || 0
+    const eis_employee   = parseFloat(formData.get('eis_employee') as string) || 0
+    const eis_employer   = parseFloat(formData.get('eis_employer') as string) || 0
+    const tax_pcb        = parseFloat(formData.get('tax_pcb') as string) || 0
+
+    amount = calcNet(gross, { epf_employee, socso_employee, eis_employee, tax_pcb })
+    contributionFields = { gross_amount: gross, epf_employee, epf_employer, socso_employee, socso_employer, eis_employee, eis_employer, tax_pcb }
+  } else {
+    const amountRaw = parseFloat(formData.get('amount') as string)
+    if (isNaN(amountRaw) || amountRaw === 0) return { error: 'Enter a valid amount' }
+    amount = amountRaw
+  }
+
   const { error } = await supabase
     .from('incomes')
-    .update({ amount, source, income_date, notes, updated_at: new Date().toISOString() })
+    .update({ amount, source, income_date, notes, updated_at: new Date().toISOString(), ...contributionFields })
     .eq('id', id)
     .eq('user_id', user.id)
 
