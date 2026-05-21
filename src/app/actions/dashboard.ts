@@ -14,7 +14,7 @@ export async function getDashboardData() {
 
   const todayStr = format(now, 'yyyy-MM-dd')
 
-  const [incomesRes, deductionsRes, paymentsRes, investmentTxRes, backupTxRes, dailyTargetRes, monthExpensesRes] = await Promise.all([
+  const [incomesRes, deductionsRes, paymentsRes, investmentTxRes, backupTxRes, dailyTargetRes, monthExpensesRes, allIncomesEpfRes] = await Promise.all([
     supabase
       .from('incomes')
       .select('amount')
@@ -60,6 +60,11 @@ export async function getDashboardData() {
       .eq('user_id', user.id)
       .gte('expense_date', currentMonth)
       .lte('expense_date', todayStr),
+
+    supabase
+      .from('incomes')
+      .select('epf_employee, epf_employer')
+      .eq('user_id', user.id),
   ])
 
   const incomes = incomesRes.data ?? []
@@ -69,6 +74,7 @@ export async function getDashboardData() {
   const backupTx = backupTxRes.data ?? []
   const dailyTarget = dailyTargetRes.data ? Number(dailyTargetRes.data.daily_amount) : null
   const monthExpenses = monthExpensesRes.data ?? []
+  const allIncomesEpf = allIncomesEpfRes.data ?? []
 
   const totalLiabilities = deductions.reduce((sum, d) => sum + Number(d.expected_amount), 0)
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.paid_amount), 0)
@@ -110,6 +116,10 @@ export async function getDashboardData() {
     .filter(t => t.type === 'withdrawal').reduce((s, t) => s + Number(t.amount), 0)
   const backupBalance = backupDeposits - backupWithdrawals
 
+  const epfEmployee = allIncomesEpf.reduce((s, i) => s + Number(i.epf_employee ?? 0), 0)
+  const epfEmployer = allIncomesEpf.reduce((s, i) => s + Number(i.epf_employer ?? 0), 0)
+  const epfTotal = epfEmployee + epfEmployer
+
   const deductionsWithStatus = deductions.map((d) => {
     const payment = payments.find((p) => p.deduction_id === d.id)
     return { ...d, payment: payment ?? null, isPaid: !!payment }
@@ -129,6 +139,7 @@ export async function getDashboardData() {
       dailyTarget,
       todaySpend,
       carryForward,
+      epfTotal,
     },
   }
 }
