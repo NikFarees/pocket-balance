@@ -14,13 +14,13 @@ export async function getDashboardData() {
 
   const todayStr = format(now, 'yyyy-MM-dd')
 
-  const [salaryRes, deductionsRes, paymentsRes, investmentTxRes, backupTxRes, dailyTargetRes, monthExpensesRes] = await Promise.all([
+  const [incomesRes, deductionsRes, paymentsRes, investmentTxRes, backupTxRes, dailyTargetRes, monthExpensesRes] = await Promise.all([
     supabase
-      .from('salaries')
+      .from('incomes')
       .select('amount')
       .eq('user_id', user.id)
-      .eq('month', currentMonth)
-      .maybeSingle(),
+      .gte('income_date', currentMonth)
+      .lte('income_date', format(new Date(now.getFullYear(), now.getMonth() + 1, 0), 'yyyy-MM-dd')),
 
     supabase
       .from('deductions')
@@ -62,7 +62,7 @@ export async function getDashboardData() {
       .lte('expense_date', todayStr),
   ])
 
-  const salary = salaryRes.data
+  const incomes = incomesRes.data ?? []
   const deductions = deductionsRes.data ?? []
   const payments = paymentsRes.data ?? []
   const investmentTx = investmentTxRes.data ?? []
@@ -73,7 +73,8 @@ export async function getDashboardData() {
   const totalLiabilities = deductions.reduce((sum, d) => sum + Number(d.expected_amount), 0)
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.paid_amount), 0)
   const totalUnpaid = totalLiabilities - totalPaid
-  const freeBalance = salary ? Number(salary.amount) - totalLiabilities : null
+  const incomeTotal = incomes.reduce((sum, i) => sum + Number(i.amount), 0)
+  const freeBalance = incomeTotal - totalLiabilities
 
   // Build a map of spend per date
   const spendByDate: Record<string, number> = {}
@@ -115,7 +116,7 @@ export async function getDashboardData() {
   })
 
   return {
-    salary,
+    incomeTotal,
     currentMonth: format(now, 'MMMM yyyy'),
     deductionsWithStatus,
     summary: {

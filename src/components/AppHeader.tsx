@@ -22,7 +22,7 @@ const standaloneLinks = [
 ]
 
 const financeLinks = [
-  { href: '/salary', label: 'Salary' },
+  { href: '/income', label: 'Income' },
   { href: '/deductions', label: 'Deductions' },
   { href: '/settings', label: 'Daily Target' },
 ]

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PocketBalance is a personal daily financial tracker. Users log monthly salary, set up recurring deductions (bills, subscriptions), record daily expenses, track debts, manage investments, and maintain a backup/emergency fund — with a running daily balance and carry-forward overspend logic.
+PocketBalance is a personal daily financial tracker. Users log income (salary, side income, gifts, etc.), set up recurring deductions (bills, subscriptions), record daily expenses, track debts, manage investments, and maintain a backup/emergency fund — with a running daily balance and carry-forward overspend logic.
 
 **Currency**: All amounts displayed as Malaysian Ringgit (`RM`).
 
@@ -44,7 +44,7 @@ All tables use `user_id UUID REFERENCES auth.users` with RLS (`FOR ALL USING (au
 
 | Table | Purpose |
 |---|---|
-| `salaries` | One record per user per month (`month` = first day of month as DATE) |
+| `incomes` | Multi-row income log; `amount` (can be negative for adjustments), free-text `source`, `income_date` DATE |
 | `deductions` | Recurring deduction templates (car, insurance, etc.) with `is_active` flag |
 | `deduction_payments` | Per-month payment records against a deduction; `month` = first day of month |
 | `expenses` | Daily expense entries with `expense_date` DATE and `created_at` TIMESTAMPTZ |
@@ -60,7 +60,7 @@ Migrations live in `supabase/migrations/`. Username is stored in `profiles.usern
 ### Key Business Logic
 
 **Daily budget with carry-forward** (computed in `src/app/actions/dashboard.ts`):
-1. Monthly budget = salary − total active deductions
+1. Monthly budget = sum of incomes for the month − total active deductions
 2. For each day from month start to yesterday: `carryForward = max(0, carryForward + spent − dailyTarget)`
 3. Today's effective spend displayed as `carryForward + todaySpend` vs `dailyTarget`
 
@@ -78,7 +78,7 @@ src/app/
   auth/callback/        # Supabase email confirmation handler (exchanges code for session)
   page.tsx              # Dashboard — summary cards + monthly liabilities table
   expenses/             # Daily expenses: QuickAddForm + ExpenseList (today) or MonthlyExpenseList
-  salary/               # SalaryForm + SalaryHistory
+  income/               # IncomeForm + IncomeHistory (multi-source, supports Income/Adjustment toggle)
   deductions/           # DeductionForm + DeductionList + payment history by month
   debts/                # DebtForm + DebtList (tabbed: they owe / I owe)
   investments/          # CreateInvestmentForm + InvestmentList
@@ -97,7 +97,7 @@ All mutations go through Server Actions in `src/app/actions/`. No API routes. Ea
 
 ### Component Patterns
 
-**List components** (ExpenseList, DebtList, SalaryHistory, etc.) follow a consistent dual-view pattern:
+**List components** (ExpenseList, DebtList, IncomeHistory, etc.) follow a consistent dual-view pattern:
 - Mobile (`sm:hidden`): card list with `divide-y`, inline action buttons
 - Desktop (`hidden sm:block`): `overflow-x-auto` table
 - View detail dialog + edit dialog with inline form

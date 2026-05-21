@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   const data = await getDashboardData()
   if (!data) return null
 
-  const { salary, currentMonth, deductionsWithStatus, summary } = data
+  const { currentMonth, deductionsWithStatus, summary } = data
   const { totalLiabilities, totalPaid, freeBalance, netInvested, backupBalance, dailyTarget, todaySpend, carryForward } = summary
 
   const paidPercent = totalLiabilities > 0 ? Math.min(100, (totalPaid / totalLiabilities) * 100) : 0
