@@ -28,8 +28,13 @@ export function calcStatutory(gross: number): StatutoryContributions {
 
 /**
  * Compute net take-home from gross minus employee-side deductions.
+ * otherDeductionsTotal covers unpaid leave etc.
  */
-export function calcNet(gross: number, c: Omit<StatutoryContributions, 'epf_employer' | 'socso_employer' | 'eis_employer'>): number {
+export function calcNet(
+  gross: number,
+  c: Omit<StatutoryContributions, 'epf_employer' | 'socso_employer' | 'eis_employer'>,
+  otherDeductionsTotal = 0,
+): number {
   const round2 = (n: number) => Math.round(n * 100) / 100
-  return round2(gross - c.epf_employee - c.socso_employee - c.eis_employee - c.tax_pcb)
+  return round2(gross - c.epf_employee - c.socso_employee - c.eis_employee - c.tax_pcb - otherDeductionsTotal)
 }
