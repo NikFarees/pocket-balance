@@ -31,6 +31,7 @@ export async function addBackupTransaction(formData: FormData) {
   const type = formData.get('type') as 'deposit' | 'withdrawal'
   const amount = parseFloat(formData.get('amount') as string)
   const description = (formData.get('description') as string).trim() || null
+  const location = (formData.get('location') as string).trim() || null
   const transaction_date = (formData.get('transaction_date') as string) || await serverToday()
 
   if (!['deposit', 'withdrawal'].includes(type)) return { error: 'Invalid type' }
@@ -41,6 +42,7 @@ export async function addBackupTransaction(formData: FormData) {
     type,
     amount,
     description,
+    location,
     transaction_date,
   })
 
@@ -58,6 +60,7 @@ export async function updateBackupTransaction(id: string, formData: FormData) {
   const type = formData.get('type') as 'deposit' | 'withdrawal'
   const amount = parseFloat(formData.get('amount') as string)
   const description = (formData.get('description') as string).trim() || null
+  const location = (formData.get('location') as string).trim() || null
   const transaction_date = formData.get('transaction_date') as string
 
   if (!['deposit', 'withdrawal'].includes(type)) return { error: 'Invalid type' }
@@ -66,7 +69,7 @@ export async function updateBackupTransaction(id: string, formData: FormData) {
 
   const { error } = await supabase
     .from('backup_fund_transactions')
-    .update({ type, amount, description, transaction_date })
+    .update({ type, amount, description, location, transaction_date })
     .eq('id', id)
     .eq('user_id', user.id)
 

@@ -77,8 +77,12 @@ export function BackupForm() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="description">Description <span className="text-muted-foreground">(optional)</span></Label>
-            <Input id="description" name="description" placeholder="e.g. Monthly backup savings" />
+            <Label htmlFor="location">Location <span className="text-muted-foreground">(optional)</span></Label>
+            <Input id="location" name="location" placeholder="e.g. TNG Go+, Maybank, Cash" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Notes <span className="text-muted-foreground">(optional)</span></Label>
+            <Input id="description" name="description" placeholder="e.g. Monthly savings, Go+ dividends" />
           </div>
           <Button type="submit" disabled={loading} variant={type === 'withdrawal' ? 'destructive' : 'default'}>
             {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</> : `Record ${type === 'deposit' ? 'Deposit' : 'Withdrawal'}`}

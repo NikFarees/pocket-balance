@@ -22,6 +22,7 @@ type Transaction = {
   type: 'deposit' | 'withdrawal'
   amount: number
   description: string | null
+  location: string | null
   transaction_date: string
 }
 
@@ -84,7 +85,10 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
           >
             <div className="min-w-0">
               <p className="font-medium text-sm">{t.description ?? (t.type === 'deposit' ? 'Deposit' : 'Withdrawal')}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{format(parseISO(t.transaction_date), 'dd MMM yyyy')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {format(parseISO(t.transaction_date), 'dd MMM yyyy')}
+                {t.location && <> · {t.location}</>}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <div className="text-right">
@@ -124,7 +128,8 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
             <TableRow>
               <TableHead>Date</TableHead>
               <TableHead>Type</TableHead>
-              <TableHead>Description</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Notes</TableHead>
               <TableHead className="text-right">Amount</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -139,6 +144,7 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
                     {t.type === 'deposit' ? 'Deposit' : 'Withdrawal'}
                   </Badge>
                 </TableCell>
+                <TableCell className="text-sm text-muted-foreground">{t.location ?? '—'}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{t.description ?? '—'}</TableCell>
                 <TableCell className="text-right font-medium">
                   <span className={t.type === 'withdrawal' ? 'text-destructive' : 'text-green-600'}>
@@ -194,7 +200,11 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
                 <span className="text-sm">{format(parseISO(viewTx.transaction_date), 'dd MMM yyyy')}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Description</span>
+                <span className="text-sm text-muted-foreground">Location</span>
+                <span className="text-sm">{viewTx.location ?? '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Notes</span>
                 <span className="text-sm">{viewTx.description ?? '—'}</span>
               </div>
               <Button variant="outline" className="w-full mt-2" onClick={() => setViewTx(null)}>Close</Button>
@@ -231,8 +241,12 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bk_desc">Description <span className="text-muted-foreground">(optional)</span></Label>
-                <Input id="bk_desc" name="description" defaultValue={editTx.description ?? ''} placeholder="e.g. Monthly savings" />
+                <Label htmlFor="bk_location">Location <span className="text-muted-foreground">(optional)</span></Label>
+                <Input id="bk_location" name="location" defaultValue={editTx.location ?? ''} placeholder="e.g. TNG Go+, Maybank, Cash" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="bk_desc">Notes <span className="text-muted-foreground">(optional)</span></Label>
+                <Input id="bk_desc" name="description" defaultValue={editTx.description ?? ''} placeholder="e.g. Monthly savings, Go+ dividends" />
               </div>
               <div className="flex gap-2 justify-end">
                 <Button type="button" variant="outline" onClick={() => setEditTx(null)}>Cancel</Button>
