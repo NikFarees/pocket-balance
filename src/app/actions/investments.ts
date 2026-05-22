@@ -8,13 +8,23 @@ export async function getInvestments() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return []
 
-  const { data } = await supabase
-    .from('investments')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('name')
+  const [{ data: investments }, { data: txs }] = await Promise.all([
+    supabase.from('investments').select('*').eq('user_id', user.id).order('name'),
+    supabase.from('investment_transactions').select('investment_id, type, amount').eq('user_id', user.id),
+  ])
 
-  return data ?? []
+  const txsByInvestment = (txs ?? []).reduce<Record<string, { bought: number; sold: number; dividend: number }>>((acc, t) => {
+    if (!acc[t.investment_id]) acc[t.investment_id] = { bought: 0, sold: 0, dividend: 0 }
+    if (t.type === 'buy') acc[t.investment_id].bought += Number(t.amount)
+    else if (t.type === 'sell') acc[t.investment_id].sold += Number(t.amount)
+    else if (t.type === 'dividend') acc[t.investment_id].dividend += Number(t.amount)
+    return acc
+  }, {})
+
+  return (investments ?? []).map(inv => {
+    const t = txsByInvestment[inv.id] ?? { bought: 0, sold: 0, dividend: 0 }
+    return { ...inv, balance: t.bought + t.dividend - t.sold }
+  })
 }
 
 export async function getInvestmentWithTransactions(id: string) {
