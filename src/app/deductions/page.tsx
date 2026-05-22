@@ -2,7 +2,6 @@ import { getDeductions } from '@/app/actions/deductions'
 import { getDeductionHistoryForMonth } from '@/app/actions/dashboard'
 import { AppHeader } from '@/components/AppHeader'
 import { MonthNav } from '@/components/MonthNav'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { format, parseISO, startOfMonth, subMonths } from 'date-fns'
@@ -24,7 +23,7 @@ export default async function DeductionsPage({
   ])
 
   const historyItems = history ?? []
-  const paidCount = historyItems.filter(d => d.isPaid).length
+  const paidItems = historyItems.filter(d => d.isPaid)
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,47 +40,45 @@ export default async function DeductionsPage({
 
         {/* Payment history by month */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between py-4 px-4">
-            <div>
-              <CardTitle className="text-base">Payment History</CardTitle>
-              {historyItems.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-0.5">{paidCount} of {historyItems.length} paid</p>
-              )}
+          <CardHeader className="py-4 px-4">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <CardTitle className="text-base">Payment History</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {paidItems.length} {paidItems.length === 1 ? 'entry' : 'entries'} recorded
+                </p>
+              </div>
+              <MonthNav month={historyMonth} />
             </div>
-            <MonthNav month={historyMonth} />
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
-            {historyItems.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No deductions set up.</p>
+            {paidItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No payments recorded for this month.</p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead className="text-right">Expected</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right hidden sm:table-cell">Paid Amount</TableHead>
+                    <TableHead className="text-right">Paid Amount</TableHead>
                     <TableHead className="hidden sm:table-cell">Date Paid</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {historyItems.map((d) => (
+                  {paidItems.map((d) => (
                     <TableRow key={d.id}>
                       <TableCell className="font-medium">
                         {d.name}
                         {!d.is_active && <span className="ml-1.5 text-xs text-muted-foreground">(inactive)</span>}
                       </TableCell>
-                      <TableCell className="text-right">RM {Number(d.expected_amount).toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge variant={d.isPaid ? 'default' : 'outline'} className={d.isPaid ? 'bg-green-500 hover:bg-green-600' : ''}>
-                          {d.isPaid ? 'Paid' : 'Unpaid'}
-                        </Badge>
+                      <TableCell className="text-right text-sm text-muted-foreground">
+                        RM {Number(d.expected_amount).toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right hidden sm:table-cell text-sm">
-                        {d.payment ? `RM ${Number(d.payment.paid_amount).toFixed(2)}` : '—'}
+                      <TableCell className="text-right font-medium">
+                        RM {Number(d.payment!.paid_amount).toFixed(2)}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
-                        {d.payment ? format(parseISO(d.payment.payment_date), 'dd MMM yyyy') : '—'}
+                        {format(parseISO(d.payment!.payment_date), 'dd MMM yyyy')}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -35,7 +35,7 @@ export default async function ExpensesPage({
       <div className="min-h-screen bg-background">
         <AppHeader />
         <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <h2 className="text-xl font-semibold">Daily Expenses</h2>
               <p className="text-sm text-muted-foreground">{todayLabel}</p>
@@ -116,7 +116,7 @@ export default async function ExpensesPage({
     <div className="min-h-screen bg-background">
       <AppHeader />
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
           <h2 className="text-xl font-semibold">Expenses</h2>
           <MonthNav month={selectedMonth} />
         </div>
@@ -138,7 +138,7 @@ export default async function ExpensesPage({
 
         <Card>
           <CardHeader className="py-4">
-            <CardTitle className="text-base">{monthLabel} — All Expenses</CardTitle>
+            <CardTitle className="text-base">Expenses History</CardTitle>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
             <MonthlyExpenseList
