@@ -22,6 +22,7 @@ type Investment = {
   category: Category
   notes: string | null
   is_active: boolean
+  balance: number
 }
 
 const CATEGORY_LABEL: Record<Category, string> = {
@@ -102,7 +103,7 @@ export function InvestmentList({ investments }: { investments: Investment[] }) {
                 <Badge variant="secondary" className="text-xs">{CATEGORY_LABEL[inv.category]}</Badge>
                 {!inv.is_active && <Badge variant="outline" className="text-xs">Inactive</Badge>}
               </div>
-              {inv.notes && <p className="text-xs text-muted-foreground mt-0.5 truncate">{inv.notes}</p>}
+              <p className="text-xs text-muted-foreground mt-0.5">RM {inv.balance.toFixed(2)}</p>
             </div>
             <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
               <Link href={`/investments/${inv.id}`} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))} onClick={(e) => e.stopPropagation()}>
@@ -137,6 +138,7 @@ export function InvestmentList({ investments }: { investments: Investment[] }) {
             <div className="space-y-3">
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Name</span><span className="text-sm font-medium">{viewItem.name}</span></div>
               <div className="flex justify-between items-center"><span className="text-sm text-muted-foreground">Category</span><Badge variant="secondary">{CATEGORY_LABEL[viewItem.category]}</Badge></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Balance</span><span className="text-sm font-semibold">RM {viewItem.balance.toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Notes</span><span className="text-sm">{viewItem.notes ?? '—'}</span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Status</span><span>{viewItem.is_active ? <Badge variant="default">Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</span></div>
               <div className="flex gap-2 pt-2">
