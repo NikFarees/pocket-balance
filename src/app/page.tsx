@@ -133,7 +133,7 @@ export default async function DashboardPage() {
               <CardContent className="px-4 pb-4">
                 <p className="text-3xl font-bold">RM {fmt(subscriptionMonthlyCost)}<span className="text-base font-normal text-muted-foreground">/mo</span></p>
                 {subscriptionExpiringSoon > 0 ? (
-                  <p className="text-xs text-orange-500 mt-0.5">{subscriptionExpiringSoon} renewing in 30 days</p>
+                  <p className="text-xs text-orange-500 mt-0.5">{subscriptionExpiringSoon} renewing within 30 days</p>
                 ) : (
                   <p className="text-xs text-muted-foreground mt-0.5">active subscriptions</p>
                 )}
