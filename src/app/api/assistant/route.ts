@@ -1,0 +1,209 @@
+import { GoogleGenerativeAI } from '@google/generative-ai'
+import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { serverToday } from '@/lib/server-date'
+import { runReadTool } from '@/lib/ai/queries'
+import { TOOLS, WRITE_TOOL_NAMES, systemPrompt } from '@/lib/ai/tools'
+
+const MODEL = process.env.GOOGLE_AI_MODEL || 'gemini-2.0-flash'
+const MAX_ITERATIONS = 5
+
+type ClientMessage = { role: 'user' | 'assistant'; content: string }
+
+/**
+ * Convert the shared Anthropic-format tool schemas (from tools.ts) to the
+ * Gemini `functionDeclarations` format: rename `input_schema` → `parameters`,
+ * and skip the `parameters` key entirely for no-argument tools (Gemini rejects
+ * empty `properties: {}`).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildFunctionDeclarations(): any[] {
+  return TOOLS.map(({ name, description, input_schema }) => {
+    const hasParams = input_schema.properties && Object.keys(input_schema.properties).length > 0
+    if (!hasParams) return { name, description }
+    return {
+      name,
+      description,
+      parameters: {
+        type: 'object',
+        properties: input_schema.properties,
+        ...(input_schema.required ? { required: input_schema.required } : {}),
+      },
+    }
+  })
+}
+
+type GeminiTurn = { role: 'user' | 'model'; parts: { text: string }[] }
+
+/**
+ * Gemini requires the chat history to START with a `user` turn. Our history can
+ * begin with an assistant ("model") turn (e.g. after a Q&A reply or an action
+ * summary), which makes startChat throw "First content should be with role
+ * 'user'". Trim leading model turns and merge consecutive same-role turns so the
+ * history is always valid alternating user/model starting with user.
+ */
+function sanitizeHistory(turns: GeminiTurn[]): GeminiTurn[] {
+  let start = 0
+  while (start < turns.length && turns[start].role === 'model') start++
+  const merged: GeminiTurn[] = []
+  for (const t of turns.slice(start)) {
+    const last = merged[merged.length - 1]
+    if (last && last.role === t.role) last.parts.push(...t.parts)
+    else merged.push({ role: t.role, parts: [...t.parts] })
+  }
+  return merged
+}
+
+export async function POST(req: Request) {
+  // Auth — all data access stays under the user's session / RLS.
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+
+  if (!process.env.GOOGLE_AI_STUDIO_API_KEY) {
+    return NextResponse.json(
+      { error: 'Assistant is not configured. Add GOOGLE_AI_STUDIO_API_KEY to .env.local.' },
+      { status: 500 }
+    )
+  }
+
+  let body: { messages?: ClientMessage[] }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+
+  const incoming = (body.messages ?? []).filter(
+    m => m && typeof m.content === 'string' && m.content.trim()
+  )
+  if (incoming.length === 0) return NextResponse.json({ error: 'No message provided' }, { status: 400 })
+
+  const today = await serverToday()
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_STUDIO_API_KEY)
+
+  const model = genAI.getGenerativeModel({
+    model: MODEL,
+    systemInstruction: systemPrompt(today),
+    tools: [{ functionDeclarations: buildFunctionDeclarations() }],
+  })
+
+  // Build history from all messages except the last (sent via sendMessage).
+  // Keep only the latest turns to reduce token usage and free-tier quota hits,
+  // then sanitize so it starts with a user turn (Gemini requirement).
+  const history = sanitizeHistory(
+    incoming.slice(-9, -1).map(m => ({
+      role: (m.role === 'assistant' ? 'model' : 'user') as 'user' | 'model',
+      parts: [{ text: m.content }],
+    }))
+  )
+
+  const lastMessage = incoming[incoming.length - 1]
+
+  try {
+    const chat = model.startChat({ history })
+    let result = await chat.sendMessage(lastMessage.content)
+
+    for (let i = 0; i < MAX_ITERATIONS; i++) {
+      const response = result.response
+      const functionCalls = response.functionCalls()
+
+      if (!functionCalls || functionCalls.length === 0) {
+        const text = response.text()?.trim()
+        return NextResponse.json({
+          type: 'message',
+          text: text || 'Could you rephrase that, or give me a bit more detail?',
+        })
+      }
+
+      // A write tool → stop the loop, surface a confirmation proposal to the client.
+      // Claude / Gemini never writes to the DB itself.
+      const writeCall = functionCalls.find(fc => WRITE_TOOL_NAMES.has(fc.name))
+      if (writeCall) {
+        return NextResponse.json({
+          type: 'proposal',
+          action: writeCall.name,
+          params: writeCall.args ?? {},
+          assistantText: '',
+        })
+      }
+
+      // Read tools → execute server-side, feed results back so Gemini can answer.
+      const functionResponses = await Promise.all(
+        functionCalls.map(async fc => {
+          const readResult = await runReadTool(
+            fc.name,
+            (fc.args ?? {}) as Record<string, unknown>
+          )
+          return {
+            functionResponse: {
+              name: fc.name,
+              response: readResult as Record<string, unknown>,
+            },
+          }
+        })
+      )
+      result = await chat.sendMessage(functionResponses)
+    }
+
+    return NextResponse.json({
+      type: 'message',
+      text: "Sorry, I couldn't complete that. Please try rephrasing.",
+    })
+  } catch (err) {
+    console.error('Assistant route error', err)
+    const message = err instanceof Error ? err.message : 'Unknown assistant error'
+    const status =
+      typeof err === 'object' &&
+      err !== null &&
+      'status' in err &&
+      typeof (err as { status?: unknown }).status === 'number'
+        ? (err as { status: number }).status
+        : undefined
+    const retryMatch = message.match(/retry in\s+([\d.]+)s/i)
+    const retrySeconds = retryMatch ? Math.ceil(Number(retryMatch[1])) : undefined
+    const isQuotaError =
+      /quota|rate.?limit|429|resource_exhausted|retry in/i.test(message)
+
+    if (isQuotaError) {
+      return NextResponse.json(
+        {
+          error: retrySeconds
+            ? `You've reached your AI usage limit for now. Please try again in about ${retrySeconds} seconds.`
+            : "You've reached your AI usage limit for now. Please try again in a little while.",
+          ...(process.env.NODE_ENV !== 'production'
+            ? {
+                debug: {
+                  message,
+                  ...(status ? { status } : {}),
+                  model: MODEL,
+                },
+              }
+            : {}),
+        },
+        { status: 429 }
+      )
+    }
+
+    // In development, surface the upstream provider error so debugging does
+    // not rely only on terminal logs.
+    if (process.env.NODE_ENV !== 'production') {
+      return NextResponse.json(
+        {
+          error: 'The assistant ran into a problem. Please try again.',
+          debug: {
+            message,
+            ...(status ? { status } : {}),
+            model: MODEL,
+          },
+        },
+        { status: 502 }
+      )
+    }
+
+    return NextResponse.json(
+      { error: 'The assistant ran into a problem. Please try again.' },
+      { status: 502 }
+    )
+  }
+}

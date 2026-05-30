@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { TimezoneSync } from "@/components/TimezoneSync";
+import { AssistantWidget } from "@/components/assistant/AssistantWidget";
+import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,11 +22,14 @@ export const metadata: Metadata = {
   description: "Personal daily financial tracker",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <html
       lang="en"
@@ -35,6 +40,7 @@ export default function RootLayout({
         <ThemeProvider>
           <TimezoneSync />
           {children}
+          {user && <AssistantWidget />}
           <Toaster richColors position="top-right" />
         </ThemeProvider>
       </body>
