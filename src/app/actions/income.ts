@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { calcNet } from '@/lib/statutory'
+import { exceedsLength, MAX_LONG_TEXT, MAX_SHORT_TEXT } from '@/lib/validation'
 import { endOfMonth, format, parseISO, startOfMonth } from 'date-fns'
 import { revalidatePath } from 'next/cache'
 
@@ -49,6 +50,8 @@ export async function createIncome(formData: FormData) {
 
   if (!source) return { error: 'Enter a source' }
   if (!income_date) return { error: 'Select a date' }
+  if (exceedsLength(source, MAX_SHORT_TEXT)) return { error: 'Source is too long' }
+  if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
   const grossRaw = formData.get('gross_amount') as string | null
   const hasContributions = !!grossRaw && grossRaw !== ''
@@ -109,6 +112,8 @@ export async function updateIncome(id: string, formData: FormData) {
 
   if (!source) return { error: 'Enter a source' }
   if (!income_date) return { error: 'Select a date' }
+  if (exceedsLength(source, MAX_SHORT_TEXT)) return { error: 'Source is too long' }
+  if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
   const grossRaw = formData.get('gross_amount') as string | null
   const hasContributions = !!grossRaw && grossRaw !== ''

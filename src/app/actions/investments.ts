@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { exceedsLength, MAX_LONG_TEXT, MAX_SHORT_TEXT } from '@/lib/validation'
 import { revalidatePath } from 'next/cache'
 
 export async function getInvestments() {
@@ -82,6 +83,8 @@ export async function createInvestment(formData: FormData) {
 
   if (!name) return { error: 'Name is required' }
   if (!['trading', 'unit_trust', 'savings'].includes(category)) return { error: 'Invalid category' }
+  if (exceedsLength(name, MAX_SHORT_TEXT)) return { error: 'Name is too long' }
+  if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
   const { data, error } = await supabase
     .from('investments')
@@ -106,6 +109,8 @@ export async function updateInvestment(id: string, formData: FormData) {
 
   if (!name) return { error: 'Name is required' }
   if (!['trading', 'unit_trust', 'savings'].includes(category)) return { error: 'Invalid category' }
+  if (exceedsLength(name, MAX_SHORT_TEXT)) return { error: 'Name is too long' }
+  if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
   const { error } = await supabase
     .from('investments')
@@ -171,6 +176,7 @@ export async function addTransaction(investmentId: string, formData: FormData) {
   if (!['buy', 'sell', 'dividend'].includes(type)) return { error: 'Invalid type' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
   if (!transaction_date) return { error: 'Date is required' }
+  if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
   const { error } = await supabase.from('investment_transactions').insert({
     user_id: user.id,
@@ -206,6 +212,7 @@ export async function updateTransaction(id: string, investmentId: string, formDa
   if (!['buy', 'sell', 'dividend'].includes(type)) return { error: 'Invalid type' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
   if (!transaction_date) return { error: 'Date is required' }
+  if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
   const { error } = await supabase
     .from('investment_transactions')
