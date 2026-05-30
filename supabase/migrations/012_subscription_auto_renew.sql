@@ -1,0 +1,3 @@
+ALTER TABLE subscriptions
+  ADD COLUMN auto_renew BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN auto_renew_days_before INTEGER NOT NULL DEFAULT 7;
