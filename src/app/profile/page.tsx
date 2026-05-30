@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createClient } from '@/lib/supabase/server'
 import { KeyRound, Mail, User } from 'lucide-react'
 import { redirect } from 'next/navigation'
+import { MfaSetup } from '@/components/auth/MfaSetup'
 import { ChangePasswordForm } from '../settings/ChangePasswordForm'
 import { EditUsernameForm } from './EditUsernameForm'
 import { SignOutButton } from './SignOutButton'
@@ -55,8 +56,11 @@ export default async function ProfilePage() {
               Security
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-5 pt-3 pb-4">
+          <CardContent className="px-5 pt-3 pb-4 space-y-5">
             <ChangePasswordForm />
+            <div className="border-t pt-5">
+              <MfaSetup />
+            </div>
           </CardContent>
         </Card>
 

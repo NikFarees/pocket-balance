@@ -6,14 +6,20 @@ import { redirect } from 'next/navigation'
 export async function login(formData: FormData) {
   const supabase = await createClient()
 
+  const captchaToken = formData.get('captchaToken') as string | null
+
   const { error } = await supabase.auth.signInWithPassword({
     email: formData.get('email') as string,
     password: formData.get('password') as string,
+    options: { captchaToken: captchaToken ?? undefined },
   })
 
   if (error) return { error: error.message }
 
-  redirect('/')
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  const needsMfa = aal?.currentLevel === 'aal1' && aal?.nextLevel === 'aal2'
+
+  redirect(needsMfa ? '/mfa' : '/')
 }
 
 export async function signup(formData: FormData) {
@@ -22,10 +28,12 @@ export async function signup(formData: FormData) {
   const username = (formData.get('username') as string)?.trim()
   const password = formData.get('password') as string
   const confirmPassword = formData.get('confirmPassword') as string
+  const captchaToken = formData.get('captchaToken') as string | null
 
   if (!username) return { error: 'Username is required' }
   if (password !== confirmPassword) return { error: 'Passwords do not match' }
-  if (password.length < 6) return { error: 'Password must be at least 6 characters' }
+  if (password.length < 8) return { error: 'Password must be at least 8 characters' }
+  if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) return { error: 'Password must include both letters and numbers' }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
@@ -35,6 +43,7 @@ export async function signup(formData: FormData) {
     options: {
       data: { username },
       emailRedirectTo: `${siteUrl}/auth/callback`,
+      captchaToken: captchaToken ?? undefined,
     },
   })
 
@@ -52,10 +61,12 @@ export async function logout() {
 export async function forgotPassword(formData: FormData) {
   const supabase = await createClient()
   const email = formData.get('email') as string
+  const captchaToken = formData.get('captchaToken') as string | null
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
+    captchaToken: captchaToken ?? undefined,
   })
 
   if (error) return { error: error.message }
@@ -68,7 +79,8 @@ export async function resetPassword(formData: FormData) {
   const confirmPassword = formData.get('confirmPassword') as string
 
   if (newPassword !== confirmPassword) return { error: 'Passwords do not match' }
-  if (newPassword.length < 6) return { error: 'Password must be at least 6 characters' }
+  if (newPassword.length < 8) return { error: 'Password must be at least 8 characters' }
+  if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) return { error: 'Password must include both letters and numbers' }
 
   const { error } = await supabase.auth.updateUser({ password: newPassword })
   if (error) return { error: error.message }
@@ -85,7 +97,8 @@ export async function changePassword(formData: FormData) {
   const confirmPassword = formData.get('confirmPassword') as string
 
   if (newPassword !== confirmPassword) return { error: 'New passwords do not match' }
-  if (newPassword.length < 6) return { error: 'Password must be at least 6 characters' }
+  if (newPassword.length < 8) return { error: 'Password must be at least 8 characters' }
+  if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) return { error: 'Password must include both letters and numbers' }
 
   const { error: verifyError } = await supabase.auth.signInWithPassword({
     email: user.email!,

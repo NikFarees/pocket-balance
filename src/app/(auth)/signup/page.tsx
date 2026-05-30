@@ -1,6 +1,7 @@
 'use client'
 
 import { signup } from '@/app/actions/auth'
+import { TurnstileWidget } from '@/components/auth/TurnstileWidget'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -15,12 +16,14 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError(null)
     setLoading(true)
     const formData = new FormData(e.currentTarget)
+    formData.set('captchaToken', captchaToken)
     const result = await signup(formData)
     if (result?.error) {
       setError(result.error)
@@ -114,6 +117,8 @@ export default function SignupPage() {
                   </button>
                 </div>
               </div>
+
+              <TurnstileWidget onToken={setCaptchaToken} />
 
               {error && (
                 <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-md">{error}</p>

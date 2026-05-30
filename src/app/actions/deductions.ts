@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { exceedsLength, MAX_SHORT_TEXT } from '@/lib/validation'
 import { revalidatePath } from 'next/cache'
 
 export async function getDeductions() {
@@ -30,6 +31,8 @@ export async function createDeduction(formData: FormData) {
   if (!name) return { error: 'Name is required' }
   if (isNaN(expected_amount) || expected_amount <= 0) return { error: 'Enter a valid amount' }
   if (due_date !== null && (due_date < 1 || due_date > 31)) return { error: 'Due date must be between 1 and 31' }
+  if (exceedsLength(name, MAX_SHORT_TEXT)) return { error: 'Name is too long' }
+  if (exceedsLength(category, MAX_SHORT_TEXT)) return { error: 'Category is too long' }
 
   const { error } = await supabase.from('deductions').insert({
     user_id: user.id,
@@ -58,6 +61,8 @@ export async function updateDeduction(id: string, formData: FormData) {
 
   if (!name) return { error: 'Name is required' }
   if (isNaN(expected_amount) || expected_amount <= 0) return { error: 'Enter a valid amount' }
+  if (exceedsLength(name, MAX_SHORT_TEXT)) return { error: 'Name is too long' }
+  if (exceedsLength(category, MAX_SHORT_TEXT)) return { error: 'Category is too long' }
 
   const { error } = await supabase
     .from('deductions')
