@@ -2,7 +2,7 @@
 
 import { serverNow, serverToday } from '@/lib/server-date'
 import { createClient } from '@/lib/supabase/server'
-import { endOfMonth, format, parseISO, startOfMonth, subDays } from 'date-fns'
+import { addDays, endOfMonth, format, parseISO, startOfMonth, subDays } from 'date-fns'
 import { revalidatePath } from 'next/cache'
 
 export async function getExpensesPageData() {
@@ -13,22 +13,15 @@ export async function getExpensesPageData() {
   const today = await serverNow()
   const yesterday = subDays(today, 1)
   const todayStr = format(today, 'yyyy-MM-dd')
-  const yesterdayStr = format(yesterday, 'yyyy-MM-dd')
   const currentMonth = format(startOfMonth(today), 'yyyy-MM-dd')
 
-  const [todayExpensesRes, yesterdayExpensesRes, targetRes, monthExpensesRes] = await Promise.all([
+  const [todayExpensesRes, targetRes, monthExpensesRes] = await Promise.all([
     supabase
       .from('expenses')
       .select('*')
       .eq('user_id', user.id)
       .eq('expense_date', todayStr)
       .order('created_at', { ascending: false }),
-
-    supabase
-      .from('expenses')
-      .select('amount')
-      .eq('user_id', user.id)
-      .eq('expense_date', yesterdayStr),
 
     supabase
       .from('daily_targets')
@@ -50,16 +43,30 @@ export async function getExpensesPageData() {
   ])
 
   const todayExpenses = todayExpensesRes.data ?? []
-  const yesterdayTotal = (yesterdayExpensesRes.data ?? []).reduce(
-    (sum, e) => sum + Number(e.amount), 0
-  )
   const target = targetRes.data
   const monthExpenses = monthExpensesRes.data ?? []
 
+  const spendByDate: Record<string, number> = {}
+  for (const e of monthExpenses) {
+    spendByDate[e.expense_date] = (spendByDate[e.expense_date] ?? 0) + Number(e.amount)
+  }
+
   const todayTotal = todayExpenses.reduce((sum, e) => sum + Number(e.amount), 0)
   const dailyTarget = target ? Number(target.daily_amount) : null
-  const yesterdayOverspend = dailyTarget ? Math.max(0, yesterdayTotal - dailyTarget) : 0
-  const effectiveTarget = dailyTarget !== null ? dailyTarget - yesterdayOverspend : null
+
+  let carryForward = 0
+  if (dailyTarget !== null) {
+    const monthStart = startOfMonth(today)
+    let d = monthStart
+    while (d <= yesterday) {
+      const dStr = format(d, 'yyyy-MM-dd')
+      const spent = spendByDate[dStr] ?? 0
+      carryForward = Math.max(0, carryForward + spent - dailyTarget)
+      d = addDays(d, 1)
+    }
+  }
+
+  const effectiveTarget = dailyTarget !== null ? dailyTarget - carryForward : null
   const remaining = effectiveTarget !== null ? effectiveTarget - todayTotal : null
 
   return {
@@ -67,7 +74,7 @@ export async function getExpensesPageData() {
     monthExpenses,
     todayTotal,
     dailyTarget,
-    yesterdayOverspend,
+    yesterdayOverspend: carryForward,
     effectiveTarget,
     remaining,
     todayLabel: format(today, 'EEEE, d MMMM yyyy'),
