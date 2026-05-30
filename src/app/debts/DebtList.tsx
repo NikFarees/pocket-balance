@@ -1,6 +1,7 @@
 'use client'
 
-import { deleteDebt, settleDebt, unsettleDebt, updateDebt } from '@/app/actions/debts'
+import { addDebtPayment, deleteDebt, deleteDebtPayment, settleDebt, unsettleDebt, updateDebt } from '@/app/actions/debts'
+import type { DebtPayment } from '@/app/actions/debts'
 import { Paginator } from '@/components/Paginator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,7 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { format, parseISO } from 'date-fns'
-import { Loader2, Settings2 } from 'lucide-react'
+import { Loader2, Settings2, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -24,16 +25,23 @@ type Debt = {
   due_date: string | null
   is_settled: boolean
   settled_date: string | null
+  amountPaid: number
+  remaining: number
+  payments: DebtPayment[]
 }
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 5
 
 export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage: string }) {
   const [viewItem, setViewItem] = useState<Debt | null>(null)
   const [editItem, setEditItem] = useState<Debt | null>(null)
+  const [payItem, setPayItem] = useState<Debt | null>(null)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [editLoading, setEditLoading] = useState(false)
+  const [payLoading, setPayLoading] = useState(false)
+  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null)
   const [page, setPage] = useState(1)
+  const [payAmount, setPayAmount] = useState('')
   const editFormRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
 
@@ -77,6 +85,32 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
     setEditLoading(false)
   }
 
+  async function handlePay(formData: FormData) {
+    if (!payItem) return
+    setPayLoading(true)
+    const result = await addDebtPayment(payItem.id, formData)
+    if (result.error) toast.error(result.error)
+    else {
+      toast.success('Payment recorded')
+      setPayItem(null)
+      setPayAmount('')
+      router.refresh()
+    }
+    setPayLoading(false)
+  }
+
+  async function handleDeletePayment(paymentId: string) {
+    setDeletingPaymentId(paymentId)
+    const result = await deleteDebtPayment(paymentId)
+    if (result.error) toast.error(result.error)
+    else {
+      toast.success('Payment removed')
+      // Update viewItem's payments inline to avoid closing the modal
+      router.refresh()
+    }
+    setDeletingPaymentId(null)
+  }
+
   if (debts.length === 0) {
     return <p className="text-sm text-muted-foreground text-center py-8">{emptyMessage}</p>
   }
@@ -99,6 +133,9 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
               </div>
               <div className="text-right flex-shrink-0">
                 <p className="font-semibold text-sm">RM {Number(d.amount).toFixed(2)}</p>
+                {d.amountPaid > 0 && !d.is_settled && (
+                  <p className="text-xs text-muted-foreground">RM {d.remaining.toFixed(2)} left</p>
+                )}
                 <div className="mt-0.5">
                   {d.is_settled
                     ? <Badge variant="outline" className="text-muted-foreground text-xs">Settled</Badge>
@@ -108,9 +145,15 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
               </div>
             </div>
             <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+              {!d.is_settled && (
+                <Button variant="outline" size="sm" className="text-xs h-7 flex-1"
+                  onClick={() => { setPayAmount(''); setPayItem(d) }} disabled={loadingId === d.id}>
+                  Pay
+                </Button>
+              )}
               <Button variant="outline" size="sm" className="text-xs h-7 flex-1"
                 onClick={() => handleSettle(d.id, d.is_settled)} disabled={loadingId === d.id}>
-                {d.is_settled ? 'Undo' : 'Settle'}
+                {loadingId === d.id ? <Loader2 className="h-3 w-3 animate-spin" /> : d.is_settled ? 'Undo' : 'Settle'}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -147,7 +190,12 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
               <TableRow key={d.id} className={`cursor-pointer ${d.is_settled ? 'opacity-50' : ''}`} onClick={() => setViewItem(d)}>
                 <TableCell className="font-medium">{d.person_name}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{d.description ?? '—'}</TableCell>
-                <TableCell className="text-right font-medium">RM {Number(d.amount).toFixed(2)}</TableCell>
+                <TableCell className="text-right">
+                  <p className="font-medium">RM {Number(d.amount).toFixed(2)}</p>
+                  {d.amountPaid > 0 && !d.is_settled && (
+                    <p className="text-xs text-muted-foreground">RM {d.remaining.toFixed(2)} left</p>
+                  )}
+                </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {d.due_date ? format(parseISO(d.due_date), 'dd MMM yyyy') : '—'}
                 </TableCell>
@@ -158,24 +206,25 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
                   }
                 </TableCell>
                 <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
-                  <div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        onClick={(ev) => ev.stopPropagation()}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                      >
-                        <Settings2 className="size-4" />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleSettle(d.id, d.is_settled)} disabled={loadingId === d.id}>
-                          {d.is_settled ? 'Undo Settle' : 'Settle'}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setEditItem(d)}>Edit</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive" onClick={() => handleDelete(d.id)} disabled={loadingId === d.id}>Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      onClick={(ev) => ev.stopPropagation()}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <Settings2 className="size-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {!d.is_settled && (
+                        <DropdownMenuItem onClick={() => { setPayAmount(''); setPayItem(d) }}>Pay</DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => handleSettle(d.id, d.is_settled)} disabled={loadingId === d.id}>
+                        {d.is_settled ? 'Undo Settle' : 'Settle'}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setEditItem(d)}>Edit</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem variant="destructive" onClick={() => handleDelete(d.id)} disabled={loadingId === d.id}>Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
@@ -185,15 +234,15 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
 
       <Paginator page={safePage} totalPages={totalPages} onPageChange={setPage} />
 
-      {/* View detail modal (no delete) */}
+      {/* View detail modal */}
       <Dialog open={!!viewItem} onOpenChange={(open) => { if (!open) setViewItem(null) }}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Debt Detail</DialogTitle></DialogHeader>
           {viewItem && (
             <div className="space-y-3">
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Person</span><span className="text-sm font-medium">{viewItem.person_name}</span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Description</span><span className="text-sm">{viewItem.description ?? '—'}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Amount</span><span className="text-sm font-semibold">RM {Number(viewItem.amount).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Total Amount</span><span className="text-sm font-semibold">RM {Number(viewItem.amount).toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Due Date</span><span className="text-sm">{viewItem.due_date ? format(parseISO(viewItem.due_date), 'dd MMM yyyy') : '—'}</span></div>
               <div className="flex justify-between items-center"><span className="text-sm text-muted-foreground">Status</span>
                 {viewItem.is_settled
@@ -204,6 +253,47 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
               {viewItem.settled_date && (
                 <div className="flex justify-between"><span className="text-sm text-muted-foreground">Settled On</span><span className="text-sm">{format(parseISO(viewItem.settled_date), 'dd MMM yyyy')}</span></div>
               )}
+
+              {/* Payment history */}
+              <div className="border-t pt-3 mt-3">
+                <p className="text-sm font-medium mb-2">Payment History</p>
+                {viewItem.payments.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No payments recorded yet.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {viewItem.payments.map((p) => (
+                      <div key={p.id} className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="text-sm font-medium">RM {Number(p.amount).toFixed(2)}</span>
+                          <span className="text-xs text-muted-foreground ml-2">{format(parseISO(p.paid_date), 'dd MMM yyyy')}</span>
+                          {p.notes && <p className="text-xs text-muted-foreground">{p.notes}</p>}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-muted-foreground hover:text-destructive flex-shrink-0"
+                          onClick={() => handleDeletePayment(p.id)}
+                          disabled={deletingPaymentId === p.id}
+                        >
+                          {deletingPaymentId === p.id
+                            ? <Loader2 className="h-3 w-3 animate-spin" />
+                            : <Trash2 className="h-3 w-3" />
+                          }
+                        </Button>
+                      </div>
+                    ))}
+                    <div className="border-t pt-2 mt-2 flex justify-between text-xs">
+                      <span className="text-muted-foreground">Total paid</span>
+                      <span className="font-medium">RM {viewItem.amountPaid.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Remaining</span>
+                      <span className="font-medium">RM {viewItem.remaining.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <Button variant="outline" className="w-full mt-2" onClick={() => setViewItem(null)}>Close</Button>
             </div>
           )}
@@ -243,6 +333,52 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
                   <Button type="button" variant="outline" onClick={() => setEditItem(null)}>Cancel</Button>
                   <Button type="submit" disabled={editLoading}>{editLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</> : 'Save'}</Button>
                 </div>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Pay modal */}
+      <Dialog open={!!payItem} onOpenChange={(open) => { if (!open) { setPayItem(null); setPayAmount('') } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Log Payment</DialogTitle></DialogHeader>
+          {payItem && (
+            <form onSubmit={e => { e.preventDefault(); handlePay(new FormData(e.currentTarget)) }} className="space-y-4">
+              <div className="text-sm text-muted-foreground">
+                {payItem.person_name} · RM {payItem.remaining.toFixed(2)} remaining of RM {Number(payItem.amount).toFixed(2)}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pay_amount">Amount Paid (RM)</Label>
+                <Input
+                  id="pay_amount"
+                  name="amount"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={payAmount}
+                  onChange={e => setPayAmount(e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pay_date">Date</Label>
+                <Input
+                  id="pay_date"
+                  name="paid_date"
+                  type="date"
+                  defaultValue={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pay_notes">Notes <span className="text-muted-foreground">(optional)</span></Label>
+                <Input id="pay_notes" name="notes" placeholder="e.g. Bank transfer" />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button type="button" variant="outline" className="flex-1" onClick={() => { setPayItem(null); setPayAmount('') }}>Cancel</Button>
+                <Button type="submit" className="flex-1" disabled={payLoading}>
+                  {payLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</> : 'Record Payment'}
+                </Button>
               </div>
             </form>
           )}
