@@ -2,6 +2,7 @@
 
 import { serverToday } from '@/lib/server-date'
 import { createClient } from '@/lib/supabase/server'
+import { exceedsLength, MAX_LONG_TEXT, MAX_SHORT_TEXT } from '@/lib/validation'
 import { revalidatePath } from 'next/cache'
 
 export type DebtPayment = {
@@ -70,6 +71,9 @@ export async function createDebt(formData: FormData) {
   if (!['i_owe', 'they_owe'].includes(type)) return { error: 'Invalid type' }
   if (!person_name) return { error: 'Person name is required' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
+  if (exceedsLength(person_name, MAX_SHORT_TEXT)) return { error: 'Person name is too long' }
+  if (exceedsLength(description, MAX_SHORT_TEXT)) return { error: 'Description is too long' }
+  if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
   const { error } = await supabase.from('debts').insert({
     user_id: user.id, type, person_name, amount, description, due_date, notes,
@@ -124,6 +128,8 @@ export async function updateDebt(id: string, formData: FormData) {
 
   if (!person_name) return { error: 'Person name is required' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
+  if (exceedsLength(person_name, MAX_SHORT_TEXT)) return { error: 'Person name is too long' }
+  if (exceedsLength(description, MAX_SHORT_TEXT)) return { error: 'Description is too long' }
 
   const { error } = await supabase
     .from('debts')
@@ -162,6 +168,7 @@ export async function addDebtPayment(debtId: string, formData: FormData) {
   const notes = (formData.get('notes') as string)?.trim() || null
 
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
+  if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
   const { error } = await supabase.from('debt_payments').insert({
     debt_id: debtId,

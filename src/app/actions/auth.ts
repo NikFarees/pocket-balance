@@ -25,7 +25,8 @@ export async function signup(formData: FormData) {
 
   if (!username) return { error: 'Username is required' }
   if (password !== confirmPassword) return { error: 'Passwords do not match' }
-  if (password.length < 6) return { error: 'Password must be at least 6 characters' }
+  if (password.length < 8) return { error: 'Password must be at least 8 characters' }
+  if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) return { error: 'Password must include both letters and numbers' }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
@@ -68,7 +69,8 @@ export async function resetPassword(formData: FormData) {
   const confirmPassword = formData.get('confirmPassword') as string
 
   if (newPassword !== confirmPassword) return { error: 'Passwords do not match' }
-  if (newPassword.length < 6) return { error: 'Password must be at least 6 characters' }
+  if (newPassword.length < 8) return { error: 'Password must be at least 8 characters' }
+  if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) return { error: 'Password must include both letters and numbers' }
 
   const { error } = await supabase.auth.updateUser({ password: newPassword })
   if (error) return { error: error.message }
@@ -85,7 +87,8 @@ export async function changePassword(formData: FormData) {
   const confirmPassword = formData.get('confirmPassword') as string
 
   if (newPassword !== confirmPassword) return { error: 'New passwords do not match' }
-  if (newPassword.length < 6) return { error: 'Password must be at least 6 characters' }
+  if (newPassword.length < 8) return { error: 'Password must be at least 8 characters' }
+  if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) return { error: 'Password must include both letters and numbers' }
 
   const { error: verifyError } = await supabase.auth.signInWithPassword({
     email: user.email!,

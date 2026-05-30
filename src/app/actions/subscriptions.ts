@@ -2,6 +2,7 @@
 
 import { serverToday } from '@/lib/server-date'
 import { createClient } from '@/lib/supabase/server'
+import { exceedsLength, MAX_LONG_TEXT, MAX_SHORT_TEXT } from '@/lib/validation'
 import { addDays, addMonths, differenceInDays, format, parseISO } from 'date-fns'
 import { revalidatePath } from 'next/cache'
 
@@ -154,6 +155,10 @@ function parseSubscriptionFormData(formData: FormData) {
   const auto_renew_days_before = auto_renew_days_raw ? parseInt(auto_renew_days_raw, 10) : 7
 
   if (!name) return { validationError: 'Name is required' }
+  if (exceedsLength(name, MAX_SHORT_TEXT)) return { validationError: 'Name is too long' }
+  if (exceedsLength(provider, MAX_SHORT_TEXT)) return { validationError: 'Provider is too long' }
+  if (exceedsLength(category, MAX_SHORT_TEXT)) return { validationError: 'Category is too long' }
+  if (exceedsLength(notes, MAX_LONG_TEXT)) return { validationError: 'Notes is too long' }
   if (isNaN(renewal_cost) || renewal_cost < 0) return { validationError: 'Enter a valid renewal cost' }
   if (!VALID_BILLING_CYCLES.includes(billing_cycle as BillingCycle)) {
     return { validationError: 'Invalid billing cycle' }
@@ -285,6 +290,7 @@ export async function addSubscriptionRenewal(subscriptionId: string, formData: F
 
   if (isNaN(amount_paid) || amount_paid < 0) return { error: 'Enter a valid amount' }
   if (!renewed_on) return { error: 'Date is required' }
+  if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
   const { error } = await supabase.from('subscription_renewals').insert({
     subscription_id: subscriptionId,
@@ -310,6 +316,7 @@ export async function updateSubscriptionRenewal(renewalId: string, formData: For
 
   if (isNaN(amount_paid) || amount_paid < 0) return { error: 'Enter a valid amount' }
   if (!renewed_on) return { error: 'Date is required' }
+  if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
   const { error } = await supabase
     .from('subscription_renewals')

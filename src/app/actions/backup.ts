@@ -2,6 +2,7 @@
 
 import { serverToday } from '@/lib/server-date'
 import { createClient } from '@/lib/supabase/server'
+import { exceedsLength, MAX_SHORT_TEXT } from '@/lib/validation'
 import { revalidatePath } from 'next/cache'
 
 export async function getBackupData() {
@@ -36,6 +37,8 @@ export async function addBackupTransaction(formData: FormData) {
 
   if (!['deposit', 'withdrawal'].includes(type)) return { error: 'Invalid type' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
+  if (exceedsLength(description, MAX_SHORT_TEXT)) return { error: 'Description is too long' }
+  if (exceedsLength(location, MAX_SHORT_TEXT)) return { error: 'Location is too long' }
 
   const { error } = await supabase.from('backup_fund_transactions').insert({
     user_id: user.id,
@@ -66,6 +69,8 @@ export async function updateBackupTransaction(id: string, formData: FormData) {
   if (!['deposit', 'withdrawal'].includes(type)) return { error: 'Invalid type' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
   if (!transaction_date) return { error: 'Date is required' }
+  if (exceedsLength(description, MAX_SHORT_TEXT)) return { error: 'Description is too long' }
+  if (exceedsLength(location, MAX_SHORT_TEXT)) return { error: 'Location is too long' }
 
   const { error } = await supabase
     .from('backup_fund_transactions')
