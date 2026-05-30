@@ -26,6 +26,8 @@ Required in `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_SITE_URL=   # used for auth email redirect (e.g. https://yourdomain.com)
+GOOGLE_AI_STUDIO_API_KEY=  # server-only — powers the AI assistant (get a free key at aistudio.google.com). NEVER prefix with NEXT_PUBLIC_
+GOOGLE_AI_MODEL=           # optional; defaults to gemini-2.0-flash
 ```
 
 ## Architecture
@@ -100,6 +102,17 @@ All mutations go through Server Actions in `src/app/actions/`. No API routes. Ea
 1. Calls `createClient()` from `lib/supabase/server`
 2. Verifies `supabase.auth.getUser()` before any DB operation
 3. Returns `{ error: string }` on failure or `{ success: true }` (sometimes with data) on success
+
+### AI Assistant
+
+A floating Claude-powered assistant (voice + text) is mounted globally via `<AssistantWidget />` in `src/app/layout.tsx` (rendered only when a user session exists). It lets users log entries and ask questions in natural language.
+
+- **Route**: `POST /api/assistant` (`src/app/api/assistant/route.ts`) — the only API route in the app. Authenticates via `getUser()`, then runs a Claude tool-use loop. Model is `process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5'`. API key stays server-side.
+- **Tools** (`src/lib/ai/tools.ts`): split into **read** tools (`get_today_status`, `get_month_summary`, `get_backup_balance`, `get_debts_summary`) and **write** tools (`add_expense`, `add_income`, `add_debt`, `add_backup_transaction`, `add_investment_transaction`). `WRITE_TOOL_NAMES`/`READ_TOOL_NAMES` drive the route's behaviour.
+- **Read tools execute server-side** in `src/lib/ai/queries.ts` (reusing existing actions like `getExpensesPageData`/`getBackupData` and dashboard math), feeding results back to Claude so it can answer.
+- **Write tools are propose-then-confirm**: Claude never writes to the DB. When it calls a write tool, the route returns `{ type: 'proposal', action, params }`; the client shows a confirm card and, on Confirm, `executeProposal` (`src/components/assistant/executeProposal.ts`) builds `FormData` and calls the **existing** server action (`addExpense`, `createIncome`, etc.) — so all validation, RLS, and `revalidatePath` are reused. Read-only Q&A returns `{ type: 'message', text }`.
+- **Voice**: `useSpeechRecognition` (browser Web Speech API, no deps) fills the input; the mic is hidden where unsupported (e.g. Firefox).
+- Prompt caching (`cache_control`) is applied to the static system prompt + tool definitions.
 
 ### Component Patterns
 
