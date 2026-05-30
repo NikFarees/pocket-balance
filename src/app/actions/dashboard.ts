@@ -2,7 +2,7 @@
 
 import { serverNow } from '@/lib/server-date'
 import { createClient } from '@/lib/supabase/server'
-import { addDays, differenceInDays, format, parseISO, startOfMonth, subDays } from 'date-fns'
+import { addDays, differenceInDays, format, parseISO, startOfDay, startOfMonth, subDays } from 'date-fns'
 
 export async function getDashboardData() {
   const supabase = await createClient()
@@ -142,7 +142,7 @@ export async function getDashboardData() {
     0
   )
   const subscriptionExpiringSoon = activeSubs.filter(sub => {
-    const days = differenceInDays(parseISO(sub.next_renewal), now)
+    const days = differenceInDays(parseISO(sub.next_renewal), startOfDay(now))
     return days >= 0 && days <= 30
   }).length
 
