@@ -278,13 +278,26 @@ export async function deleteSubscriptionRenewal(renewalId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { error } = await supabase
+  const { data: renewal } = await supabase
     .from('subscription_renewals')
-    .delete()
+    .select('subscription_id, renewed_on, amount_paid')
     .eq('id', renewalId)
     .eq('user_id', user.id)
+    .single()
 
-  if (error) return { error: error.message }
+  if (!renewal) return { error: 'Renewal not found' }
+
+  const [deleteRes, updateRes] = await Promise.all([
+    supabase.from('subscription_renewals').delete().eq('id', renewalId).eq('user_id', user.id),
+    supabase.from('subscriptions')
+      .update({ next_renewal: renewal.renewed_on, current_cost: renewal.amount_paid })
+      .eq('id', renewal.subscription_id)
+      .eq('user_id', user.id),
+  ])
+
+  if (deleteRes.error) return { error: deleteRes.error.message }
+  if (updateRes.error) return { error: updateRes.error.message }
+
   revalidatePath('/subscriptions')
   return { success: true }
 }
