@@ -16,7 +16,10 @@ export async function login(formData: FormData) {
 
   if (error) return { error: error.message }
 
-  redirect('/')
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  const needsMfa = aal?.currentLevel === 'aal1' && aal?.nextLevel === 'aal2'
+
+  redirect(needsMfa ? '/mfa' : '/')
 }
 
 export async function signup(formData: FormData) {
