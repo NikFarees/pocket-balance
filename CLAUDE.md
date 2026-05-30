@@ -14,20 +14,24 @@ PocketBalance is a personal daily financial tracker. Users log income (salary, s
 npm run dev      # Start dev server (localhost:3000)
 npm run build    # Production build (also surfaces TypeScript errors — no separate type-check script)
 npm run lint     # ESLint
+npm run audit    # npm audit --audit-level=moderate (also runs in CI)
 ```
 
 **Dev server cache**: if routes return 404 unexpectedly after file changes, kill the server, run `rm -rf .next`, then restart.
 
 ## Environment Variables
 
-Required in `.env.local`:
+Locally these live in `.env.local` (gitignored; `.env.example` documents them). In production they are set in the **Vercel dashboard** (Settings → Environment Variables) — `.env.local` is never deployed. Note `NEXT_PUBLIC_*` vars are inlined at **build time**, so changing them in Vercel requires a **redeploy** to take effect.
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_SITE_URL=   # used for auth email redirect (e.g. https://yourdomain.com)
-GOOGLE_AI_STUDIO_API_KEY=  # server-only — powers the AI assistant (get a free key at aistudio.google.com). NEVER prefix with NEXT_PUBLIC_
-GOOGLE_AI_MODEL=           # optional; defaults to gemini-2.0-flash
+NEXT_PUBLIC_SITE_URL=            # auth email redirect (e.g. https://yourdomain.com)
+GOOGLE_AI_STUDIO_API_KEY=        # server-only — powers the AI assistant (free key at aistudio.google.com). NEVER prefix NEXT_PUBLIC_
+GOOGLE_AI_MODEL=                 # optional; defaults to gemini-2.0-flash
+UPSTASH_REDIS_REST_URL=          # AI assistant rate limiter; limiter no-ops if absent (see Security)
+UPSTASH_REDIS_REST_TOKEN=
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=  # Cloudflare Turnstile widget; the matching secret lives in the Supabase dashboard
 ```
 
 ## Architecture
@@ -36,11 +40,15 @@ GOOGLE_AI_MODEL=           # optional; defaults to gemini-2.0-flash
 
 Auth is handled by `src/proxy.ts`. Despite not being named `middleware.ts`, Turbopack treats it as middleware because it exports a `config.matcher`. It uses `@supabase/ssr` to refresh sessions via cookies and redirects unauthenticated users to `/login`. Public (unauthenticated) routes are `/login`, `/signup`, `/forgot-password`, and anything under `/auth/` — all others require a session. Authenticated users hitting public routes are redirected to `/`.
 
-The email confirmation callback is at `src/app/auth/callback/route.ts`.
+The email confirmation callback is at `src/app/auth/callback/route.ts`. The `next` redirect param is sanitized to a same-origin relative path (rejects `//host` / `/\host`) to prevent open redirects.
+
+**CAPTCHA**: Cloudflare Turnstile is enabled on the Supabase project, so `signInWithPassword` / `signUp` / `resetPasswordForEmail` require a `captchaToken`. The `<TurnstileWidget>` (`src/components/auth/TurnstileWidget.tsx`) renders on the login/signup/forgot-password forms and the token flows through `FormData` to the auth actions. The widget renders nothing when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is unset (dev still works) — but if CAPTCHA is on in Supabase and the key is missing in the deployed build, **auth will fail** (no token).
+
+**MFA (TOTP)**: optional two-factor auth via Supabase MFA. Enrollment UI is `src/components/auth/MfaSetup.tsx` (on the profile Security card). After password login, the `login` action checks `getAuthenticatorAssuranceLevel()` and redirects to `/mfa` (`src/app/(auth)/mfa/page.tsx`) for the code challenge when step-up is needed. `proxy.ts` enforces it: a signed-in user with a verified factor at `aal1` is routed to `/mfa` (the page itself and `/auth/` callbacks are excluded to avoid redirect loops). Only affects users who voluntarily enrolled a factor.
 
 Supabase clients:
 - `src/lib/supabase/server.ts` — for Server Components and Server Actions (cookie-based)
-- `src/lib/supabase/client.ts` — for Client Components (`createBrowserClient`)
+- `src/lib/supabase/client.ts` — for Client Components (`createBrowserClient`); MFA enroll/challenge/verify run here
 
 ### Database Schema
 
@@ -59,7 +67,7 @@ All tables use `user_id UUID REFERENCES auth.users` with RLS (`FOR ALL USING (au
 | `debts` | Debts with `type` ('i_owe'/'they_owe'), `is_settled`, and `settled_date` |
 | `profiles` | User profile; `username` (nullable); upserted on conflict of `user_id` |
 
-**Signup gap**: the signup form has a username field but the `signup` action does not persist it — would need `options.data: { username }` in `supabase.auth.signUp` plus a `profiles` upsert.
+**Username storage**: the `signup` action passes `options.data: { username }`, so the username lands in `auth.users.user_metadata`. The `profiles` table is read for the username with a fallback to `user_metadata.username` (the signup flow does not itself upsert a `profiles` row).
 
 ### Key Business Logic
 
@@ -83,6 +91,7 @@ src/app/
     signup/
     forgot-password/
     reset-password/
+    mfa/                # TOTP step-up challenge (requires a session at aal1)
   auth/callback/        # Supabase email confirmation handler
   page.tsx              # Dashboard — summary cards + monthly liabilities table
   expenses/             # Daily expenses: QuickAddForm + ExpenseList / MonthlyExpenseList
@@ -93,26 +102,36 @@ src/app/
   investments/[id]/     # Single investment: TransactionForm + TransactionList
   backup/               # BackupForm + BackupHistory
   settings/             # TargetForm + TargetHistory + ChangePasswordForm
-  profile/              # EditUsernameForm + ChangePasswordForm + SignOutButton
+  profile/              # EditUsernameForm + ChangePasswordForm + MfaSetup + SignOutButton
 ```
 
 ### Server Actions
 
-All mutations go through Server Actions in `src/app/actions/`. No API routes. Each action:
+All mutations go through Server Actions in `src/app/actions/` (the only API route is `/api/assistant`, below). Each action:
 1. Calls `createClient()` from `lib/supabase/server`
 2. Verifies `supabase.auth.getUser()` before any DB operation
-3. Returns `{ error: string }` on failure or `{ success: true }` (sometimes with data) on success
+3. Validates input — amounts/enums/dates, plus text-field max-lengths via `exceedsLength` / `MAX_SHORT_TEXT` / `MAX_LONG_TEXT` in `src/lib/validation.ts`
+4. Returns `{ error: string }` on failure or `{ success: true }` (sometimes with data) on success
 
 ### AI Assistant
 
-A floating Claude-powered assistant (voice + text) is mounted globally via `<AssistantWidget />` in `src/app/layout.tsx` (rendered only when a user session exists). It lets users log entries and ask questions in natural language.
+A floating AI assistant (voice + text) is mounted globally via `<AssistantWidget />` in `src/app/layout.tsx` (rendered only when a user session exists). It lets users log entries and ask questions in natural language.
 
-- **Route**: `POST /api/assistant` (`src/app/api/assistant/route.ts`) — the only API route in the app. Authenticates via `getUser()`, then runs a Claude tool-use loop. Model is `process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5'`. API key stays server-side.
-- **Tools** (`src/lib/ai/tools.ts`): split into **read** tools (`get_today_status`, `get_month_summary`, `get_backup_balance`, `get_debts_summary`) and **write** tools (`add_expense`, `add_income`, `add_debt`, `add_backup_transaction`, `add_investment_transaction`). `WRITE_TOOL_NAMES`/`READ_TOOL_NAMES` drive the route's behaviour.
-- **Read tools execute server-side** in `src/lib/ai/queries.ts` (reusing existing actions like `getExpensesPageData`/`getBackupData` and dashboard math), feeding results back to Claude so it can answer.
-- **Write tools are propose-then-confirm**: Claude never writes to the DB. When it calls a write tool, the route returns `{ type: 'proposal', action, params }`; the client shows a confirm card and, on Confirm, `executeProposal` (`src/components/assistant/executeProposal.ts`) builds `FormData` and calls the **existing** server action (`addExpense`, `createIncome`, etc.) — so all validation, RLS, and `revalidatePath` are reused. Read-only Q&A returns `{ type: 'message', text }`.
+- **Provider**: Google **Gemini** via `@google/generative-ai` (NOT Anthropic, despite the propose-then-confirm naming). Model is `process.env.GOOGLE_AI_MODEL || 'gemini-2.0-flash'`; the key (`GOOGLE_AI_STUDIO_API_KEY`) stays server-side. The tool schemas in `tools.ts` are written in Anthropic `input_schema` shape and converted to Gemini `functionDeclarations` at runtime in the route (`buildFunctionDeclarations`).
+- **Route**: `POST /api/assistant` (`src/app/api/assistant/route.ts`) — the only API route in the app. Authenticates via `getUser()`, applies the rate limiter (see Security), enforces payload caps, then runs a tool-use loop (`MAX_ITERATIONS = 5`, tool-call fan-out capped at 5 per turn).
+- **Tools** (`src/lib/ai/tools.ts`): **read** tools (`get_today_status`, `get_month_summary`, `get_backup_balance`, `get_debts_summary`, `find_entries`) and **write** tools — full CRUD: `add_*`/`update_*`/`delete_*` for `expense`, `income`, `debt`, `backup_transaction`, `investment_transaction`. `WRITE_TOOL_NAMES`/`READ_TOOL_NAMES` drive the route's behaviour. `find_entries` looks up rows (and their ids) so the model can target updates/deletes.
+- **Read tools execute server-side** in `src/lib/ai/queries.ts` (reusing existing actions like `getExpensesPageData`/`getBackupData` and dashboard math), feeding results back to the model so it can answer.
+- **Write tools are propose-then-confirm**: the model never writes to the DB. When it calls a write tool, the route returns `{ type: 'proposal', action, params }`; the client shows a confirm card and, on Confirm, `executeProposal` (`src/components/assistant/executeProposal.ts`) builds `FormData` and calls the **existing** server action (`addExpense`, `createIncome`, etc.) — so all validation, RLS, and `revalidatePath` are reused. Read-only Q&A returns `{ type: 'message', text }`.
 - **Voice**: `useSpeechRecognition` (browser Web Speech API, no deps) fills the input; the mic is hidden where unsupported (e.g. Firefox).
-- Prompt caching (`cache_control`) is applied to the static system prompt + tool definitions.
+
+### Security
+
+The DB layer is the primary boundary: every table has RLS (`auth.uid() = user_id`) and the app only ever uses the Supabase **anon key** (no service-role key). On top of that:
+
+- **HTTP headers / CSP**: set in `next.config.ts` via `async headers()` (HSTS, X-Frame-Options, Referrer-Policy, Permissions-Policy with `microphone=(self)` for voice, and a CSP that whitelists the Supabase origin and `challenges.cloudflare.com` for Turnstile). When adding a client integration on a new origin, update the CSP `connect-src`/`script-src`/`frame-src` or it will be blocked.
+- **AI assistant rate limiting**: `src/lib/rate-limit.ts` uses Upstash Redis (sliding windows: 10/60s burst + 100/24h) keyed by user id. **Gracefully no-ops when `UPSTASH_REDIS_REST_*` are absent**, so dev/unconfigured deploys still work. The route also caps payload size and tool-call fan-out.
+- **Auth hardening**: password policy (≥8 chars, letters + digits) in `src/app/actions/auth.ts`; Turnstile CAPTCHA + TOTP MFA (see Auth Flow); open-redirect protection in the callback.
+- **Deps/CI**: `package.json` pins a `postcss` override (security patch); `npm run audit` + `npm run build` run in CI (`.github/workflows/ci.yml`) on PRs to `staging`/`main`.
 
 ### Component Patterns
 
