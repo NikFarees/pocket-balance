@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { addDays, addMonths, differenceInDays, format, parseISO } from 'date-fns'
+import { addDays, addMonths, differenceInDays, format, parseISO, startOfDay } from 'date-fns'
 import { Loader2, Pencil, RefreshCw, Settings2, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
@@ -81,6 +81,10 @@ function calcNextRenewal(startedAt: string, cycle: BillingCycle, customDays: str
   }
 }
 
+function warnThreshold(sub: Subscription): number {
+  return sub.auto_renew ? sub.auto_renew_days_before + 7 : 7
+}
+
 function StatusBadge({ sub }: { sub: Subscription }) {
   if (!sub.is_active) {
     return <Badge variant="outline" className="text-muted-foreground">Canceled</Badge>
@@ -88,20 +92,20 @@ function StatusBadge({ sub }: { sub: Subscription }) {
   if (sub.current_cost === 0) {
     return <Badge className="bg-amber-500 hover:bg-amber-600 text-white">Free trial</Badge>
   }
-  const days = differenceInDays(parseISO(sub.next_renewal), new Date())
+  const days = differenceInDays(parseISO(sub.next_renewal), startOfDay(new Date()))
   if (days <= 7) {
     return <Badge className="bg-red-500 hover:bg-red-600 text-white">Expires in {days}d</Badge>
   }
-  if (days <= 30) {
+  if (days <= warnThreshold(sub)) {
     return <Badge className="bg-orange-500 hover:bg-orange-600 text-white">Renewing in {days}d</Badge>
   }
   return <Badge className="bg-green-600 hover:bg-green-700 text-white">Active</Badge>
 }
 
-function renewalDateClass(nextRenewal: string): string {
-  const days = differenceInDays(parseISO(nextRenewal), new Date())
+function renewalDateClass(sub: Subscription): string {
+  const days = differenceInDays(parseISO(sub.next_renewal), startOfDay(new Date()))
   if (days <= 7) return 'text-red-500 font-semibold'
-  if (days <= 30) return 'text-orange-500 font-medium'
+  if (days <= warnThreshold(sub)) return 'text-orange-500 font-medium'
   return 'text-muted-foreground'
 }
 
@@ -434,7 +438,7 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
               <div className="min-w-0">
                 <p className="font-medium text-sm">{s.name}</p>
                 {s.provider && <p className="text-xs text-muted-foreground mt-0.5">{s.provider}</p>}
-                <p className={`text-xs mt-0.5 ${renewalDateClass(s.next_renewal)}`}>
+                <p className={`text-xs mt-0.5 ${renewalDateClass(s)}`}>
                   Renews {format(parseISO(s.next_renewal), 'dd MMM yyyy')} · {cycleName(s.billing_cycle)}
                 </p>
                 <div className="mt-0.5">
@@ -510,7 +514,7 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
                     <p className="text-xs text-muted-foreground">now RM {Number(s.current_cost).toFixed(2)}</p>
                   )}
                 </TableCell>
-                <TableCell className={`text-sm ${renewalDateClass(s.next_renewal)}`}>
+                <TableCell className={`text-sm ${renewalDateClass(s)}`}>
                   {format(parseISO(s.next_renewal), 'dd MMM yyyy')}
                 </TableCell>
                 <TableCell>
