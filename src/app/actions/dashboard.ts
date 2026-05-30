@@ -2,7 +2,7 @@
 
 import { serverNow } from '@/lib/server-date'
 import { createClient } from '@/lib/supabase/server'
-import { addDays, format, startOfMonth, subDays } from 'date-fns'
+import { addDays, differenceInDays, format, parseISO, startOfMonth, subDays } from 'date-fns'
 
 export async function getDashboardData() {
   const supabase = await createClient()
@@ -14,7 +14,7 @@ export async function getDashboardData() {
 
   const todayStr = format(now, 'yyyy-MM-dd')
 
-  const [incomesRes, deductionsRes, paymentsRes, investmentTxRes, backupTxRes, dailyTargetRes, monthExpensesRes, allIncomesEpfRes] = await Promise.all([
+  const [incomesRes, deductionsRes, paymentsRes, investmentTxRes, backupTxRes, dailyTargetRes, monthExpensesRes, allIncomesEpfRes, subscriptionsRes] = await Promise.all([
     supabase
       .from('incomes')
       .select('amount')
@@ -65,6 +65,12 @@ export async function getDashboardData() {
       .from('incomes')
       .select('epf_employee, epf_employer')
       .eq('user_id', user.id),
+
+    supabase
+      .from('subscriptions')
+      .select('current_cost, renewal_cost, billing_cycle, custom_days, next_renewal, is_active')
+      .eq('user_id', user.id)
+      .eq('is_active', true),
   ])
 
   const incomes = incomesRes.data ?? []
@@ -75,6 +81,7 @@ export async function getDashboardData() {
   const dailyTarget = dailyTargetRes.data ? Number(dailyTargetRes.data.daily_amount) : null
   const monthExpenses = monthExpensesRes.data ?? []
   const allIncomesEpf = allIncomesEpfRes.data ?? []
+  const activeSubs = subscriptionsRes.data ?? []
 
   const totalLiabilities = deductions.reduce((sum, d) => sum + Number(d.expected_amount), 0)
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.paid_amount), 0)
@@ -120,6 +127,25 @@ export async function getDashboardData() {
   const epfEmployer = allIncomesEpf.reduce((s, i) => s + Number(i.epf_employer ?? 0), 0)
   const epfTotal = epfEmployee + epfEmployer
 
+  function toSubMonthlyCost(cost: number, cycle: string, customDays: number | null): number {
+    switch (cycle) {
+      case 'monthly': return cost
+      case 'quarterly': return cost / 3
+      case 'yearly': return cost / 12
+      case 'custom': return customDays && customDays > 0 ? (cost * 30) / customDays : 0
+      default: return 0
+    }
+  }
+
+  const subscriptionMonthlyCost = activeSubs.reduce(
+    (s, sub) => s + toSubMonthlyCost(Number(sub.current_cost), sub.billing_cycle, sub.custom_days ?? null),
+    0
+  )
+  const subscriptionExpiringSoon = activeSubs.filter(sub => {
+    const days = differenceInDays(parseISO(sub.next_renewal), now)
+    return days >= 0 && days <= 30
+  }).length
+
   const deductionsWithStatus = deductions.map((d) => {
     const payment = payments.find((p) => p.deduction_id === d.id)
     return { ...d, payment: payment ?? null, isPaid: !!payment }
@@ -140,6 +166,8 @@ export async function getDashboardData() {
       todaySpend,
       carryForward,
       epfTotal,
+      subscriptionMonthlyCost,
+      subscriptionExpiringSoon,
     },
   }
 }

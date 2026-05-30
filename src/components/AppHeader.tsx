@@ -24,6 +24,7 @@ const standaloneLinks = [
 const financeLinks = [
   { href: '/income', label: 'Income' },
   { href: '/deductions', label: 'Deductions' },
+  { href: '/subscriptions', label: 'Subscriptions' },
   { href: '/settings', label: 'Daily Target' },
 ]
 
