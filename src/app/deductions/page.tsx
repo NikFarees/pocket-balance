@@ -29,10 +29,10 @@ export default async function DeductionsPage({
     <div className="min-h-screen bg-background">
       <AppHeader />
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-        <h2 className="text-xl font-semibold">Deductions</h2>
+        <h2 className="text-xl font-semibold">Liabilities</h2>
         <DeductionForm />
         <Card>
-          <CardHeader><CardTitle>All Deductions</CardTitle></CardHeader>
+          <CardHeader><CardTitle>All Liabilities</CardTitle></CardHeader>
           <CardContent className="p-0 overflow-x-auto">
             <DeductionList deductions={deductions} />
           </CardContent>

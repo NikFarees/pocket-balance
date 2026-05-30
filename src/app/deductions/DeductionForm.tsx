@@ -37,7 +37,7 @@ export function DeductionForm({ editing, onCancel }: Props) {
     if (result.error) {
       toast.error(result.error)
     } else {
-      toast.success(editing ? 'Deduction updated' : 'Deduction added')
+      toast.success(editing ? 'Liability updated' : 'Liability added')
       setOpen(false)
       router.refresh()
       onCancel?.()
@@ -49,7 +49,7 @@ export function DeductionForm({ editing, onCancel }: Props) {
   if (!editing && !open) {
     return (
       <Button variant="outline" onClick={() => setOpen(true)} className="w-full">
-        <Plus className="size-4 mr-2" /> Add Deduction
+        <Plus className="size-4 mr-2" /> Add Liability
       </Button>
     )
   }
@@ -57,7 +57,7 @@ export function DeductionForm({ editing, onCancel }: Props) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between py-4">
-        <CardTitle>{editing ? 'Edit Deduction' : 'Add Deduction'}</CardTitle>
+        <CardTitle>{editing ? 'Edit Liability' : 'Add Liability'}</CardTitle>
         <Button variant="ghost" size="icon" onClick={() => { setOpen(false); onCancel?.() }}><X className="size-4" /></Button>
       </CardHeader>
       <CardContent>
@@ -114,7 +114,7 @@ export function DeductionForm({ editing, onCancel }: Props) {
           </div>
 
           <Button type="submit" disabled={loading}>
-            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</> : editing ? 'Update' : 'Add Deduction'}
+            {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving…</> : editing ? 'Update' : 'Add Liability'}
           </Button>
         </form>
       </CardContent>
