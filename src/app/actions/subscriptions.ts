@@ -169,6 +169,10 @@ export async function renewSubscription(id: string) {
     .single()
 
   if (fetchError || !sub) return { error: fetchError?.message ?? 'Subscription not found' }
+  if (!sub.next_renewal) return { error: 'Subscription has no renewal date' }
+  if (sub.billing_cycle === 'custom' && (!sub.custom_days || sub.custom_days <= 0)) {
+    return { error: 'Invalid custom days for this subscription' }
+  }
 
   const currentRenewal = parseISO(sub.next_renewal)
   const cycle = sub.billing_cycle as BillingCycle
@@ -207,7 +211,7 @@ export async function renewSubscription(id: string) {
   return { success: true }
 }
 
-export async function toggleActive(id: string, isActive: boolean) {
+export async function toggleSubscriptionActive(id: string, isActive: boolean) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
