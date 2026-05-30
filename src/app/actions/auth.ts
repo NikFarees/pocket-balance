@@ -6,9 +6,12 @@ import { redirect } from 'next/navigation'
 export async function login(formData: FormData) {
   const supabase = await createClient()
 
+  const captchaToken = formData.get('captchaToken') as string | null
+
   const { error } = await supabase.auth.signInWithPassword({
     email: formData.get('email') as string,
     password: formData.get('password') as string,
+    options: { captchaToken: captchaToken ?? undefined },
   })
 
   if (error) return { error: error.message }
@@ -22,6 +25,7 @@ export async function signup(formData: FormData) {
   const username = (formData.get('username') as string)?.trim()
   const password = formData.get('password') as string
   const confirmPassword = formData.get('confirmPassword') as string
+  const captchaToken = formData.get('captchaToken') as string | null
 
   if (!username) return { error: 'Username is required' }
   if (password !== confirmPassword) return { error: 'Passwords do not match' }
@@ -36,6 +40,7 @@ export async function signup(formData: FormData) {
     options: {
       data: { username },
       emailRedirectTo: `${siteUrl}/auth/callback`,
+      captchaToken: captchaToken ?? undefined,
     },
   })
 
@@ -53,10 +58,12 @@ export async function logout() {
 export async function forgotPassword(formData: FormData) {
   const supabase = await createClient()
   const email = formData.get('email') as string
+  const captchaToken = formData.get('captchaToken') as string | null
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl}/auth/callback?next=/reset-password`,
+    captchaToken: captchaToken ?? undefined,
   })
 
   if (error) return { error: error.message }
