@@ -8,6 +8,15 @@ import { revalidatePath } from 'next/cache'
 const VALID_BILLING_CYCLES = ['monthly', 'quarterly', 'yearly', 'custom'] as const
 type BillingCycle = (typeof VALID_BILLING_CYCLES)[number]
 
+export type SubscriptionRenewal = {
+  id: string
+  subscription_id: string
+  renewed_on: string
+  amount_paid: number
+  notes: string | null
+  created_at: string
+}
+
 function toMonthlyCost(amount: number, cycle: BillingCycle, customDays?: number | null): number {
   switch (cycle) {
     case 'monthly': return amount
@@ -33,16 +42,31 @@ export async function getSubscriptions() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data, error } = await supabase
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('is_active', { ascending: false })
-    .order('next_renewal', { ascending: true })
+  const [subsRes, renewalsRes] = await Promise.all([
+    supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('is_active', { ascending: false })
+      .order('next_renewal', { ascending: true }),
+    supabase
+      .from('subscription_renewals')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('renewed_on', { ascending: false }),
+  ])
 
-  if (error) return { error: error.message }
+  if (subsRes.error) return { error: subsRes.error.message }
 
-  const subscriptions = data ?? []
+  const subscriptions = subsRes.data ?? []
+  const allRenewals: SubscriptionRenewal[] = renewalsRes.data ?? []
+
+  const renewalsBySubId: Record<string, SubscriptionRenewal[]> = {}
+  for (const r of allRenewals) {
+    if (!renewalsBySubId[r.subscription_id]) renewalsBySubId[r.subscription_id] = []
+    renewalsBySubId[r.subscription_id].push(r)
+  }
+
   const today = await serverToday()
   const todayDate = parseISO(today)
 
@@ -50,25 +74,25 @@ export async function getSubscriptions() {
   let yearlyCost = 0
   let expiringSoon = 0
 
-  for (const sub of subscriptions) {
-    if (!sub.is_active) continue
-    const amount = Number(sub.current_cost)
-    const cycle = sub.billing_cycle as BillingCycle
-    const customDays = sub.custom_days ?? undefined
+  const enriched = subscriptions.map(sub => {
+    if (sub.is_active) {
+      const amount = Number(sub.current_cost)
+      const cycle = sub.billing_cycle as BillingCycle
+      const customDays = sub.custom_days ?? undefined
 
-    monthlyCost += toMonthlyCost(amount, cycle, customDays)
-    yearlyCost += toYearlyCost(amount, cycle, customDays)
+      monthlyCost += toMonthlyCost(amount, cycle, customDays)
+      yearlyCost += toYearlyCost(amount, cycle, customDays)
 
-    if (sub.next_renewal) {
-      const renewalDate = parseISO(sub.next_renewal)
-      const daysUntilRenewal = differenceInDays(renewalDate, todayDate)
-      if (daysUntilRenewal >= 0 && daysUntilRenewal <= 30) {
-        expiringSoon++
+      if (sub.next_renewal) {
+        const daysUntilRenewal = differenceInDays(parseISO(sub.next_renewal), todayDate)
+        if (daysUntilRenewal >= 0 && daysUntilRenewal <= 30) expiringSoon++
       }
     }
-  }
 
-  return { subscriptions, monthlyCost, yearlyCost, expiringSoon }
+    return { ...sub, renewals: renewalsBySubId[sub.id] ?? [] }
+  })
+
+  return { subscriptions: enriched, monthlyCost, yearlyCost, expiringSoon }
 }
 
 function parseSubscriptionFormData(formData: FormData) {
@@ -85,7 +109,6 @@ function parseSubscriptionFormData(formData: FormData) {
   const next_renewal = (formData.get('next_renewal') as string) || null
   const notes = (formData.get('notes') as string)?.trim() || null
 
-  // Validations
   if (!name) return { validationError: 'Name is required' }
   if (isNaN(renewal_cost) || renewal_cost < 0) return { validationError: 'Enter a valid renewal cost' }
   if (!VALID_BILLING_CYCLES.includes(billing_cycle as BillingCycle)) {
@@ -103,16 +126,10 @@ function parseSubscriptionFormData(formData: FormData) {
 
   return {
     fields: {
-      name,
-      provider,
-      category,
-      current_cost: parsed_current_cost,
-      renewal_cost,
-      billing_cycle,
+      name, provider, category,
+      current_cost: parsed_current_cost, renewal_cost, billing_cycle,
       custom_days: billing_cycle === 'custom' ? custom_days : null,
-      started_at,
-      next_renewal,
-      notes,
+      started_at, next_renewal, notes,
     },
   }
 }
@@ -125,10 +142,7 @@ export async function createSubscription(formData: FormData) {
   const result = parseSubscriptionFormData(formData)
   if ('validationError' in result) return { error: result.validationError }
 
-  const { error } = await supabase.from('subscriptions').insert({
-    user_id: user.id,
-    ...result.fields,
-  })
+  const { error } = await supabase.from('subscriptions').insert({ user_id: user.id, ...result.fields })
 
   if (error) return { error: error.message }
   revalidatePath('/subscriptions')
@@ -180,34 +194,98 @@ export async function renewSubscription(id: string) {
 
   let nextRenewal: Date
   switch (cycle) {
-    case 'monthly':
-      nextRenewal = addMonths(currentRenewal, 1)
-      break
-    case 'quarterly':
-      nextRenewal = addMonths(currentRenewal, 3)
-      break
-    case 'yearly':
-      nextRenewal = addMonths(currentRenewal, 12)
-      break
-    case 'custom':
-      nextRenewal = addDays(currentRenewal, customDays)
-      break
-    default:
-      return { error: 'Unknown billing cycle' }
+    case 'monthly': nextRenewal = addMonths(currentRenewal, 1); break
+    case 'quarterly': nextRenewal = addMonths(currentRenewal, 3); break
+    case 'yearly': nextRenewal = addMonths(currentRenewal, 12); break
+    case 'custom': nextRenewal = addDays(currentRenewal, customDays); break
+    default: return { error: 'Unknown billing cycle' }
   }
 
+  const [updateRes, insertRes] = await Promise.all([
+    supabase
+      .from('subscriptions')
+      .update({ next_renewal: format(nextRenewal, 'yyyy-MM-dd'), current_cost: sub.renewal_cost })
+      .eq('id', id)
+      .eq('user_id', user.id),
+    supabase
+      .from('subscription_renewals')
+      .insert({
+        subscription_id: id,
+        user_id: user.id,
+        renewed_on: sub.next_renewal,
+        amount_paid: sub.renewal_cost,
+      }),
+  ])
+
+  if (updateRes.error) return { error: updateRes.error.message }
+  if (insertRes.error) return { error: insertRes.error.message }
+
+  revalidatePath('/subscriptions')
+  revalidatePath('/')
+  return { success: true }
+}
+
+export async function addSubscriptionRenewal(subscriptionId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const renewed_on = (formData.get('renewed_on') as string) || await serverToday()
+  const amount_paid = parseFloat(formData.get('amount_paid') as string)
+  const notes = (formData.get('notes') as string)?.trim() || null
+
+  if (isNaN(amount_paid) || amount_paid < 0) return { error: 'Enter a valid amount' }
+  if (!renewed_on) return { error: 'Date is required' }
+
+  const { error } = await supabase.from('subscription_renewals').insert({
+    subscription_id: subscriptionId,
+    user_id: user.id,
+    renewed_on,
+    amount_paid,
+    notes,
+  })
+
+  if (error) return { error: error.message }
+  revalidatePath('/subscriptions')
+  return { success: true }
+}
+
+export async function updateSubscriptionRenewal(renewalId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const renewed_on = (formData.get('renewed_on') as string)
+  const amount_paid = parseFloat(formData.get('amount_paid') as string)
+  const notes = (formData.get('notes') as string)?.trim() || null
+
+  if (isNaN(amount_paid) || amount_paid < 0) return { error: 'Enter a valid amount' }
+  if (!renewed_on) return { error: 'Date is required' }
+
   const { error } = await supabase
-    .from('subscriptions')
-    .update({
-      next_renewal: format(nextRenewal, 'yyyy-MM-dd'),
-      current_cost: sub.renewal_cost,
-    })
-    .eq('id', id)
+    .from('subscription_renewals')
+    .update({ renewed_on, amount_paid, notes })
+    .eq('id', renewalId)
     .eq('user_id', user.id)
 
   if (error) return { error: error.message }
   revalidatePath('/subscriptions')
-  revalidatePath('/')
+  return { success: true }
+}
+
+export async function deleteSubscriptionRenewal(renewalId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('subscription_renewals')
+    .delete()
+    .eq('id', renewalId)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/subscriptions')
   return { success: true }
 }
 

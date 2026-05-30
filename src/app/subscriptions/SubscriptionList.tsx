@@ -1,11 +1,15 @@
 'use client'
 
 import {
+  addSubscriptionRenewal,
   deleteSubscription,
+  deleteSubscriptionRenewal,
   renewSubscription,
   toggleSubscriptionActive,
   updateSubscription,
+  updateSubscriptionRenewal,
 } from '@/app/actions/subscriptions'
+import type { SubscriptionRenewal } from '@/app/actions/subscriptions'
 import { Paginator } from '@/components/Paginator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -22,7 +26,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { addDays, addMonths, differenceInDays, format, parseISO } from 'date-fns'
-import { Loader2, RefreshCw, Settings2 } from 'lucide-react'
+import { Loader2, Pencil, RefreshCw, Settings2, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -40,6 +44,7 @@ type Subscription = {
   next_renewal: string
   notes: string | null
   is_active: boolean
+  renewals: SubscriptionRenewal[]
 }
 
 type BillingCycle = 'monthly' | 'quarterly' | 'yearly' | 'custom'
@@ -252,7 +257,18 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
   const [editLoading, setEditLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [page, setPage] = useState(1)
+  // Renewal history state
+  const [addingRenewal, setAddingRenewal] = useState(false)
+  const [renewalLoading, setRenewalLoading] = useState(false)
+  const [editingRenewalId, setEditingRenewalId] = useState<string | null>(null)
+  const [deletingRenewalId, setDeletingRenewalId] = useState<string | null>(null)
+  const [renewalAmountAdd, setRenewalAmountAdd] = useState('')
+  const [renewalAmountEdit, setRenewalAmountEdit] = useState('')
   const router = useRouter()
+
+  // Keep viewItem in sync with latest data after refresh
+  const currentSubs = subscriptions
+  const syncedViewItem = viewItem ? (currentSubs.find(s => s.id === viewItem.id) ?? viewItem) : null
 
   const totalPages = Math.max(1, Math.ceil(subscriptions.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
@@ -303,6 +319,43 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
       router.refresh()
     }
     setEditLoading(false)
+  }
+
+  async function handleAddRenewal(formData: FormData) {
+    if (!viewItem) return
+    setRenewalLoading(true)
+    const result = await addSubscriptionRenewal(viewItem.id, formData)
+    if (result.error) toast.error(result.error)
+    else {
+      toast.success('Renewal added')
+      setAddingRenewal(false)
+      setRenewalAmountAdd('')
+      router.refresh()
+    }
+    setRenewalLoading(false)
+  }
+
+  async function handleUpdateRenewal(renewalId: string, formData: FormData) {
+    setRenewalLoading(true)
+    const result = await updateSubscriptionRenewal(renewalId, formData)
+    if (result.error) toast.error(result.error)
+    else {
+      toast.success('Updated')
+      setEditingRenewalId(null)
+      router.refresh()
+    }
+    setRenewalLoading(false)
+  }
+
+  async function handleDeleteRenewal(renewalId: string) {
+    setDeletingRenewalId(renewalId)
+    const result = await deleteSubscriptionRenewal(renewalId)
+    if (result.error) toast.error(result.error)
+    else {
+      toast.success('Deleted')
+      router.refresh()
+    }
+    setDeletingRenewalId(null)
   }
 
   if (subscriptions.length === 0) {
@@ -442,24 +495,124 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
       <Paginator page={safePage} totalPages={totalPages} onPageChange={setPage} />
 
       {/* View detail dialog */}
-      <Dialog open={!!viewItem} onOpenChange={(open) => { if (!open) setViewItem(null) }}>
+      <Dialog open={!!viewItem} onOpenChange={(open) => { if (!open) { setViewItem(null); setAddingRenewal(false); setEditingRenewalId(null) } }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Subscription Detail</DialogTitle></DialogHeader>
-          {viewItem && (
+          {syncedViewItem && (
             <div className="space-y-3">
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Name</span><span className="text-sm font-medium">{viewItem.name}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Provider</span><span className="text-sm">{viewItem.provider ?? '—'}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Category</span><span className="text-sm">{viewItem.category ?? '—'}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Billing Cycle</span><span className="text-sm">{cycleName(viewItem.billing_cycle)}{viewItem.custom_days ? ` (${viewItem.custom_days} days)` : ''}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Current Cost</span><span className="text-sm font-semibold">RM {Number(viewItem.current_cost).toFixed(2)}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Renewal Cost</span><span className="text-sm font-semibold">RM {Number(viewItem.renewal_cost).toFixed(2)}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Started On</span><span className="text-sm">{viewItem.started_at ? format(parseISO(viewItem.started_at), 'dd MMM yyyy') : '—'}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Next Renewal</span><span className="text-sm">{format(parseISO(viewItem.next_renewal), 'dd MMM yyyy')}</span></div>
-              <div className="flex justify-between items-center"><span className="text-sm text-muted-foreground">Status</span><StatusBadge sub={viewItem} /></div>
-              {viewItem.notes && (
-                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Notes</span><span className="text-sm">{viewItem.notes}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Name</span><span className="text-sm font-medium">{syncedViewItem.name}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Provider</span><span className="text-sm">{syncedViewItem.provider ?? '—'}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Category</span><span className="text-sm">{syncedViewItem.category ?? '—'}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Billing Cycle</span><span className="text-sm">{cycleName(syncedViewItem.billing_cycle)}{syncedViewItem.custom_days ? ` (${syncedViewItem.custom_days} days)` : ''}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Current Cost</span><span className="text-sm font-semibold">RM {Number(syncedViewItem.current_cost).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Renewal Cost</span><span className="text-sm font-semibold">RM {Number(syncedViewItem.renewal_cost).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Started On</span><span className="text-sm">{syncedViewItem.started_at ? format(parseISO(syncedViewItem.started_at), 'dd MMM yyyy') : '—'}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Next Renewal</span><span className="text-sm">{format(parseISO(syncedViewItem.next_renewal), 'dd MMM yyyy')}</span></div>
+              <div className="flex justify-between items-center"><span className="text-sm text-muted-foreground">Status</span><StatusBadge sub={syncedViewItem} /></div>
+              {syncedViewItem.notes && (
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Notes</span><span className="text-sm">{syncedViewItem.notes}</span></div>
               )}
-              <Button variant="outline" className="w-full mt-2" onClick={() => setViewItem(null)}>Close</Button>
+
+              {/* Renewal History */}
+              <div className="border-t pt-3 mt-1">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium">Renewal History</p>
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setAddingRenewal(true); setRenewalAmountAdd('') }}>
+                    + Add
+                  </Button>
+                </div>
+
+                {/* Add renewal form */}
+                {addingRenewal && (
+                  <form
+                    onSubmit={e => { e.preventDefault(); handleAddRenewal(new FormData(e.currentTarget)) }}
+                    className="border rounded-md p-3 mb-3 space-y-2 bg-muted/30"
+                  >
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Date</Label>
+                        <Input name="renewed_on" type="date" defaultValue={new Date().toISOString().split('T')[0]} className="h-8 text-xs" required />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Amount Paid (RM)</Label>
+                        <Input name="amount_paid" inputMode="decimal" placeholder="0.00" value={renewalAmountAdd} onChange={e => setRenewalAmountAdd(e.target.value)} className="h-8 text-xs" required />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Notes <span className="text-muted-foreground">(optional)</span></Label>
+                      <Input name="notes" placeholder="e.g. auto-renewed" className="h-8 text-xs" />
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setAddingRenewal(false)}>Cancel</Button>
+                      <Button type="submit" size="sm" className="h-7 text-xs" disabled={renewalLoading}>
+                        {renewalLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Save'}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
+                {syncedViewItem.renewals.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No renewal records yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {syncedViewItem.renewals.map(r => (
+                      <div key={r.id} className="border rounded-md p-2">
+                        {editingRenewalId === r.id ? (
+                          <form
+                            onSubmit={e => { e.preventDefault(); handleUpdateRenewal(r.id, new FormData(e.currentTarget)) }}
+                            className="space-y-2"
+                          >
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="space-y-1">
+                                <Label className="text-xs">Date</Label>
+                                <Input name="renewed_on" type="date" defaultValue={r.renewed_on} className="h-8 text-xs" required />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Amount (RM)</Label>
+                                <Input name="amount_paid" inputMode="decimal" value={renewalAmountEdit} onChange={e => setRenewalAmountEdit(e.target.value)} className="h-8 text-xs" required />
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Notes</Label>
+                              <Input name="notes" defaultValue={r.notes ?? ''} className="h-8 text-xs" />
+                            </div>
+                            <div className="flex gap-2 justify-end">
+                              <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setEditingRenewalId(null)}>Cancel</Button>
+                              <Button type="submit" size="sm" className="h-7 text-xs" disabled={renewalLoading}>
+                                {renewalLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Save'}
+                              </Button>
+                            </div>
+                          </form>
+                        ) : (
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium">RM {Number(r.amount_paid).toFixed(2)} <span className="font-normal text-muted-foreground">· {format(parseISO(r.renewed_on), 'dd MMM yyyy')}</span></p>
+                              {r.notes && <p className="text-xs text-muted-foreground">{r.notes}</p>}
+                            </div>
+                            <div className="flex gap-1 flex-shrink-0">
+                              <Button
+                                variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                                onClick={() => { setEditingRenewalId(r.id); setRenewalAmountEdit(Number(r.amount_paid).toFixed(2)) }}
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                onClick={() => handleDeleteRenewal(r.id)}
+                                disabled={deletingRenewalId === r.id}
+                              >
+                                {deletingRenewalId === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Button variant="outline" className="w-full mt-2" onClick={() => { setViewItem(null); setAddingRenewal(false); setEditingRenewalId(null) }}>Close</Button>
             </div>
           )}
         </DialogContent>
