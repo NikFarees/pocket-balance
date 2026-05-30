@@ -23,7 +23,7 @@ const standaloneLinks = [
 
 const financeLinks = [
   { href: '/income', label: 'Income' },
-  { href: '/deductions', label: 'Deductions' },
+  { href: '/deductions', label: 'Liabilities' },
   { href: '/subscriptions', label: 'Subscriptions' },
   { href: '/settings', label: 'Daily Target' },
 ]
@@ -35,8 +35,6 @@ const assetLinks = [
 
 export function AppHeader() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [financeOpen, setFinanceOpen] = useState(false)
-  const [assetsOpen, setAssetsOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
 
@@ -46,7 +44,7 @@ export function AppHeader() {
   return (
     <header className="border-b bg-background sticky top-0 z-40">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <Link href="/" className="font-bold text-lg shrink-0">PocketBalance</Link>
+        <Link href="/" className="font-bold text-lg shrink-0">PennyWise</Link>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1 flex-1">
@@ -140,72 +138,48 @@ export function AppHeader() {
             </Link>
           ))}
 
-          {/* Finance group */}
-          <button
-            onClick={() => setFinanceOpen(!financeOpen)}
-            className={cn(
-              buttonVariants({ variant: 'ghost', size: 'sm' }),
-              'justify-between w-full',
-              isFinanceActive && 'bg-muted font-medium'
-            )}
-          >
-            Finance <ChevronDown className={cn('size-3 opacity-60 transition-transform', financeOpen && 'rotate-180')} />
-          </button>
-          {financeOpen && (
-            <div className="pl-4 flex flex-col gap-1">
-              {financeLinks.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={cn(
-                    buttonVariants({ variant: 'ghost', size: 'sm' }),
-                    'justify-start w-full',
-                    pathname === l.href && 'bg-muted font-medium'
-                  )}
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </div>
-          )}
+          {/* Finance section */}
+          <p className="text-xs text-muted-foreground uppercase tracking-wide px-2 pt-3 pb-1 border-t mt-1">Finance</p>
+          {financeLinks.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                buttonVariants({ variant: 'ghost', size: 'sm' }),
+                'justify-start w-full pl-4',
+                pathname === l.href && 'bg-muted font-medium'
+              )}
+            >
+              {l.label}
+            </Link>
+          ))}
 
-          {/* Assets group */}
-          <button
-            onClick={() => setAssetsOpen(!assetsOpen)}
-            className={cn(
-              buttonVariants({ variant: 'ghost', size: 'sm' }),
-              'justify-between w-full',
-              isAssetsActive && 'bg-muted font-medium'
-            )}
-          >
-            Assets <ChevronDown className={cn('size-3 opacity-60 transition-transform', assetsOpen && 'rotate-180')} />
-          </button>
-          {assetsOpen && (
-            <div className="pl-4 flex flex-col gap-1">
-              {assetLinks.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={cn(
-                    buttonVariants({ variant: 'ghost', size: 'sm' }),
-                    'justify-start w-full',
-                    pathname === l.href && 'bg-muted font-medium'
-                  )}
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </div>
-          )}
+          {/* Assets section */}
+          <p className="text-xs text-muted-foreground uppercase tracking-wide px-2 pt-3 pb-1 border-t mt-1">Assets</p>
+          {assetLinks.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                buttonVariants({ variant: 'ghost', size: 'sm' }),
+                'justify-start w-full pl-4',
+                pathname === l.href && 'bg-muted font-medium'
+              )}
+            >
+              {l.label}
+            </Link>
+          ))}
 
+          {/* Account section */}
+          <p className="text-xs text-muted-foreground uppercase tracking-wide px-2 pt-3 pb-1 border-t mt-1">Account</p>
           <Link
             href="/profile"
             onClick={() => setMobileOpen(false)}
             className={cn(
               buttonVariants({ variant: 'ghost', size: 'sm' }),
-              'justify-start w-full',
+              'justify-start w-full pl-4',
               pathname === '/profile' && 'bg-muted font-medium'
             )}
           >

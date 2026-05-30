@@ -57,7 +57,7 @@ export function DeductionList({ deductions }: { deductions: Deduction[] }) {
     const result = await updateDeduction(editItem.id, formData)
     if (result.error) toast.error(result.error)
     else {
-      toast.success('Deduction updated')
+      toast.success('Liability updated')
       setEditItem(null)
       router.refresh()
     }
@@ -65,7 +65,7 @@ export function DeductionList({ deductions }: { deductions: Deduction[] }) {
   }
 
   if (deductions.length === 0) {
-    return <p className="text-sm text-muted-foreground text-center py-8">No deductions yet. Add one above.</p>
+    return <p className="text-sm text-muted-foreground text-center py-8">No liabilities yet. Add one above.</p>
   }
 
   return (
@@ -166,7 +166,7 @@ export function DeductionList({ deductions }: { deductions: Deduction[] }) {
       {/* View detail modal */}
       <Dialog open={!!viewItem} onOpenChange={(open) => { if (!open) setViewItem(null) }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Deduction Detail</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Liability Detail</DialogTitle></DialogHeader>
           {viewItem && (
             <div className="space-y-3">
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Name</span><span className="text-sm font-medium">{viewItem.name}</span></div>
@@ -183,7 +183,7 @@ export function DeductionList({ deductions }: { deductions: Deduction[] }) {
       {/* Edit modal */}
       <Dialog open={!!editItem} onOpenChange={(open) => { if (!open) setEditItem(null) }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Edit Deduction</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Edit Liability</DialogTitle></DialogHeader>
           {editItem && (
             <form ref={editFormRef} onSubmit={e => { e.preventDefault(); handleEdit(new FormData(e.currentTarget)) }} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">

@@ -37,26 +37,70 @@ function toYearlyCost(amount: number, cycle: BillingCycle, customDays?: number |
   }
 }
 
-export async function getSubscriptions() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated' }
-
-  const [subsRes, renewalsRes] = await Promise.all([
+async function fetchSubsAndRenewals(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  return Promise.all([
     supabase
       .from('subscriptions')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('is_active', { ascending: false })
       .order('next_renewal', { ascending: true }),
     supabase
       .from('subscription_renewals')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('renewed_on', { ascending: false }),
   ])
+}
 
+export async function getSubscriptions() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const today = await serverToday()
+  const todayDate = parseISO(today)
+
+  let [subsRes, renewalsRes] = await fetchSubsAndRenewals(supabase, user.id)
   if (subsRes.error) return { error: subsRes.error.message }
+
+  const rawSubs = subsRes.data ?? []
+
+  // Auto-renew: find active subs with auto_renew=true whose next_renewal is within their threshold
+  const toAutoRenew = rawSubs.filter(sub => {
+    if (!sub.is_active || !sub.auto_renew || !sub.next_renewal) return false
+    const daysUntil = differenceInDays(parseISO(sub.next_renewal), todayDate)
+    return daysUntil <= (sub.auto_renew_days_before ?? 7)
+  })
+
+  if (toAutoRenew.length > 0) {
+    await Promise.all(toAutoRenew.map(sub => {
+      const cycle = sub.billing_cycle as BillingCycle
+      const currentRenewal = parseISO(sub.next_renewal!)
+      let nextRenewal: Date
+      switch (cycle) {
+        case 'monthly': nextRenewal = addMonths(currentRenewal, 1); break
+        case 'quarterly': nextRenewal = addMonths(currentRenewal, 3); break
+        case 'yearly': nextRenewal = addMonths(currentRenewal, 12); break
+        case 'custom': nextRenewal = addDays(currentRenewal, sub.custom_days ?? 0); break
+        default: return Promise.resolve()
+      }
+      return Promise.all([
+        supabase.from('subscriptions')
+          .update({ next_renewal: format(nextRenewal, 'yyyy-MM-dd'), current_cost: sub.renewal_cost })
+          .eq('id', sub.id).eq('user_id', user.id),
+        supabase.from('subscription_renewals').insert({
+          subscription_id: sub.id,
+          user_id: user.id,
+          renewed_on: sub.next_renewal,
+          amount_paid: sub.renewal_cost,
+          notes: 'Auto-renewed',
+        }),
+      ])
+    }))
+    ;[subsRes, renewalsRes] = await fetchSubsAndRenewals(supabase, user.id)
+    if (subsRes.error) return { error: subsRes.error.message }
+  }
 
   const subscriptions = subsRes.data ?? []
   const allRenewals: SubscriptionRenewal[] = renewalsRes.data ?? []
@@ -66,9 +110,6 @@ export async function getSubscriptions() {
     if (!renewalsBySubId[r.subscription_id]) renewalsBySubId[r.subscription_id] = []
     renewalsBySubId[r.subscription_id].push(r)
   }
-
-  const today = await serverToday()
-  const todayDate = parseISO(today)
 
   let monthlyCost = 0
   let yearlyCost = 0
@@ -108,6 +149,9 @@ function parseSubscriptionFormData(formData: FormData) {
   const started_at = (formData.get('started_at') as string) || null
   const next_renewal = (formData.get('next_renewal') as string) || null
   const notes = (formData.get('notes') as string)?.trim() || null
+  const auto_renew = formData.get('auto_renew') === 'on'
+  const auto_renew_days_raw = formData.get('auto_renew_days_before') as string
+  const auto_renew_days_before = auto_renew_days_raw ? parseInt(auto_renew_days_raw, 10) : 7
 
   if (!name) return { validationError: 'Name is required' }
   if (isNaN(renewal_cost) || renewal_cost < 0) return { validationError: 'Enter a valid renewal cost' }
@@ -121,6 +165,9 @@ function parseSubscriptionFormData(formData: FormData) {
   }
   if (!started_at) return { validationError: 'Started date is required' }
   if (!next_renewal) return { validationError: 'Next renewal date is required' }
+  if (auto_renew && (isNaN(auto_renew_days_before) || auto_renew_days_before <= 0)) {
+    return { validationError: 'Days before renewal must be a positive number' }
+  }
 
   const parsed_current_cost = isNaN(current_cost) ? 0 : current_cost
 
@@ -130,6 +177,8 @@ function parseSubscriptionFormData(formData: FormData) {
       current_cost: parsed_current_cost, renewal_cost, billing_cycle,
       custom_days: billing_cycle === 'custom' ? custom_days : null,
       started_at, next_renewal, notes,
+      auto_renew,
+      auto_renew_days_before: auto_renew ? auto_renew_days_before : 7,
     },
   }
 }
@@ -278,13 +327,26 @@ export async function deleteSubscriptionRenewal(renewalId: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { error } = await supabase
+  const { data: renewal } = await supabase
     .from('subscription_renewals')
-    .delete()
+    .select('subscription_id, renewed_on, amount_paid')
     .eq('id', renewalId)
     .eq('user_id', user.id)
+    .single()
 
-  if (error) return { error: error.message }
+  if (!renewal) return { error: 'Renewal not found' }
+
+  const [deleteRes, updateRes] = await Promise.all([
+    supabase.from('subscription_renewals').delete().eq('id', renewalId).eq('user_id', user.id),
+    supabase.from('subscriptions')
+      .update({ next_renewal: renewal.renewed_on, current_cost: renewal.amount_paid })
+      .eq('id', renewal.subscription_id)
+      .eq('user_id', user.id),
+  ])
+
+  if (deleteRes.error) return { error: deleteRes.error.message }
+  if (updateRes.error) return { error: updateRes.error.message }
+
   revalidatePath('/subscriptions')
   return { success: true }
 }

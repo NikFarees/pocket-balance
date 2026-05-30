@@ -51,6 +51,8 @@ export function SubscriptionForm() {
   const [nextRenewal, setNextRenewal] = useState('')
   const [currentCost, setCurrentCost] = useState('0')
   const [renewalCost, setRenewalCost] = useState('')
+  const [autoRenew, setAutoRenew] = useState(false)
+  const [autoRenewDays, setAutoRenewDays] = useState('7')
   const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
 
@@ -74,6 +76,8 @@ export function SubscriptionForm() {
       setNextRenewal('')
       setCurrentCost('0')
       setRenewalCost('')
+      setAutoRenew(false)
+      setAutoRenewDays('7')
       setOpen(false)
       router.refresh()
     }
@@ -184,6 +188,42 @@ export function SubscriptionForm() {
                 required
               />
             </div>
+            {/* Auto-renew */}
+            <div className="col-span-2 space-y-2">
+              <label className="flex items-center gap-3 cursor-pointer select-none">
+                <span className="relative inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    name="auto_renew"
+                    checked={autoRenew}
+                    onChange={e => setAutoRenew(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <span className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+                </span>
+                <span className="text-sm font-medium">Auto Renew</span>
+              </label>
+              {autoRenew && (
+                <div className="space-y-2 pt-1">
+                  <Label className="text-xs text-muted-foreground">Renew automatically this many days before the renewal date</Label>
+                  <div className="flex gap-2 items-center">
+                    <button type="button" onClick={() => setAutoRenewDays('7')} className={`text-xs px-2 py-1 rounded border transition-colors ${autoRenewDays === '7' ? 'bg-primary text-primary-foreground border-primary' : 'border-input hover:bg-muted'}`}>7 days</button>
+                    <button type="button" onClick={() => setAutoRenewDays('30')} className={`text-xs px-2 py-1 rounded border transition-colors ${autoRenewDays === '30' ? 'bg-primary text-primary-foreground border-primary' : 'border-input hover:bg-muted'}`}>30 days</button>
+                    <Input
+                      name="auto_renew_days_before"
+                      inputMode="numeric"
+                      placeholder="custom"
+                      value={autoRenewDays}
+                      onChange={e => setAutoRenewDays(e.target.value)}
+                      className="h-8 w-24 text-xs"
+                    />
+                    <span className="text-xs text-muted-foreground">days</span>
+                  </div>
+                </div>
+              )}
+              {!autoRenew && <input type="hidden" name="auto_renew_days_before" value="7" />}
+            </div>
+
             <div className="space-y-2 col-span-2">
               <Label htmlFor="notes">Notes <span className="text-muted-foreground">(optional)</span></Label>
               <Input id="notes" name="notes" placeholder="Any notes about this subscription" />

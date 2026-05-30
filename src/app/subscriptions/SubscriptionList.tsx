@@ -44,6 +44,8 @@ type Subscription = {
   next_renewal: string
   notes: string | null
   is_active: boolean
+  auto_renew: boolean
+  auto_renew_days_before: number
   renewals: SubscriptionRenewal[]
 }
 
@@ -96,6 +98,24 @@ function StatusBadge({ sub }: { sub: Subscription }) {
   return <Badge className="bg-green-600 hover:bg-green-700 text-white">Active</Badge>
 }
 
+function renewalDateClass(nextRenewal: string): string {
+  const days = differenceInDays(parseISO(nextRenewal), new Date())
+  if (days <= 7) return 'text-red-500 font-semibold'
+  if (days <= 30) return 'text-orange-500 font-medium'
+  return 'text-muted-foreground'
+}
+
+function AutoBadge({ autoRenew }: { autoRenew: boolean }) {
+  if (autoRenew) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-xs text-green-600 dark:text-green-400">
+        <RefreshCw className="h-2.5 w-2.5" /> Auto
+      </span>
+    )
+  }
+  return <span className="text-xs text-muted-foreground">Manual</span>
+}
+
 function cycleName(cycle: string): string {
   switch (cycle) {
     case 'monthly': return 'Monthly'
@@ -127,6 +147,8 @@ function EditForm({
   const [nextRenewal, setNextRenewal] = useState(sub.next_renewal ?? '')
   const [currentCost, setCurrentCost] = useState(Number(sub.current_cost).toFixed(2))
   const [renewalCost, setRenewalCost] = useState(Number(sub.renewal_cost).toFixed(2))
+  const [autoRenew, setAutoRenew] = useState(sub.auto_renew ?? false)
+  const [autoRenewDays, setAutoRenewDays] = useState(String(sub.auto_renew_days_before ?? 7))
   const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
@@ -223,6 +245,42 @@ function EditForm({
             required
           />
         </div>
+        {/* Auto-renew */}
+        <div className="col-span-2 space-y-2">
+          <label className="flex items-center gap-3 cursor-pointer select-none">
+            <span className="relative inline-flex items-center">
+              <input
+                type="checkbox"
+                name="auto_renew"
+                checked={autoRenew}
+                onChange={e => setAutoRenew(e.target.checked)}
+                className="sr-only peer"
+              />
+              <span className="w-9 h-5 bg-muted rounded-full peer peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+            </span>
+            <span className="text-sm font-medium">Auto Renew</span>
+          </label>
+          {autoRenew && (
+            <div className="space-y-2 pt-1">
+              <Label className="text-xs text-muted-foreground">Renew automatically this many days before the renewal date</Label>
+              <div className="flex gap-2 items-center">
+                <button type="button" onClick={() => setAutoRenewDays('7')} className={`text-xs px-2 py-1 rounded border transition-colors ${autoRenewDays === '7' ? 'bg-primary text-primary-foreground border-primary' : 'border-input hover:bg-muted'}`}>7 days</button>
+                <button type="button" onClick={() => setAutoRenewDays('30')} className={`text-xs px-2 py-1 rounded border transition-colors ${autoRenewDays === '30' ? 'bg-primary text-primary-foreground border-primary' : 'border-input hover:bg-muted'}`}>30 days</button>
+                <Input
+                  name="auto_renew_days_before"
+                  inputMode="numeric"
+                  placeholder="custom"
+                  value={autoRenewDays}
+                  onChange={e => setAutoRenewDays(e.target.value)}
+                  className="h-8 w-24 text-xs"
+                />
+                <span className="text-xs text-muted-foreground">days</span>
+              </div>
+            </div>
+          )}
+          {!autoRenew && <input type="hidden" name="auto_renew_days_before" value="7" />}
+        </div>
+
         <div className="space-y-2 col-span-2">
           <Label htmlFor="edit_notes">Notes <span className="text-muted-foreground">(optional)</span></Label>
           <Input id="edit_notes" name="notes" defaultValue={sub.notes ?? ''} />
@@ -376,9 +434,12 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
               <div className="min-w-0">
                 <p className="font-medium text-sm">{s.name}</p>
                 {s.provider && <p className="text-xs text-muted-foreground mt-0.5">{s.provider}</p>}
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className={`text-xs mt-0.5 ${renewalDateClass(s.next_renewal)}`}>
                   Renews {format(parseISO(s.next_renewal), 'dd MMM yyyy')} · {cycleName(s.billing_cycle)}
                 </p>
+                <div className="mt-0.5">
+                  <AutoBadge autoRenew={s.auto_renew} />
+                </div>
               </div>
               <div className="text-right flex-shrink-0">
                 <p className="font-semibold text-sm">RM {Number(s.renewal_cost).toFixed(2)}</p>
@@ -449,11 +510,14 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
                     <p className="text-xs text-muted-foreground">now RM {Number(s.current_cost).toFixed(2)}</p>
                   )}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className={`text-sm ${renewalDateClass(s.next_renewal)}`}>
                   {format(parseISO(s.next_renewal), 'dd MMM yyyy')}
                 </TableCell>
                 <TableCell>
-                  <StatusBadge sub={s} />
+                  <div className="flex flex-col gap-1">
+                    <StatusBadge sub={s} />
+                    <AutoBadge autoRenew={s.auto_renew} />
+                  </div>
                 </TableCell>
                 <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
                   <div className="flex items-center justify-end gap-1">
@@ -512,6 +576,14 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
               {syncedViewItem.notes && (
                 <div className="flex justify-between"><span className="text-sm text-muted-foreground">Notes</span><span className="text-sm">{syncedViewItem.notes}</span></div>
               )}
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Auto Renew</span>
+                <span className="text-sm">
+                  {syncedViewItem.auto_renew
+                    ? <span className="text-green-600 dark:text-green-400">Enabled · {syncedViewItem.auto_renew_days_before}d before</span>
+                    : <span className="text-muted-foreground">Disabled</span>}
+                </span>
+              </div>
 
               {/* Renewal History */}
               <div className="border-t pt-3 mt-1">

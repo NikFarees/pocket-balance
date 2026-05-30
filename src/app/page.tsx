@@ -76,23 +76,18 @@ export default async function DashboardPage() {
             </Card>
           </Link>
 
-          {/* KWSP / EPF */}
-          <Link href="/income" className={cardLink}>
+          {/* Subscriptions */}
+          <Link href="/subscriptions" className={cardLink}>
             <Card className={cardHover}>
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">EPF / KWSP</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Subscriptions</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
-                {epfTotal > 0 ? (
-                  <>
-                    <p className="text-3xl font-bold">RM {fmt(epfTotal)}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">accumulated</p>
-                  </>
+                <p className="text-3xl font-bold">RM {fmt(subscriptionMonthlyCost)}<span className="text-base font-normal text-muted-foreground">/mo</span></p>
+                {subscriptionExpiringSoon > 0 ? (
+                  <p className="text-xs text-orange-500 mt-0.5">{subscriptionExpiringSoon} renewing within 30 days</p>
                 ) : (
-                  <>
-                    <p className="text-3xl font-bold text-muted-foreground">—</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">no contributions yet</p>
-                  </>
+                  <p className="text-xs text-muted-foreground mt-0.5">active subscriptions</p>
                 )}
               </CardContent>
             </Card>
@@ -124,18 +119,23 @@ export default async function DashboardPage() {
             </Card>
           </Link>
 
-          {/* Subscriptions */}
-          <Link href="/subscriptions" className={cardLink}>
+          {/* KWSP / EPF — full width */}
+          <Link href="/income" className={cn(cardLink, 'col-span-2')}>
             <Card className={cardHover}>
               <CardHeader className="pb-1 pt-4 px-4">
-                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Subscriptions</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">EPF / KWSP</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
-                <p className="text-3xl font-bold">RM {fmt(subscriptionMonthlyCost)}<span className="text-base font-normal text-muted-foreground">/mo</span></p>
-                {subscriptionExpiringSoon > 0 ? (
-                  <p className="text-xs text-orange-500 mt-0.5">{subscriptionExpiringSoon} renewing in 30 days</p>
+                {epfTotal > 0 ? (
+                  <>
+                    <p className="text-3xl font-bold">RM {fmt(epfTotal)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">accumulated</p>
+                  </>
                 ) : (
-                  <p className="text-xs text-muted-foreground mt-0.5">active subscriptions</p>
+                  <>
+                    <p className="text-3xl font-bold text-muted-foreground">—</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">no contributions yet</p>
+                  </>
                 )}
               </CardContent>
             </Card>

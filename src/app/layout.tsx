@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PocketBalance",
+  title: "PennyWise",
   description: "Personal daily financial tracker",
 };
 
