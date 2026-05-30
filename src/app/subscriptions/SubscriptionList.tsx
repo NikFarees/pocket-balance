@@ -98,6 +98,24 @@ function StatusBadge({ sub }: { sub: Subscription }) {
   return <Badge className="bg-green-600 hover:bg-green-700 text-white">Active</Badge>
 }
 
+function renewalDateClass(nextRenewal: string): string {
+  const days = differenceInDays(parseISO(nextRenewal), new Date())
+  if (days <= 7) return 'text-red-500 font-semibold'
+  if (days <= 30) return 'text-orange-500 font-medium'
+  return 'text-muted-foreground'
+}
+
+function AutoBadge({ autoRenew }: { autoRenew: boolean }) {
+  if (autoRenew) {
+    return (
+      <span className="inline-flex items-center gap-0.5 text-xs text-green-600 dark:text-green-400">
+        <RefreshCw className="h-2.5 w-2.5" /> Auto
+      </span>
+    )
+  }
+  return <span className="text-xs text-muted-foreground">Manual</span>
+}
+
 function cycleName(cycle: string): string {
   switch (cycle) {
     case 'monthly': return 'Monthly'
@@ -416,9 +434,12 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
               <div className="min-w-0">
                 <p className="font-medium text-sm">{s.name}</p>
                 {s.provider && <p className="text-xs text-muted-foreground mt-0.5">{s.provider}</p>}
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className={`text-xs mt-0.5 ${renewalDateClass(s.next_renewal)}`}>
                   Renews {format(parseISO(s.next_renewal), 'dd MMM yyyy')} · {cycleName(s.billing_cycle)}
                 </p>
+                <div className="mt-0.5">
+                  <AutoBadge autoRenew={s.auto_renew} />
+                </div>
               </div>
               <div className="text-right flex-shrink-0">
                 <p className="font-semibold text-sm">RM {Number(s.renewal_cost).toFixed(2)}</p>
@@ -489,11 +510,14 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
                     <p className="text-xs text-muted-foreground">now RM {Number(s.current_cost).toFixed(2)}</p>
                   )}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className={`text-sm ${renewalDateClass(s.next_renewal)}`}>
                   {format(parseISO(s.next_renewal), 'dd MMM yyyy')}
                 </TableCell>
                 <TableCell>
-                  <StatusBadge sub={s} />
+                  <div className="flex flex-col gap-1">
+                    <StatusBadge sub={s} />
+                    <AutoBadge autoRenew={s.auto_renew} />
+                  </div>
                 </TableCell>
                 <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
                   <div className="flex items-center justify-end gap-1">
