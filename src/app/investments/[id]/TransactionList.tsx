@@ -44,7 +44,7 @@ const TX_SUCCESS: Record<Category, Record<TxType, string>> = {
 
 function TxBadge({ type, category }: { type: TxType; category: Category }) {
   const label = TX_LABELS[category][type]
-  if (type === 'buy') return <Badge variant="default" className="bg-green-500 hover:bg-green-600">{label}</Badge>
+  if (type === 'buy') return <Badge variant="success">{label}</Badge>
   if (type === 'sell') return <Badge variant="destructive">{label}</Badge>
   return <Badge variant="secondary">{label}</Badge>
 }
@@ -142,7 +142,7 @@ export function TransactionList({
             </div>
             <div className="flex items-center gap-2">
               <div className="text-right">
-                <p className={`font-semibold text-sm ${t.type === 'sell' ? 'text-destructive' : t.type === 'dividend' ? 'text-muted-foreground' : 'text-green-600'}`}>
+                <p className={`font-semibold text-sm tabular-nums ${t.type === 'sell' ? 'text-destructive' : t.type === 'dividend' ? 'text-muted-foreground' : 'text-success'}`}>
                   {amountPrefix(t.type)}RM {Number(t.amount).toFixed(2)}
                 </p>
                 <div className="mt-0.5">

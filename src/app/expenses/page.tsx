@@ -46,37 +46,37 @@ export default async function ExpensesPage({
           <div className="grid grid-cols-2 gap-3">
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
-                <p className="text-xs text-muted-foreground">Daily Target</p>
-                <p className="text-2xl font-bold mt-1">{dailyTarget !== null ? `RM ${dailyTarget.toFixed(2)}` : '—'}</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Daily Target</p>
+                <p className="font-heading text-2xl font-bold tabular-nums mt-1">{dailyTarget !== null ? `RM ${dailyTarget.toFixed(2)}` : '—'}</p>
                 {dailyTarget === null && (
                   <Link href="/settings" className="text-xs underline text-muted-foreground hover:text-foreground">Set target</Link>
                 )}
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className={yesterdayOverspend > 0 ? 'border-warning/25 bg-warning/8 dark:bg-warning/14 dark:border-warning/22' : ''}>
               <CardContent className="pt-4 pb-4 px-4">
-                <p className="text-xs text-muted-foreground">Effective Target</p>
-                <p className="text-2xl font-bold mt-1">{effectiveTarget !== null ? `RM ${effectiveTarget.toFixed(2)}` : '—'}</p>
+                <p className={`text-xs font-medium uppercase tracking-wider ${yesterdayOverspend > 0 ? 'text-warning/80' : 'text-muted-foreground'}`}>Effective Target</p>
+                <p className={`font-heading text-2xl font-bold tabular-nums mt-1 ${yesterdayOverspend > 0 ? 'text-warning' : ''}`}>{effectiveTarget !== null ? `RM ${effectiveTarget.toFixed(2)}` : '—'}</p>
                 {yesterdayOverspend > 0 && (
-                  <p className="text-xs text-orange-500 mt-1">−RM {yesterdayOverspend.toFixed(2)} carry-forward</p>
+                  <p className="text-xs text-warning mt-1">−RM {yesterdayOverspend.toFixed(2)} carry-forward</p>
                 )}
               </CardContent>
             </Card>
 
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
-                <p className="text-xs text-muted-foreground">Spent Today</p>
-                <p className="text-2xl font-bold mt-1">RM {todayTotal.toFixed(2)}</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Spent Today</p>
+                <p className="font-heading text-2xl font-bold tabular-nums mt-1">RM {todayTotal.toFixed(2)}</p>
               </CardContent>
             </Card>
 
-            <Card className={cn(isOver ? 'border-destructive bg-destructive/5' : remaining !== null ? 'border-green-200 bg-green-50 dark:bg-green-950/20' : '')}>
+            <Card className={cn(isOver ? 'border-destructive/40 bg-destructive/8 dark:bg-destructive/12' : remaining !== null ? 'border-success/25 bg-success/8 dark:bg-success/12' : '')}>
               <CardContent className="pt-4 pb-4 px-4">
-                <p className={cn('text-xs', isOver ? 'text-destructive' : 'text-green-600 dark:text-green-400')}>
+                <p className={cn('text-xs', isOver ? 'text-destructive' : 'text-success')}>
                   {isOver ? 'Over Budget' : 'Remaining'}
                 </p>
-                <p className={cn('text-2xl font-bold mt-1', isOver ? 'text-destructive' : remaining !== null ? 'text-green-600 dark:text-green-400' : '')}>
+                <p className={cn('font-heading text-2xl font-bold tabular-nums mt-1', isOver ? 'text-destructive' : remaining !== null ? 'text-success' : '')}>
                   {remaining !== null ? `RM ${Math.abs(remaining).toFixed(2)}` : '—'}
                 </p>
               </CardContent>

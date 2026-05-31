@@ -24,24 +24,24 @@ export default async function DebtsPage() {
 
         {/* Summary cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Card>
+          <Card className="border-success/30 bg-success/10 dark:bg-success/12 dark:border-success/22">
             <CardContent className="pt-4 pb-4 px-4">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Owed to Me</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">RM {fmt(totalTheyOwe)}</p>
+              <p className="text-xs font-medium text-success/80 uppercase tracking-wider">Owed to Me</p>
+              <p className="font-heading text-2xl font-bold tabular-nums text-success text-glow mt-1">RM {fmt(totalTheyOwe)}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{theyOwe.filter(d => !d.is_settled).length} pending</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-destructive/25 bg-destructive/8 dark:bg-destructive/12 dark:border-destructive/22">
             <CardContent className="pt-4 pb-4 px-4">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">I Owe</p>
-              <p className="text-2xl font-bold text-destructive mt-1">RM {fmt(totalIOwe)}</p>
+              <p className="text-xs font-medium text-destructive/80 uppercase tracking-wider">I Owe</p>
+              <p className="font-heading text-2xl font-bold tabular-nums text-destructive text-glow mt-1">RM {fmt(totalIOwe)}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{iOwe.filter(d => !d.is_settled).length} pending</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className={netPosition >= 0 ? 'border-success/30 bg-success/10 dark:bg-success/12 dark:border-success/22' : 'border-destructive/25 bg-destructive/8 dark:bg-destructive/12 dark:border-destructive/22'}>
             <CardContent className="pt-4 pb-4 px-4">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Net Position</p>
-              <p className={`text-2xl font-bold mt-1 ${netPosition >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+              <p className={`text-xs font-medium uppercase tracking-wider ${netPosition >= 0 ? 'text-success/80' : 'text-destructive/80'}`}>Net Position</p>
+              <p className={`font-heading text-2xl font-bold tabular-nums text-glow mt-1 ${netPosition >= 0 ? 'text-success' : 'text-destructive'}`}>
                 {netPosition >= 0 ? '+' : '−'}RM {fmt(Math.abs(netPosition))}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">{netPosition >= 0 ? 'in your favour' : 'you owe more'}</p>
