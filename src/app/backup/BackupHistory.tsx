@@ -92,12 +92,11 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
             </div>
             <div className="flex items-center gap-2">
               <div className="text-right">
-                <p className={`font-semibold text-sm ${t.type === 'deposit' ? 'text-green-600' : 'text-destructive'}`}>
+                <p className={`font-semibold text-sm tabular-nums ${t.type === 'deposit' ? 'text-success' : 'text-destructive'}`}>
                   {t.type === 'deposit' ? '+' : '−'}RM {Number(t.amount).toFixed(2)}
                 </p>
                 <div className="mt-0.5">
-                  <Badge variant={t.type === 'deposit' ? 'default' : 'destructive'}
-                    className={`text-xs ${t.type === 'deposit' ? 'bg-green-500 hover:bg-green-600' : ''}`}>
+                  <Badge variant={t.type === 'deposit' ? 'success' : 'destructive'} className="text-xs">
                     {t.type === 'deposit' ? 'Deposit' : 'Withdrawal'}
                   </Badge>
                 </div>
@@ -139,15 +138,14 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
               <TableRow key={t.id} className="cursor-pointer" onClick={() => setViewTx(t)}>
                 <TableCell className="text-sm">{format(parseISO(t.transaction_date), 'dd MMM yyyy')}</TableCell>
                 <TableCell>
-                  <Badge variant={t.type === 'deposit' ? 'default' : 'destructive'}
-                    className={t.type === 'deposit' ? 'bg-green-500 hover:bg-green-600' : ''}>
+                  <Badge variant={t.type === 'deposit' ? 'success' : 'destructive'}>
                     {t.type === 'deposit' ? 'Deposit' : 'Withdrawal'}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">{t.location ?? '—'}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{t.description ?? '—'}</TableCell>
                 <TableCell className="text-right font-medium">
-                  <span className={t.type === 'withdrawal' ? 'text-destructive' : 'text-green-600'}>
+                  <span className={t.type === 'withdrawal' ? 'text-destructive' : 'text-success'}>
                     {t.type === 'withdrawal' ? '−' : '+'}RM {Number(t.amount).toFixed(2)}
                   </span>
                 </TableCell>
@@ -184,14 +182,13 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Type</span>
-                <Badge variant={viewTx.type === 'deposit' ? 'default' : 'destructive'}
-                  className={viewTx.type === 'deposit' ? 'bg-green-500 hover:bg-green-600' : ''}>
+                <Badge variant={viewTx.type === 'deposit' ? 'success' : 'destructive'}>
                   {viewTx.type === 'deposit' ? 'Deposit' : 'Withdrawal'}
                 </Badge>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Amount</span>
-                <span className={`font-semibold ${viewTx.type === 'deposit' ? 'text-green-600' : 'text-destructive'}`}>
+                <span className={`font-semibold tabular-nums ${viewTx.type === 'deposit' ? 'text-success' : 'text-destructive'}`}>
                   {viewTx.type === 'deposit' ? '+' : '−'}RM {Number(viewTx.amount).toFixed(2)}
                 </span>
               </div>

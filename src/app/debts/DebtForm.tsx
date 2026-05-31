@@ -53,7 +53,7 @@ export function DebtForm() {
             <button
               type="button"
               onClick={() => setType('they_owe')}
-              className={`px-4 py-1.5 text-sm font-medium transition-colors ${type === 'they_owe' ? 'bg-green-600 text-white' : 'hover:bg-muted'}`}
+              className={`px-4 py-1.5 text-sm font-medium transition-colors ${type === 'they_owe' ? 'bg-success text-success-foreground' : 'hover:bg-muted'}`}
             >
               They Owe Me
             </button>

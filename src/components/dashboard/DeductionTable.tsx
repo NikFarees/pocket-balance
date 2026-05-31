@@ -71,7 +71,7 @@ export function DeductionTable({ deductions }: { deductions: DashboardDeduction[
                 <p className="font-semibold text-sm">RM {Number(d.expected_amount).toFixed(2)}</p>
                 <div className="mt-0.5">
                   {d.isPaid
-                    ? <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-xs">Paid</Badge>
+                    ? <Badge variant="success" className="text-xs">Paid</Badge>
                     : <Badge variant="secondary" className="text-xs">Unpaid</Badge>
                   }
                 </div>
@@ -113,7 +113,7 @@ export function DeductionTable({ deductions }: { deductions: DashboardDeduction[
                 <TableCell className="text-right font-medium">RM {Number(d.expected_amount).toFixed(2)}</TableCell>
                 <TableCell>
                   {d.isPaid
-                    ? <Badge variant="default" className="bg-green-500 hover:bg-green-600">Paid</Badge>
+                    ? <Badge variant="success">Paid</Badge>
                     : <Badge variant="secondary">Unpaid</Badge>
                   }
                 </TableCell>

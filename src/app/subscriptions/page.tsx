@@ -1,6 +1,6 @@
 import { getSubscriptions } from '@/app/actions/subscriptions'
 import { AppHeader } from '@/components/AppHeader'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SubscriptionForm } from './SubscriptionForm'
 import { SubscriptionList } from './SubscriptionList'
 
@@ -20,22 +20,22 @@ export default async function SubscriptionsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Card>
             <CardContent className="pt-4 pb-4 px-4">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Monthly Cost</p>
-              <p className={`text-2xl font-bold mt-1 ${monthlyCost > 0 ? 'text-green-600' : ''}`}>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Monthly Cost</p>
+              <p className="font-heading text-2xl font-bold tabular-nums mt-1">
                 RM {monthlyCost.toFixed(2)}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4 px-4">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Yearly Cost</p>
-              <p className="text-2xl font-bold mt-1">RM {yearlyCost.toFixed(2)}</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Yearly Cost</p>
+              <p className="font-heading text-2xl font-bold tabular-nums mt-1">RM {yearlyCost.toFixed(2)}</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className={expiringSoon > 0 ? 'border-warning/30 bg-warning/10 dark:bg-warning/14 dark:border-warning/22' : ''}>
             <CardContent className="pt-4 pb-4 px-4">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">Expiring Soon</p>
-              <p className={`text-2xl font-bold mt-1 ${expiringSoon > 0 ? 'text-orange-500' : ''}`}>
+              <p className={`text-xs font-medium uppercase tracking-wider ${expiringSoon > 0 ? 'text-warning/80' : 'text-muted-foreground'}`}>Expiring Soon</p>
+              <p className={`font-heading text-2xl font-bold tabular-nums mt-1 ${expiringSoon > 0 ? 'text-warning' : ''}`}>
                 {expiringSoon}
               </p>
             </CardContent>
@@ -44,7 +44,17 @@ export default async function SubscriptionsPage() {
 
         <SubscriptionForm />
 
-        <SubscriptionList subscriptions={subscriptions} />
+        <Card>
+          <CardHeader className="py-4">
+            <CardTitle className="text-base flex items-center justify-between">
+              <span>Active Subscriptions</span>
+              <span className="text-sm font-normal text-muted-foreground">{subscriptions.length} total</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <SubscriptionList subscriptions={subscriptions} />
+          </CardContent>
+        </Card>
       </main>
     </div>
   )

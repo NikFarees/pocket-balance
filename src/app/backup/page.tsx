@@ -19,22 +19,22 @@ export default async function BackupFundPage() {
 
         {/* Balance cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Card>
+          <Card className="border-success/25 bg-success/8 dark:bg-success/12 dark:border-success/22">
             <CardContent className="pt-4 pb-4 px-4">
-              <p className="text-xs text-muted-foreground">Total Deposited</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">RM {totalDeposited.toFixed(2)}</p>
+              <p className="text-xs font-medium text-success/80 uppercase tracking-wider">Total Deposited</p>
+              <p className="font-heading text-2xl font-bold tabular-nums text-success text-glow mt-1">RM {totalDeposited.toFixed(2)}</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-destructive/25 bg-destructive/6 dark:bg-destructive/12 dark:border-destructive/22">
             <CardContent className="pt-4 pb-4 px-4">
-              <p className="text-xs text-muted-foreground">Total Withdrawn</p>
-              <p className="text-2xl font-bold text-destructive mt-1">RM {totalWithdrawn.toFixed(2)}</p>
+              <p className="text-xs font-medium text-destructive/80 uppercase tracking-wider">Total Withdrawn</p>
+              <p className="font-heading text-2xl font-bold tabular-nums text-destructive mt-1">RM {totalWithdrawn.toFixed(2)}</p>
             </CardContent>
           </Card>
-          <Card className={cn(balance > 0 ? 'border-green-200 bg-green-50 dark:bg-green-950/20' : '')}>
+          <Card className={cn(balance > 0 ? 'border-success/25 bg-success/8 dark:bg-success/12 dark:border-success/22' : '')}>
             <CardContent className="pt-4 pb-4 px-4">
-              <p className="text-xs text-muted-foreground">Current Balance</p>
-              <p className={cn('text-2xl font-bold mt-1', balance > 0 ? 'text-green-600' : balance < 0 ? 'text-destructive' : '')}>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Current Balance</p>
+              <p className={cn('font-heading text-2xl font-bold tabular-nums mt-1', balance > 0 ? 'text-success text-glow' : balance < 0 ? 'text-destructive text-glow' : '')}>
                 RM {balance.toFixed(2)}
               </p>
             </CardContent>

@@ -97,22 +97,22 @@ function StatusBadge({ sub }: { sub: Subscription }) {
     return <Badge className="bg-red-500 hover:bg-red-600 text-white">Expires in {days}d</Badge>
   }
   if (days <= warnThreshold(sub)) {
-    return <Badge className="bg-orange-500 hover:bg-orange-600 text-white">Renewing in {days}d</Badge>
+    return <Badge variant="warning">Renewing in {days}d</Badge>
   }
-  return <Badge className="bg-green-600 hover:bg-green-700 text-white">Active</Badge>
+  return <Badge variant="success">Active</Badge>
 }
 
 function renewalDateClass(sub: Subscription): string {
   const days = differenceInDays(parseISO(sub.next_renewal), startOfDay(new Date()))
-  if (days <= 7) return 'text-red-500 font-semibold'
-  if (days <= warnThreshold(sub)) return 'text-orange-500 font-medium'
+  if (days <= 7) return 'text-destructive font-semibold'
+  if (days <= warnThreshold(sub)) return 'text-warning font-medium'
   return 'text-muted-foreground'
 }
 
 function AutoBadge({ autoRenew }: { autoRenew: boolean }) {
   if (autoRenew) {
     return (
-      <span className="inline-flex items-center gap-0.5 text-xs text-green-600 dark:text-green-400">
+      <span className="inline-flex items-center gap-0.5 text-xs text-success">
         <RefreshCw className="h-2.5 w-2.5" /> Auto
       </span>
     )
@@ -584,7 +584,7 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
                 <span className="text-sm text-muted-foreground">Auto Renew</span>
                 <span className="text-sm">
                   {syncedViewItem.auto_renew
-                    ? <span className="text-green-600 dark:text-green-400">Enabled · {syncedViewItem.auto_renew_days_before}d before</span>
+                    ? <span className="text-success">Enabled · {syncedViewItem.auto_renew_days_before}d before</span>
                     : <span className="text-muted-foreground">Disabled</span>}
                 </span>
               </div>
