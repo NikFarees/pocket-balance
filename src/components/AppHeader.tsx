@@ -42,9 +42,11 @@ export function AppHeader() {
   const isAssetsActive = assetLinks.some(l => pathname === l.href)
 
   return (
-    <header className="border-b bg-background sticky top-0 z-40">
+    <header className="sticky top-0 z-40">
+      <div className="h-0.5 bg-gradient-to-r from-primary via-primary/60 to-transparent" />
+      <div className="border-b bg-background/95 backdrop-blur-sm dark:bg-background/80 dark:backdrop-blur-md">
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-        <Link href="/" className="font-bold text-lg shrink-0">PennyWise</Link>
+        <Link href="/" className="font-heading font-semibold text-lg text-primary shrink-0 tracking-tight">PennyWise</Link>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-1 flex-1">
@@ -54,7 +56,7 @@ export function AppHeader() {
               href={l.href}
               className={cn(
                 buttonVariants({ variant: 'ghost', size: 'sm' }),
-                pathname === l.href && 'bg-muted font-medium'
+                pathname === l.href && 'bg-primary/10 text-primary font-medium'
               )}
             >
               {l.label}
@@ -66,7 +68,7 @@ export function AppHeader() {
             <DropdownMenuTrigger className={cn(
               buttonVariants({ variant: 'ghost', size: 'sm' }),
               'gap-1',
-              isFinanceActive && 'bg-muted font-medium'
+              isFinanceActive && 'bg-primary/10 text-primary font-medium'
             )}>
               Finance <ChevronDown className="size-3 opacity-60" />
             </DropdownMenuTrigger>
@@ -84,7 +86,7 @@ export function AppHeader() {
             <DropdownMenuTrigger className={cn(
               buttonVariants({ variant: 'ghost', size: 'sm' }),
               'gap-1',
-              isAssetsActive && 'bg-muted font-medium'
+              isAssetsActive && 'bg-primary/10 text-primary font-medium'
             )}>
               Assets <ChevronDown className="size-3 opacity-60" />
             </DropdownMenuTrigger>
@@ -119,10 +121,20 @@ export function AppHeader() {
           </Button>
         </div>
       </div>
+      </div>
+
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t bg-background px-4 py-3 flex flex-col gap-1">
+        <div className="md:hidden border-t bg-popover shadow-lg rounded-b-lg z-40 relative px-4 py-3 flex flex-col gap-1">
           {standaloneLinks.map((l) => (
             <Link
               key={l.href}
@@ -131,7 +143,7 @@ export function AppHeader() {
               className={cn(
                 buttonVariants({ variant: 'ghost', size: 'sm' }),
                 'justify-start w-full',
-                pathname === l.href && 'bg-muted font-medium'
+                pathname === l.href && 'bg-primary/10 text-primary font-medium'
               )}
             >
               {l.label}
@@ -148,7 +160,7 @@ export function AppHeader() {
               className={cn(
                 buttonVariants({ variant: 'ghost', size: 'sm' }),
                 'justify-start w-full pl-4',
-                pathname === l.href && 'bg-muted font-medium'
+                pathname === l.href && 'bg-primary/10 text-primary font-medium'
               )}
             >
               {l.label}
@@ -165,7 +177,7 @@ export function AppHeader() {
               className={cn(
                 buttonVariants({ variant: 'ghost', size: 'sm' }),
                 'justify-start w-full pl-4',
-                pathname === l.href && 'bg-muted font-medium'
+                pathname === l.href && 'bg-primary/10 text-primary font-medium'
               )}
             >
               {l.label}

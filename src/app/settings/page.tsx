@@ -14,7 +14,7 @@ export default async function SettingsPage() {
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         <h2 className="text-xl font-semibold">Daily Target</h2>
 
-        <Card className={cn(current ? 'border-green-200 bg-green-50 dark:bg-green-950/20' : '')}>
+        <Card className={cn(current ? 'border-success/25 bg-success/8 dark:bg-success/12 dark:border-success/22' : '')}>
           <CardContent className="pt-5 pb-5">
             <p className="text-sm text-muted-foreground">Current daily target</p>
             {current ? (

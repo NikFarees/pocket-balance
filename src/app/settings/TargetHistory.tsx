@@ -60,7 +60,7 @@ export function TargetHistory({ targets, currentId }: { targets: Target[]; curre
             </TableCell>
             <TableCell>
               {t.id === currentId
-                ? <Badge variant="default" className="bg-green-500 hover:bg-green-600">Active</Badge>
+                ? <Badge variant="success">Active</Badge>
                 : <Badge variant="secondary">Past</Badge>
               }
             </TableCell>

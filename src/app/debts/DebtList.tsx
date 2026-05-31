@@ -139,7 +139,7 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
                 <div className="mt-0.5">
                   {d.is_settled
                     ? <Badge variant="outline" className="text-muted-foreground text-xs">Settled</Badge>
-                    : <Badge className="bg-orange-500 hover:bg-orange-600 text-xs">Pending</Badge>
+                    : <Badge variant="warning" className="text-xs">Pending</Badge>
                   }
                 </div>
               </div>
@@ -202,7 +202,7 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
                 <TableCell>
                   {d.is_settled
                     ? <Badge variant="outline" className="text-muted-foreground">Settled</Badge>
-                    : <Badge className="bg-orange-500 hover:bg-orange-600">Pending</Badge>
+                    : <Badge variant="warning">Pending</Badge>
                   }
                 </TableCell>
                 <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
@@ -247,7 +247,7 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
               <div className="flex justify-between items-center"><span className="text-sm text-muted-foreground">Status</span>
                 {viewItem.is_settled
                   ? <Badge variant="outline" className="text-muted-foreground">Settled</Badge>
-                  : <Badge className="bg-orange-500 hover:bg-orange-600">Pending</Badge>
+                  : <Badge variant="warning">Pending</Badge>
                 }
               </div>
               {viewItem.settled_date && (

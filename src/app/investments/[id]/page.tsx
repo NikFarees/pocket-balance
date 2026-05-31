@@ -48,7 +48,7 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Total Invested</p>
-                <p className="text-2xl font-bold text-green-600 mt-1">RM {summary.totalBought.toFixed(2)}</p>
+                <p className="font-heading text-2xl font-bold tabular-nums text-success mt-1">RM {summary.totalBought.toFixed(2)}</p>
               </CardContent>
             </Card>
             <Card>
@@ -94,7 +94,7 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Total Saved</p>
-                <p className="text-2xl font-bold text-green-600 mt-1">RM {summary.totalBought.toFixed(2)}</p>
+                <p className="font-heading text-2xl font-bold tabular-nums text-success mt-1">RM {summary.totalBought.toFixed(2)}</p>
               </CardContent>
             </Card>
             <Card>
@@ -106,7 +106,7 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Total Dividends</p>
-                <p className="text-2xl font-bold text-blue-600 mt-1">RM {summary.totalDividend.toFixed(2)}</p>
+                <p className="font-heading text-2xl font-bold tabular-nums mt-1">RM {summary.totalDividend.toFixed(2)}</p>
               </CardContent>
             </Card>
             <Card className="col-span-2 sm:col-span-1">
@@ -124,7 +124,7 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Total Deposited</p>
-                <p className="text-2xl font-bold text-green-600 mt-1">RM {summary.totalBought.toFixed(2)}</p>
+                <p className="font-heading text-2xl font-bold tabular-nums text-success mt-1">RM {summary.totalBought.toFixed(2)}</p>
               </CardContent>
             </Card>
             <Card>
@@ -136,7 +136,7 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Total Dividends</p>
-                <p className="text-2xl font-bold text-blue-600 mt-1">RM {summary.totalDividend.toFixed(2)}</p>
+                <p className="font-heading text-2xl font-bold tabular-nums mt-1">RM {summary.totalDividend.toFixed(2)}</p>
               </CardContent>
             </Card>
             <Card className="col-span-2 sm:col-span-1">
