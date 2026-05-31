@@ -14,8 +14,12 @@ CREATE INDEX idx_incomes_user_date ON incomes(user_id, income_date DESC);
 ALTER TABLE incomes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "incomes_user_access" ON incomes FOR ALL USING (auth.uid() = user_id);
 
-INSERT INTO incomes (user_id, amount, source, income_date, notes, created_at, updated_at)
-SELECT user_id, amount, 'Salary', month, notes, created_at, COALESCE(updated_at, created_at)
-FROM salaries;
-
-DROP TABLE salaries;
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'salaries') THEN
+    INSERT INTO incomes (user_id, amount, source, income_date, notes, created_at, updated_at)
+    SELECT user_id, amount, 'Salary', month, notes, created_at, COALESCE(updated_at, created_at)
+    FROM salaries;
+    DROP TABLE salaries;
+  END IF;
+END $$;
