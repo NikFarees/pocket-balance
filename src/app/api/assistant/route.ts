@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenerativeAI, type ChatSession } from '@google/generative-ai'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { serverToday } from '@/lib/server-date'
@@ -8,6 +8,45 @@ import { checkAssistantRateLimit } from '@/lib/rate-limit'
 
 const MODEL = process.env.GOOGLE_AI_MODEL || 'gemini-2.0-flash'
 const MAX_ITERATIONS = 5
+// Gemini free-tier backends intermittently return 503 "model is overloaded".
+// These are transient and usually clear within a second or two, so retry a
+// couple of times with a short backoff before surfacing an error to the user.
+const MAX_OVERLOAD_RETRIES = 2
+const OVERLOAD_RETRY_DELAY_MS = 800
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+/** True when an error is a transient Gemini overload/unavailable (HTTP 503). */
+function isOverloadError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err)
+  const status =
+    typeof err === 'object' && err !== null && 'status' in err
+      ? (err as { status?: unknown }).status
+      : undefined
+  return status === 503 || /503|service unavailable|overloaded|UNAVAILABLE/i.test(message)
+}
+
+/**
+ * Send a message to a Gemini chat, retrying on transient 503 "overloaded"
+ * errors with a short backoff. Re-throws on the final attempt or for any
+ * non-overload error so the route's catch block can classify it.
+ */
+async function sendWithRetry(
+  chat: ChatSession,
+  message: Parameters<ChatSession['sendMessage']>[0]
+): ReturnType<ChatSession['sendMessage']> {
+  let lastErr: unknown
+  for (let attempt = 0; attempt <= MAX_OVERLOAD_RETRIES; attempt++) {
+    try {
+      return await chat.sendMessage(message)
+    } catch (err) {
+      lastErr = err
+      if (!isOverloadError(err) || attempt === MAX_OVERLOAD_RETRIES) throw err
+      await sleep(OVERLOAD_RETRY_DELAY_MS * (attempt + 1))
+    }
+  }
+  throw lastErr
+}
 
 type ClientMessage = { role: 'user' | 'assistant'; content: string }
 
@@ -129,7 +168,7 @@ export async function POST(req: Request) {
 
   try {
     const chat = model.startChat({ history })
-    let result = await chat.sendMessage(lastMessage.content)
+    let result = await sendWithRetry(chat, lastMessage.content)
 
     for (let i = 0; i < MAX_ITERATIONS; i++) {
       const response = result.response
@@ -173,7 +212,7 @@ export async function POST(req: Request) {
           }
         })
       )
-      result = await chat.sendMessage(functionResponses)
+      result = await sendWithRetry(chat, functionResponses)
     }
 
     return NextResponse.json({
@@ -212,6 +251,20 @@ export async function POST(req: Request) {
             : {}),
         },
         { status: 429 }
+      )
+    }
+
+    // Transient Gemini overload (503) that survived the in-loop retries. Tell
+    // the user it's a temporary upstream issue rather than a generic failure.
+    if (isOverloadError(err)) {
+      return NextResponse.json(
+        {
+          error: 'The AI service is busy right now. Please try again in a moment.',
+          ...(process.env.NODE_ENV !== 'production'
+            ? { debug: { message, ...(status ? { status } : {}), model: MODEL } }
+            : {}),
+        },
+        { status: 503 }
       )
     }
 
