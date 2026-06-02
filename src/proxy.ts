@@ -32,11 +32,12 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   // Public, unauthenticated routes. `/auth/` covers the email-confirmation callback.
   const isPasswordResetRoute = pathname === '/reset-password'
+  const isCallbackRoute = pathname.startsWith('/auth/')
   const isPublicAuthRoute =
     pathname.startsWith('/login') ||
     pathname.startsWith('/signup') ||
     pathname.startsWith('/forgot-password') ||
-    pathname.startsWith('/auth/')
+    isCallbackRoute
   const isAuthRoute = isPublicAuthRoute || isPasswordResetRoute
   // `/mfa` requires a user but is the step-up page, so it is allowed without aal2.
   const isMfaRoute = pathname === '/mfa'
@@ -65,8 +66,9 @@ export async function proxy(request: NextRequest) {
   }
 
   // Fully authenticated (no pending MFA): keep them out of sign-in flows and
-  // /mfa, but allow the recovery page so they can set a new password.
-  if (user && !needsMfa && (isPublicAuthRoute || isMfaRoute)) {
+  // /mfa, but always allow callbacks to exchange auth codes.
+  const isRedirectableAuthPage = isPublicAuthRoute && !isCallbackRoute
+  if (user && !needsMfa && (isRedirectableAuthPage || isMfaRoute)) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
