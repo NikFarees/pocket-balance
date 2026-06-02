@@ -11,7 +11,10 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function ResetPasswordPage() {
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null
+    return new URLSearchParams(window.location.search).get('error')
+  })
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [showNew, setShowNew] = useState(false)
@@ -68,7 +71,7 @@ export default function ResetPasswordPage() {
                     type={showNew ? 'text' : 'password'}
                     required
                     autoComplete="new-password"
-                    minLength={6}
+                    minLength={8}
                     className="pr-10"
                   />
                   <button

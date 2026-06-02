@@ -83,7 +83,12 @@ export async function resetPassword(formData: FormData) {
   if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) return { error: 'Password must include both letters and numbers' }
 
   const { error } = await supabase.auth.updateUser({ password: newPassword })
-  if (error) return { error: error.message }
+  if (error) {
+    const message = error.message.toLowerCase().includes('session')
+      ? 'Your password reset link is invalid or expired. Please request a new reset link.'
+      : error.message
+    return { error: message }
+  }
   return { success: true }
 }
 
