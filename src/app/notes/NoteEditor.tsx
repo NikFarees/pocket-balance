@@ -13,7 +13,7 @@ export function NoteEditor({
   onChange: (html: string) => void
 }) {
   const editor = useEditor({
-    extensions: [StarterKit, TableKit],
+    extensions: [StarterKit, TableKit.configure({ table: { resizable: true } })],
     content: defaultHtml,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {

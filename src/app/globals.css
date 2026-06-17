@@ -223,3 +223,24 @@
 }
 .tiptap th, .note-content th { background: var(--muted); font-weight: 600; }
 .tiptap a, .note-content a { color: var(--primary); text-decoration: underline; }
+/* Tiptap table column resizing */
+.tiptap .tableWrapper { overflow-x: auto; margin: 0.5rem 0; }
+.tiptap td, .tiptap th { position: relative; }
+.tiptap .column-resize-handle {
+  position: absolute;
+  right: -1px;
+  top: 0;
+  bottom: -1px;
+  width: 3px;
+  background: var(--primary);
+  pointer-events: none;
+}
+.tiptap.resize-cursor { cursor: col-resize; }
+.tiptap .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--primary);
+  opacity: 0.1;
+  pointer-events: none;
+}
