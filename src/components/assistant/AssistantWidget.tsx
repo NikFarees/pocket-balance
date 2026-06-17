@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import { ASSISTANT_MODELS, DEFAULT_ASSISTANT_MODEL } from '@/lib/ai/models'
 import { useSpeechRecognition } from './useSpeechRecognition'
 import { describeProposal, executeProposal, proposalKind, type Proposal, type ProposalKind } from './executeProposal'
 
@@ -38,6 +39,7 @@ export function AssistantWidget() {
   const [open, setOpen] = useState(false)
   const [items, setItems] = useState<ChatItem[]>([])
   const [input, setInput] = useState('')
+  const [model, setModel] = useState<string>(DEFAULT_ASSISTANT_MODEL)
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -82,7 +84,7 @@ export function AssistantWidget() {
       const res = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, model }),
       })
       const data = await res.json()
 
@@ -161,9 +163,22 @@ export function AssistantWidget() {
           <Sparkles className="size-4 text-primary" />
           Assistant
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Close assistant">
-          <X className="size-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <select
+            value={model}
+            onChange={e => setModel(e.target.value)}
+            aria-label="AI model"
+            title="AI model"
+            className="max-w-[9rem] rounded-md border bg-background px-2 py-1 text-xs text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/50"
+          >
+            {ASSISTANT_MODELS.map(m => (
+              <option key={m.id} value={m.id}>{m.label}</option>
+            ))}
+          </select>
+          <Button variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Close assistant">
+            <X className="size-4" />
+          </Button>
+        </div>
       </header>
 
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
