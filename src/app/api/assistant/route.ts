@@ -48,6 +48,20 @@ function isModelUnavailableError(err: unknown): boolean {
 }
 
 /**
+ * True when an error is a usage/quota limit (HTTP 429 / RESOURCE_EXHAUSTED),
+ * e.g. a model's free-tier daily request cap is used up. The route falls
+ * through to the next model in the chain before surfacing a limit message.
+ */
+function isQuotaError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err)
+  const status =
+    typeof err === 'object' && err !== null && 'status' in err
+      ? (err as { status?: unknown }).status
+      : undefined
+  return status === 429 || /429|quota|resource_exhausted|rate.?limit|retry in/i.test(message)
+}
+
+/**
  * Send a message to a Gemini chat, retrying on transient 503 "overloaded"
  * errors with a short backoff. Re-throws on the final attempt or for any
  * non-overload error so the route's catch block can classify it.
@@ -267,10 +281,13 @@ export async function POST(req: Request) {
         return NextResponse.json(payload)
       } catch (err) {
         lastErr = err
-        // Fall through to the next model on a transient overload or when this
-        // model is unavailable to the key (404/unsupported). Other errors are
-        // real and handled below.
-        if ((isOverloadError(err) || isModelUnavailableError(err)) && mi < modelOrder.length - 1) continue
+        // Fall through to the next model on a transient overload, an unavailable
+        // model (404/unsupported), or an exhausted quota (429). Only when every
+        // model in the chain fails do we surface the error below.
+        if (
+          (isOverloadError(err) || isModelUnavailableError(err) || isQuotaError(err)) &&
+          mi < modelOrder.length - 1
+        ) continue
         throw err
       }
     }
@@ -287,10 +304,8 @@ export async function POST(req: Request) {
         : undefined
     const retryMatch = message.match(/retry in\s+([\d.]+)s/i)
     const retrySeconds = retryMatch ? Math.ceil(Number(retryMatch[1])) : undefined
-    const isQuotaError =
-      /quota|rate.?limit|429|resource_exhausted|retry in/i.test(message)
 
-    if (isQuotaError) {
+    if (isQuotaError(err)) {
       return NextResponse.json(
         {
           error: retrySeconds
