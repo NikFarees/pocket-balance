@@ -5,15 +5,17 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Plus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { NoteEditor } from './NoteEditor'
 
 export function NoteForm() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [bodyHtml, setBodyHtml] = useState('')
+  const [editorKey, setEditorKey] = useState(0)
   const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
 
@@ -25,6 +27,8 @@ export function NoteForm() {
     } else {
       toast.success('Note added')
       formRef.current?.reset()
+      setBodyHtml('')
+      setEditorKey(k => k + 1)
       setOpen(false)
       router.refresh()
     }
@@ -52,8 +56,9 @@ export function NoteForm() {
             <Input id="title" name="title" placeholder="e.g. Next month target, Backup accounts" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="body">Note <span className="text-muted-foreground">(optional)</span></Label>
-            <Textarea id="body" name="body" rows={5} placeholder="Write your plan, target, account info…" />
+            <Label>Note <span className="text-muted-foreground">(optional)</span></Label>
+            <NoteEditor key={editorKey} onChange={setBodyHtml} />
+            <input type="hidden" name="body" value={bodyHtml} />
             <p className="text-xs text-muted-foreground">For your eyes only, but avoid storing full PINs / passwords / CVV.</p>
           </div>
           <Button type="submit" disabled={loading}>
