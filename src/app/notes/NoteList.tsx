@@ -114,7 +114,7 @@ export function NoteList({ notes }: { notes: Note[] }) {
 
       {/* View modal */}
       <Dialog open={!!viewNote} onOpenChange={(open) => { if (!open) setViewNote(null) }}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader><DialogTitle>{viewNote?.title}</DialogTitle></DialogHeader>
           {viewNote && (
             <div className="space-y-3">
@@ -130,7 +130,7 @@ export function NoteList({ notes }: { notes: Note[] }) {
 
       {/* Edit modal */}
       <Dialog open={!!editNote} onOpenChange={(open) => { if (!open) setEditNote(null) }}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader><DialogTitle>Edit Note</DialogTitle></DialogHeader>
           {editNote && (
             <form ref={editFormRef} onSubmit={e => { e.preventDefault(); handleEdit(new FormData(e.currentTarget)) }} className="space-y-4">
