@@ -6,7 +6,13 @@ import { runReadTool } from '@/lib/ai/queries'
 import { TOOLS, WRITE_TOOL_NAMES, systemPrompt } from '@/lib/ai/tools'
 import { checkAssistantRateLimit } from '@/lib/rate-limit'
 
-const MODEL = process.env.GOOGLE_AI_MODEL || 'gemini-2.0-flash'
+// GOOGLE_AI_MODEL may be a single model id or a comma-separated fallback list
+// (e.g. "gemini-2.5-flash,gemini-2.0-flash"). The route tries them in order and
+// falls through to the next model on a transient 503 "overloaded" error.
+const MODELS = (process.env.GOOGLE_AI_MODEL || 'gemini-2.0-flash')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean)
 const MAX_ITERATIONS = 5
 // Gemini free-tier backends intermittently return 503 "model is overloaded".
 // These are transient and usually clear within a second or two, so retry a
@@ -94,6 +100,73 @@ function sanitizeHistory(turns: GeminiTurn[]): GeminiTurn[] {
   return merged
 }
 
+type TurnResult =
+  | { type: 'message'; text: string }
+  | { type: 'proposal'; action: string; params: Record<string, unknown>; assistantText: string }
+
+/**
+ * Run one full assistant turn against a single model: start the chat, run the
+ * tool-use loop, and return a client payload. Throws on any error (including a
+ * 503 overload that survived sendWithRetry) so the caller can fall through to
+ * the next model. Read tools are idempotent and write tools short-circuit before
+ * any DB write, so re-running this on another model is safe.
+ */
+async function runAssistantTurn(
+  genAI: GoogleGenerativeAI,
+  modelName: string,
+  today: string,
+  history: GeminiTurn[],
+  lastMessage: string
+): Promise<TurnResult> {
+  const model = genAI.getGenerativeModel({
+    model: modelName,
+    systemInstruction: systemPrompt(today),
+    tools: [{ functionDeclarations: buildFunctionDeclarations() }],
+  })
+
+  const chat = model.startChat({ history })
+  let result = await sendWithRetry(chat, lastMessage)
+
+  for (let i = 0; i < MAX_ITERATIONS; i++) {
+    const response = result.response
+    const allFunctionCalls = response.functionCalls()
+    // Cap fan-out: a single model turn can trigger at most 5 tool calls so it
+    // can't spawn dozens of DB queries. (MAX_ITERATIONS bounds loop depth.)
+    const functionCalls = allFunctionCalls?.slice(0, 5)
+
+    if (!functionCalls || functionCalls.length === 0) {
+      const text = response.text()?.trim()
+      return { type: 'message', text: text || 'Could you rephrase that, or give me a bit more detail?' }
+    }
+
+    // A write tool → stop the loop, surface a confirmation proposal to the client.
+    // Claude / Gemini never writes to the DB itself.
+    const writeCall = functionCalls.find(fc => WRITE_TOOL_NAMES.has(fc.name))
+    if (writeCall) {
+      return { type: 'proposal', action: writeCall.name, params: (writeCall.args ?? {}) as Record<string, unknown>, assistantText: '' }
+    }
+
+    // Read tools → execute server-side, feed results back so Gemini can answer.
+    const functionResponses = await Promise.all(
+      functionCalls.map(async fc => {
+        const readResult = await runReadTool(
+          fc.name,
+          (fc.args ?? {}) as Record<string, unknown>
+        )
+        return {
+          functionResponse: {
+            name: fc.name,
+            response: readResult as Record<string, unknown>,
+          },
+        }
+      })
+    )
+    result = await sendWithRetry(chat, functionResponses)
+  }
+
+  return { type: 'message', text: "Sorry, I couldn't complete that. Please try rephrasing." }
+}
+
 export async function POST(req: Request) {
   // Auth — all data access stays under the user's session / RLS.
   const supabase = await createClient()
@@ -148,12 +221,6 @@ export async function POST(req: Request) {
   const today = await serverToday()
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_STUDIO_API_KEY)
 
-  const model = genAI.getGenerativeModel({
-    model: MODEL,
-    systemInstruction: systemPrompt(today),
-    tools: [{ functionDeclarations: buildFunctionDeclarations() }],
-  })
-
   // Build history from all messages except the last (sent via sendMessage).
   // Keep only the latest turns to reduce token usage and free-tier quota hits,
   // then sanitize so it starts with a user turn (Gemini requirement).
@@ -166,59 +233,25 @@ export async function POST(req: Request) {
 
   const lastMessage = incoming[incoming.length - 1]
 
+  // Track which model was last attempted so error responses report it in debug.
+  let lastModel = MODELS[0]
+
   try {
-    const chat = model.startChat({ history })
-    let result = await sendWithRetry(chat, lastMessage.content)
-
-    for (let i = 0; i < MAX_ITERATIONS; i++) {
-      const response = result.response
-      const allFunctionCalls = response.functionCalls()
-      // Cap fan-out: a single model turn can trigger at most 5 tool calls so it
-      // can't spawn dozens of DB queries. (MAX_ITERATIONS bounds loop depth.)
-      const functionCalls = allFunctionCalls?.slice(0, 5)
-
-      if (!functionCalls || functionCalls.length === 0) {
-        const text = response.text()?.trim()
-        return NextResponse.json({
-          type: 'message',
-          text: text || 'Could you rephrase that, or give me a bit more detail?',
-        })
+    let lastErr: unknown
+    for (let mi = 0; mi < MODELS.length; mi++) {
+      lastModel = MODELS[mi]
+      try {
+        const payload = await runAssistantTurn(genAI, lastModel, today, history, lastMessage.content)
+        return NextResponse.json(payload)
+      } catch (err) {
+        lastErr = err
+        // Only fall through to the next model on a transient overload; other
+        // errors are real and handled below.
+        if (isOverloadError(err) && mi < MODELS.length - 1) continue
+        throw err
       }
-
-      // A write tool → stop the loop, surface a confirmation proposal to the client.
-      // Claude / Gemini never writes to the DB itself.
-      const writeCall = functionCalls.find(fc => WRITE_TOOL_NAMES.has(fc.name))
-      if (writeCall) {
-        return NextResponse.json({
-          type: 'proposal',
-          action: writeCall.name,
-          params: writeCall.args ?? {},
-          assistantText: '',
-        })
-      }
-
-      // Read tools → execute server-side, feed results back so Gemini can answer.
-      const functionResponses = await Promise.all(
-        functionCalls.map(async fc => {
-          const readResult = await runReadTool(
-            fc.name,
-            (fc.args ?? {}) as Record<string, unknown>
-          )
-          return {
-            functionResponse: {
-              name: fc.name,
-              response: readResult as Record<string, unknown>,
-            },
-          }
-        })
-      )
-      result = await sendWithRetry(chat, functionResponses)
     }
-
-    return NextResponse.json({
-      type: 'message',
-      text: "Sorry, I couldn't complete that. Please try rephrasing.",
-    })
+    throw lastErr
   } catch (err) {
     console.error('Assistant route error:', err instanceof Error ? err.message : 'unknown error')
     const message = err instanceof Error ? err.message : 'Unknown assistant error'
@@ -245,7 +278,7 @@ export async function POST(req: Request) {
                 debug: {
                   message,
                   ...(status ? { status } : {}),
-                  model: MODEL,
+                  model: lastModel,
                 },
               }
             : {}),
@@ -261,7 +294,7 @@ export async function POST(req: Request) {
         {
           error: 'The AI service is busy right now. Please try again in a moment.',
           ...(process.env.NODE_ENV !== 'production'
-            ? { debug: { message, ...(status ? { status } : {}), model: MODEL } }
+            ? { debug: { message, ...(status ? { status } : {}), model: lastModel } }
             : {}),
         },
         { status: 503 }
@@ -277,7 +310,7 @@ export async function POST(req: Request) {
           debug: {
             message,
             ...(status ? { status } : {}),
-            model: MODEL,
+            model: lastModel,
           },
         },
         { status: 502 }
