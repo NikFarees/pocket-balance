@@ -21,6 +21,11 @@ export async function runReadTool(name: string, input: Record<string, unknown>):
       return getBackupBalance()
     case 'get_debts_summary':
       return getDebtsSummary()
+    case 'get_notes':
+      return getNotes({
+        contains: typeof input.contains === 'string' ? input.contains : undefined,
+        limit: typeof input.limit === 'number' ? input.limit : undefined,
+      })
     case 'find_entries':
       return findEntries(
         typeof input.kind === 'string' ? input.kind : '',
@@ -129,6 +134,57 @@ async function getDebtsSummary() {
     they_owe: theyOwe,
     i_owe: iOwe,
   }
+}
+
+/** Strip HTML tags/entities so the model reads a note as plain text. */
+function noteToText(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<(p|div|br|tr|h[1-6]|li)[^>]*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n\s*\n\s*/g, '\n')
+    .trim()
+}
+
+/**
+ * Read the user's saved notes as plain text so the assistant can answer
+ * questions about their plans/targets. Read-only; RLS-scoped to the user.
+ */
+async function getNotes(opts: { contains?: string; limit?: number }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const limit = Math.min(Math.max(Math.trunc(opts.limit ?? 10) || 10, 1), 25)
+  const { data } = await supabase
+    .from('notes')
+    .select('title, body, updated_at')
+    .eq('user_id', user.id)
+    .order('updated_at', { ascending: false })
+    .limit(limit)
+
+  let notes = (data ?? []).map(n => ({
+    title: n.title as string,
+    content: n.body ? noteToText(n.body as string) : '',
+    updated: n.updated_at as string,
+  }))
+
+  const contains = opts.contains?.toLowerCase()
+  if (contains) {
+    notes = notes.filter(
+      n => n.title.toLowerCase().includes(contains) || n.content.toLowerCase().includes(contains)
+    )
+  }
+
+  return { notes, count: notes.length }
 }
 
 /**

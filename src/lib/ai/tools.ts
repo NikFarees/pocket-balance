@@ -42,6 +42,7 @@ export const READ_TOOL_NAMES = new Set([
   'get_month_summary',
   'get_backup_balance',
   'get_debts_summary',
+  'get_notes',
   'find_entries',
 ])
 
@@ -312,6 +313,18 @@ export const TOOLS: Anthropic.Tool[] = [
     input_schema: { type: 'object', properties: {} },
   },
   {
+    name: 'get_notes',
+    description:
+      "Read the user's saved notes — free-form notes they wrote, such as future plans, monthly targets, where their backup money is, or account info. Returns each note's title and plain-text content (formatting stripped), newest first. Call this whenever the user asks about their notes/plans (e.g. \"read my notes\", \"what's my plan\", \"is that plan good?\"). Optionally narrow with `contains` (a text fragment in the title or body).",
+    input_schema: {
+      type: 'object',
+      properties: {
+        contains: { type: 'string', description: 'Optional text fragment to match in a note title or body.' },
+        limit: { type: 'number', description: 'Max notes to return (default 10).' },
+      },
+    },
+  },
+  {
     name: 'find_entries',
     description:
       "Look up the user's recent entries (with their database IDs) so you can edit or delete a specific one. ALWAYS call this before any update_* or delete_* tool, and use only the IDs it returns. Optionally narrow with `date` (a single day) or `contains` (a text fragment matching the description / person / investment name).",
@@ -344,6 +357,7 @@ export function systemPrompt(today: string): string {
     '- After find_entries returns, you MUST either call the matching update_*/delete_* tool (when exactly one row clearly matches) or ask one short clarifying question. Never end your turn with an empty reply.',
     '- The conversation history includes lines like "Done: Add expense ..." or "User cancelled: ..." describing your earlier actions. Use them to resolve follow-ups such as "remove it", "delete that", or "the dinner one" — they refer to those recent entries; look them up with find_entries and act.',
     '- To answer a question about the user\'s finances, call a read tool (get_today_status, get_month_summary, get_backup_balance, get_debts_summary) and base your answer ONLY on the returned data. Never invent numbers.',
+    '- To answer anything about the user\'s notes or plans, call get_notes and base your answer ONLY on the returned note content. If they ask you to assess a plan, read the notes first with get_notes, then give your view.',
     '- When the user states an amount and a purpose (e.g. "RM5 for lunch"), call add_expense. Infer a sensible category when obvious (food, transport, groceries, etc.), but leave it out if unsure.',
     '- The expense `category` is free text and inconsistent (e.g. "drink" vs "drinks"), so do NOT give per-category breakdowns in summaries — report totals and net instead, unless the user explicitly asks about a specific category.',
     '- If a request is ambiguous (e.g. you cannot tell expense vs income, or which investment), ask one short clarifying question instead of guessing.',
