@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { serverToday } from '@/lib/server-date'
 import { runReadTool } from '@/lib/ai/queries'
 import { TOOLS, WRITE_TOOL_NAMES, systemPrompt } from '@/lib/ai/tools'
+import { ASSISTANT_MODEL_IDS } from '@/lib/ai/models'
 import { checkAssistantRateLimit } from '@/lib/rate-limit'
 
 // GOOGLE_AI_MODEL may be a single model id or a comma-separated fallback list
@@ -194,12 +195,19 @@ export async function POST(req: Request) {
     )
   }
 
-  let body: { messages?: ClientMessage[] }
+  let body: { messages?: ClientMessage[]; model?: string }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
+
+  // Optional user-picked model. Only honour it if it's in the allowlist, then
+  // try it first and fall back through the rest of the configured chain.
+  const picked = typeof body.model === 'string' && ASSISTANT_MODEL_IDS.includes(body.model)
+    ? body.model
+    : undefined
+  const modelOrder = picked ? [picked, ...MODELS.filter(m => m !== picked)] : MODELS
 
   const incoming = (body.messages ?? []).filter(
     m => m && typeof m.content === 'string' && m.content.trim()
@@ -234,12 +242,12 @@ export async function POST(req: Request) {
   const lastMessage = incoming[incoming.length - 1]
 
   // Track which model was last attempted so error responses report it in debug.
-  let lastModel = MODELS[0]
+  let lastModel = modelOrder[0]
 
   try {
     let lastErr: unknown
-    for (let mi = 0; mi < MODELS.length; mi++) {
-      lastModel = MODELS[mi]
+    for (let mi = 0; mi < modelOrder.length; mi++) {
+      lastModel = modelOrder[mi]
       try {
         const payload = await runAssistantTurn(genAI, lastModel, today, history, lastMessage.content)
         return NextResponse.json(payload)
@@ -247,7 +255,7 @@ export async function POST(req: Request) {
         lastErr = err
         // Only fall through to the next model on a transient overload; other
         // errors are real and handled below.
-        if (isOverloadError(err) && mi < MODELS.length - 1) continue
+        if (isOverloadError(err) && mi < modelOrder.length - 1) continue
         throw err
       }
     }
