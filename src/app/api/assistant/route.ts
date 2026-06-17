@@ -34,6 +34,20 @@ function isOverloadError(err: unknown): boolean {
 }
 
 /**
+ * True when an error means the requested model is unavailable to this key (404
+ * not found, unsupported, or deprecated). Like an overload, the route should
+ * fall through to the next model in the chain rather than hard-fail.
+ */
+function isModelUnavailableError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err)
+  const status =
+    typeof err === 'object' && err !== null && 'status' in err
+      ? (err as { status?: unknown }).status
+      : undefined
+  return status === 404 || /404|not found|not supported|is not found|does not exist|NOT_FOUND/i.test(message)
+}
+
+/**
  * Send a message to a Gemini chat, retrying on transient 503 "overloaded"
  * errors with a short backoff. Re-throws on the final attempt or for any
  * non-overload error so the route's catch block can classify it.
@@ -253,9 +267,10 @@ export async function POST(req: Request) {
         return NextResponse.json(payload)
       } catch (err) {
         lastErr = err
-        // Only fall through to the next model on a transient overload; other
-        // errors are real and handled below.
-        if (isOverloadError(err) && mi < modelOrder.length - 1) continue
+        // Fall through to the next model on a transient overload or when this
+        // model is unavailable to the key (404/unsupported). Other errors are
+        // real and handled below.
+        if ((isOverloadError(err) || isModelUnavailableError(err)) && mi < modelOrder.length - 1) continue
         throw err
       }
     }
