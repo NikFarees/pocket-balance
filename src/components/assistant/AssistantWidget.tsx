@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Check, Loader2, Mic, Send, Sparkles, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { useSpeechRecognition } from './useSpeechRecognition'
 import { describeProposal, executeProposal, proposalKind, type Proposal, type ProposalKind } from './executeProposal'
@@ -40,7 +40,7 @@ export function AssistantWidget() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
 
   const { supported: micSupported, listening, toggle: toggleMic } = useSpeechRecognition(text => {
@@ -244,7 +244,7 @@ export function AssistantWidget() {
 
       <form
         onSubmit={e => { e.preventDefault(); send(input) }}
-        className="flex items-center gap-2 border-t p-3"
+        className="flex items-end gap-2 border-t p-3"
       >
         {micSupported && (
           <Button
@@ -258,12 +258,14 @@ export function AssistantWidget() {
             <Mic className="size-4" />
           </Button>
         )}
-        <Input
+        <Textarea
           ref={inputRef}
           value={input}
           onChange={e => setInput(e.target.value)}
           placeholder={listening ? 'Listening…' : 'Type or speak…'}
           autoComplete="off"
+          rows={1}
+          className="min-h-9 max-h-32 resize-none"
         />
         <Button type="submit" size="icon" disabled={loading || !input.trim()} aria-label="Send">
           <Send className="size-4" />
