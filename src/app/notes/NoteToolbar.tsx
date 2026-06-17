@@ -7,7 +7,8 @@ import { useEditorState } from '@tiptap/react'
 import {
   BetweenHorizontalEnd, BetweenVerticalEnd, Bold, Columns3, Heading1, Heading2,
   Heading3, Italic, List, ListOrdered, Quote, Rows3, Strikethrough,
-  Table as TableIcon, Trash2, Underline as UnderlineIcon,
+  Table as TableIcon, TableCellsMerge, TableCellsSplit, Trash2,
+  Underline as UnderlineIcon,
 } from 'lucide-react'
 
 export function NoteToolbar({ editor }: { editor: Editor }) {
@@ -52,6 +53,8 @@ export function NoteToolbar({ editor }: { editor: Editor }) {
           <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => editor.chain().focus().deleteColumn().run()} aria-label="Delete column" title="Delete column"><Columns3 className="size-4" /></Button>
           <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => editor.chain().focus().addRowAfter().run()} aria-label="Add row" title="Add row"><BetweenHorizontalEnd className="size-4" /></Button>
           <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => editor.chain().focus().deleteRow().run()} aria-label="Delete row" title="Delete row"><Rows3 className="size-4" /></Button>
+          <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => editor.chain().focus().mergeCells().run()} aria-label="Merge cells" title="Merge selected cells"><TableCellsMerge className="size-4" /></Button>
+          <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => editor.chain().focus().splitCell().run()} aria-label="Split cell" title="Split cell"><TableCellsSplit className="size-4" /></Button>
           <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => editor.chain().focus().deleteTable().run()} aria-label="Delete table" title="Delete table"><Trash2 className="size-4" /></Button>
         </>
       )}
