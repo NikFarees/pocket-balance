@@ -19,6 +19,7 @@ const standaloneLinks = [
   { href: '/', label: 'Dashboard' },
   { href: '/expenses', label: 'Expenses' },
   { href: '/debts', label: 'Debts' },
+  { href: '/notes', label: 'Notes' },
 ]
 
 const financeLinks = [
