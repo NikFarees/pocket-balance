@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { exceedsLength, MAX_SHORT_TEXT, MAX_LONG_TEXT } from '@/lib/validation'
+import { exceedsLength, MAX_SHORT_TEXT, MAX_NOTE_BODY } from '@/lib/validation'
 import { revalidatePath } from 'next/cache'
 
 export type Note = {
@@ -36,7 +36,7 @@ export async function addNote(formData: FormData) {
 
   if (!title) return { error: 'Title is required' }
   if (exceedsLength(title, MAX_SHORT_TEXT)) return { error: 'Title is too long' }
-  if (exceedsLength(body, MAX_LONG_TEXT)) return { error: 'Note is too long' }
+  if (exceedsLength(body, MAX_NOTE_BODY)) return { error: 'Note is too long' }
 
   const { error } = await supabase.from('notes').insert({
     user_id: user.id,
@@ -60,7 +60,7 @@ export async function updateNote(id: string, formData: FormData) {
 
   if (!title) return { error: 'Title is required' }
   if (exceedsLength(title, MAX_SHORT_TEXT)) return { error: 'Title is too long' }
-  if (exceedsLength(body, MAX_LONG_TEXT)) return { error: 'Note is too long' }
+  if (exceedsLength(body, MAX_NOTE_BODY)) return { error: 'Note is too long' }
 
   const { error } = await supabase
     .from('notes')

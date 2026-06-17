@@ -7,18 +7,36 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import DOMPurify from 'dompurify'
 import { format, parseISO } from 'date-fns'
 import { Loader2, Settings2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { NoteEditor } from './NoteEditor'
 
 const PAGE_SIZE = 8
+
+/** Pure-JS tag strip for list previews (runs during SSR — no DOM/DOMPurify). */
+function stripHtml(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
 
 export function NoteList({ notes }: { notes: Note[] }) {
   const [viewNote, setViewNote] = useState<Note | null>(null)
   const [editNote, setEditNote] = useState<Note | null>(null)
+  const [editBody, setEditBody] = useState('')
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [editLoading, setEditLoading] = useState(false)
   const [page, setPage] = useState(1)
@@ -28,6 +46,11 @@ export function NoteList({ notes }: { notes: Note[] }) {
   const totalPages = Math.max(1, Math.ceil(notes.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
   const paged = notes.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  function openEdit(n: Note) {
+    setEditNote(n)
+    setEditBody(n.body ?? '')
+  }
 
   async function handleDelete(id: string) {
     setLoadingId(id)
@@ -68,7 +91,7 @@ export function NoteList({ notes }: { notes: Note[] }) {
           >
             <div className="min-w-0">
               <p className="font-medium text-sm">{n.title}</p>
-              {n.body && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 whitespace-pre-wrap">{n.body}</p>}
+              {n.body && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{stripHtml(n.body)}</p>}
               <p className="text-xs text-muted-foreground mt-1">{format(parseISO(n.updated_at), 'dd MMM yyyy')}</p>
             </div>
             <div onClick={(e) => e.stopPropagation()}>
@@ -77,7 +100,7 @@ export function NoteList({ notes }: { notes: Note[] }) {
                   <Settings2 className="size-3.5" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setEditNote(n)}>Edit</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => openEdit(n)}>Edit</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem variant="destructive" onClick={() => handleDelete(n.id)} disabled={loadingId === n.id}>Delete</DropdownMenuItem>
                 </DropdownMenuContent>
@@ -95,7 +118,9 @@ export function NoteList({ notes }: { notes: Note[] }) {
           <DialogHeader><DialogTitle>{viewNote?.title}</DialogTitle></DialogHeader>
           {viewNote && (
             <div className="space-y-3">
-              <p className="text-sm whitespace-pre-wrap">{viewNote.body || <span className="text-muted-foreground">No details.</span>}</p>
+              {viewNote.body
+                ? <div className="note-content" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(viewNote.body) }} />
+                : <p className="text-sm text-muted-foreground">No details.</p>}
               <p className="text-xs text-muted-foreground">Last updated {format(parseISO(viewNote.updated_at), 'dd MMM yyyy')}</p>
               <Button variant="outline" className="w-full mt-2" onClick={() => setViewNote(null)}>Close</Button>
             </div>
@@ -114,8 +139,9 @@ export function NoteList({ notes }: { notes: Note[] }) {
                 <Input id="nt_title" name="title" defaultValue={editNote.title} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nt_body">Note <span className="text-muted-foreground">(optional)</span></Label>
-                <Textarea id="nt_body" name="body" rows={5} defaultValue={editNote.body ?? ''} />
+                <Label>Note <span className="text-muted-foreground">(optional)</span></Label>
+                <NoteEditor key={editNote.id} defaultHtml={editNote.body ?? ''} onChange={setEditBody} />
+                <input type="hidden" name="body" value={editBody} />
               </div>
               <div className="flex gap-2 justify-end">
                 <Button type="button" variant="outline" onClick={() => setEditNote(null)}>Cancel</Button>
