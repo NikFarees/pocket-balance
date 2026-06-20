@@ -49,6 +49,7 @@ export function TransactionForm({ investmentId, category }: { investmentId: stri
   const [fees, setFees] = useState('')
   const [qty, setQty] = useState('')
   const [price, setPrice] = useState('')
+  const [asset, setAsset] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
 
@@ -103,6 +104,7 @@ export function TransactionForm({ investmentId, category }: { investmentId: stri
       setFees('')
       setQty('')
       setPrice('')
+      setAsset('')
       setOpen(false)
       router.refresh()
     }
@@ -119,6 +121,7 @@ export function TransactionForm({ investmentId, category }: { investmentId: stri
 
   const showQtyPrice = category === 'trading' && type !== 'wallet_topup'
   const showFees = type !== 'dividend'
+  const showAsset = category === 'trading' && type !== 'wallet_topup'
 
   return (
     <Card>
@@ -141,6 +144,19 @@ export function TransactionForm({ investmentId, category }: { investmentId: stri
             ))}
           </div>
           <input type="hidden" name="type" value={type} />
+
+          {showAsset && (
+            <div className="space-y-2">
+              <Label htmlFor="asset">Asset / Ticker <span className="text-muted-foreground">(optional, e.g. ETH, BTC, NVDA)</span></Label>
+              <Input
+                id="asset" name="asset" type="text"
+                placeholder="e.g. ETH"
+                value={asset}
+                onChange={e => setAsset(e.target.value.toUpperCase())}
+                className="w-40 uppercase"
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
