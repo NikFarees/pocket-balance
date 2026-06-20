@@ -10,6 +10,7 @@ import {
   updateSubscriptionRenewal,
 } from '@/app/actions/subscriptions'
 import type { SubscriptionRenewal } from '@/app/actions/subscriptions'
+import { Amount } from '@/components/Amount'
 import { Paginator } from '@/components/Paginator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -446,7 +447,7 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
-                <p className="font-semibold text-sm">RM {Number(s.renewal_cost).toFixed(2)}</p>
+                <p className="font-semibold text-sm"><Amount value={Number(s.renewal_cost)} /></p>
                 <div className="mt-0.5">
                   <StatusBadge sub={s} />
                 </div>
@@ -509,9 +510,9 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
                 <TableCell className="text-sm text-muted-foreground">{s.provider ?? '—'}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{cycleName(s.billing_cycle)}</TableCell>
                 <TableCell className="text-right">
-                  <p className="font-medium">RM {Number(s.renewal_cost).toFixed(2)}</p>
+                  <p className="font-medium"><Amount value={Number(s.renewal_cost)} /></p>
                   {s.current_cost !== s.renewal_cost && (
-                    <p className="text-xs text-muted-foreground">now RM {Number(s.current_cost).toFixed(2)}</p>
+                    <p className="text-xs text-muted-foreground">now <Amount value={Number(s.current_cost)} /></p>
                   )}
                 </TableCell>
                 <TableCell className={`text-sm ${renewalDateClass(s)}`}>
@@ -572,8 +573,8 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Provider</span><span className="text-sm">{syncedViewItem.provider ?? '—'}</span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Category</span><span className="text-sm">{syncedViewItem.category ?? '—'}</span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Billing Cycle</span><span className="text-sm">{cycleName(syncedViewItem.billing_cycle)}{syncedViewItem.custom_days ? ` (${syncedViewItem.custom_days} days)` : ''}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Current Cost</span><span className="text-sm font-semibold">RM {Number(syncedViewItem.current_cost).toFixed(2)}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Renewal Cost</span><span className="text-sm font-semibold">RM {Number(syncedViewItem.renewal_cost).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Current Cost</span><span className="text-sm font-semibold"><Amount value={Number(syncedViewItem.current_cost)} /></span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Renewal Cost</span><span className="text-sm font-semibold"><Amount value={Number(syncedViewItem.renewal_cost)} /></span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Started On</span><span className="text-sm">{syncedViewItem.started_at ? format(parseISO(syncedViewItem.started_at), 'dd MMM yyyy') : '—'}</span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Next Renewal</span><span className="text-sm">{format(parseISO(syncedViewItem.next_renewal), 'dd MMM yyyy')}</span></div>
               <div className="flex justify-between items-center"><span className="text-sm text-muted-foreground">Status</span><StatusBadge sub={syncedViewItem} /></div>
@@ -662,7 +663,7 @@ export function SubscriptionList({ subscriptions }: { subscriptions: Subscriptio
                         ) : (
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <p className="text-sm font-medium">RM {Number(r.amount_paid).toFixed(2)} <span className="font-normal text-muted-foreground">· {format(parseISO(r.renewed_on), 'dd MMM yyyy')}</span></p>
+                              <p className="text-sm font-medium"><Amount value={Number(r.amount_paid)} /> <span className="font-normal text-muted-foreground">· {format(parseISO(r.renewed_on), 'dd MMM yyyy')}</span></p>
                               {r.notes && <p className="text-xs text-muted-foreground">{r.notes}</p>}
                             </div>
                             <div className="flex gap-1 flex-shrink-0">

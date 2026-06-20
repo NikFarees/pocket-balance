@@ -1,4 +1,5 @@
 import { getExpensesPageData, getMonthExpensesData } from '@/app/actions/expenses'
+import { Amount } from '@/components/Amount'
 import { AppHeader } from '@/components/AppHeader'
 import { MonthNav } from '@/components/MonthNav'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -47,7 +48,7 @@ export default async function ExpensesPage({
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Daily Target</p>
-                <p className="font-heading text-2xl font-bold tabular-nums mt-1">{dailyTarget !== null ? `RM ${dailyTarget.toFixed(2)}` : '—'}</p>
+                <p className="font-heading text-2xl font-bold tabular-nums mt-1">{dailyTarget !== null ? <Amount value={dailyTarget} /> : '—'}</p>
                 {dailyTarget === null && (
                   <Link href="/settings" className="text-xs underline text-muted-foreground hover:text-foreground">Set target</Link>
                 )}
@@ -57,9 +58,9 @@ export default async function ExpensesPage({
             <Card className={yesterdayOverspend > 0 ? 'border-warning/25 bg-warning/8 dark:bg-warning/14 dark:border-warning/22' : ''}>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className={`text-xs font-medium uppercase tracking-wider ${yesterdayOverspend > 0 ? 'text-warning/80' : 'text-muted-foreground'}`}>Effective Target</p>
-                <p className={`font-heading text-2xl font-bold tabular-nums mt-1 ${yesterdayOverspend > 0 ? 'text-warning' : ''}`}>{effectiveTarget !== null ? `RM ${effectiveTarget.toFixed(2)}` : '—'}</p>
+                <p className={`font-heading text-2xl font-bold tabular-nums mt-1 ${yesterdayOverspend > 0 ? 'text-warning' : ''}`}>{effectiveTarget !== null ? <Amount value={effectiveTarget} /> : '—'}</p>
                 {yesterdayOverspend > 0 && (
-                  <p className="text-xs text-warning mt-1">−RM {yesterdayOverspend.toFixed(2)} carry-forward</p>
+                  <p className="text-xs text-warning mt-1">−<Amount value={yesterdayOverspend} /> carry-forward</p>
                 )}
               </CardContent>
             </Card>
@@ -67,7 +68,7 @@ export default async function ExpensesPage({
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Spent Today</p>
-                <p className="font-heading text-2xl font-bold tabular-nums mt-1">RM {todayTotal.toFixed(2)}</p>
+                <p className="font-heading text-2xl font-bold tabular-nums mt-1"><Amount value={todayTotal} /></p>
               </CardContent>
             </Card>
 
@@ -77,7 +78,7 @@ export default async function ExpensesPage({
                   {isOver ? 'Over Budget' : 'Remaining'}
                 </p>
                 <p className={cn('font-heading text-2xl font-bold tabular-nums mt-1', isOver ? 'text-destructive' : remaining !== null ? 'text-success' : '')}>
-                  {remaining !== null ? `RM ${Math.abs(remaining).toFixed(2)}` : '—'}
+                  {remaining !== null ? <Amount value={Math.abs(remaining)} /> : '—'}
                 </p>
               </CardContent>
             </Card>
@@ -125,7 +126,7 @@ export default async function ExpensesPage({
           <Card>
             <CardContent className="pt-4 pb-4 px-4">
               <p className="text-xs text-muted-foreground">Total Spent</p>
-              <p className="text-2xl font-bold mt-1">RM {total.toFixed(2)}</p>
+              <p className="text-2xl font-bold mt-1"><Amount value={total} /></p>
             </CardContent>
           </Card>
           <Card>

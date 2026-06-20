@@ -1,6 +1,7 @@
 'use client'
 
 import { deleteExpense, updateExpense } from '@/app/actions/expenses'
+import { Amount } from '@/components/Amount'
 import { Paginator } from '@/components/Paginator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -72,7 +73,7 @@ export function AllExpensesCard({ expenses }: { expenses: Expense[] }) {
           <div>
             <CardTitle className="text-base">Expenses History</CardTitle>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {filtered.length} {filtered.length === 1 ? 'entry' : 'entries'} · RM {filteredTotal.toFixed(2)}
+              {filtered.length} {filtered.length === 1 ? 'entry' : 'entries'} · <Amount value={filteredTotal} />
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -114,7 +115,7 @@ export function AllExpensesCard({ expenses }: { expenses: Expense[] }) {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <p className="font-semibold text-sm">RM {Number(e.amount).toFixed(2)}</p>
+                    <p className="font-semibold text-sm"><Amount value={Number(e.amount)} /></p>
                     <div onClick={(ev) => ev.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent">
@@ -154,7 +155,7 @@ export function AllExpensesCard({ expenses }: { expenses: Expense[] }) {
                       <TableCell>
                         {e.category ? <Badge variant="secondary">{e.category}</Badge> : <span className="text-muted-foreground">—</span>}
                       </TableCell>
-                      <TableCell className="text-right font-medium">RM {Number(e.amount).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-medium"><Amount value={Number(e.amount)} /></TableCell>
                       <TableCell className="text-right" onClick={(ev) => ev.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger onClick={(ev) => ev.stopPropagation()} className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground">
@@ -185,7 +186,7 @@ export function AllExpensesCard({ expenses }: { expenses: Expense[] }) {
           {viewItem && (
             <div className="space-y-3">
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Description</span><span className="text-sm font-medium">{viewItem.description}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Amount</span><span className="text-sm font-semibold">RM {Number(viewItem.amount).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Amount</span><span className="text-sm font-semibold"><Amount value={Number(viewItem.amount)} /></span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Category</span><span className="text-sm">{viewItem.category ? <Badge variant="secondary">{viewItem.category}</Badge> : '—'}</span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Date</span><span className="text-sm">{format(parseISO(viewItem.expense_date), 'dd MMM yyyy')}</span></div>
               <Button variant="outline" className="w-full mt-2" onClick={() => setViewItem(null)}>Close</Button>

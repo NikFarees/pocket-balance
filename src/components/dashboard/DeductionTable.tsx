@@ -1,6 +1,7 @@
 'use client'
 
 import { markDeductionPaid, unmarkDeductionPaid } from '@/app/actions/dashboard'
+import { Amount } from '@/components/Amount'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -68,7 +69,7 @@ export function DeductionTable({ deductions }: { deductions: DashboardDeduction[
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
-                <p className="font-semibold text-sm">RM {Number(d.expected_amount).toFixed(2)}</p>
+                <p className="font-semibold text-sm"><Amount value={Number(d.expected_amount)} /></p>
                 <div className="mt-0.5">
                   {d.isPaid
                     ? <Badge variant="success" className="text-xs">Paid</Badge>
@@ -79,7 +80,7 @@ export function DeductionTable({ deductions }: { deductions: DashboardDeduction[
             </div>
             {d.isPaid && d.payment && (
               <p className="text-xs text-muted-foreground mb-2">
-                Paid RM {Number(d.payment.paid_amount).toFixed(2)} on {format(parseISO(d.payment.payment_date), 'dd MMM')}
+                Paid <Amount value={Number(d.payment.paid_amount)} /> on {format(parseISO(d.payment.payment_date), 'dd MMM')}
               </p>
             )}
             <div onClick={e => e.stopPropagation()}>
@@ -110,7 +111,7 @@ export function DeductionTable({ deductions }: { deductions: DashboardDeduction[
                   {d.category && <div className="text-xs text-muted-foreground mt-0.5">{d.category}</div>}
                 </TableCell>
                 <TableCell>{d.due_date ? `${d.due_date}th` : '—'}</TableCell>
-                <TableCell className="text-right font-medium">RM {Number(d.expected_amount).toFixed(2)}</TableCell>
+                <TableCell className="text-right font-medium"><Amount value={Number(d.expected_amount)} /></TableCell>
                 <TableCell>
                   {d.isPaid
                     ? <Badge variant="success">Paid</Badge>
@@ -120,7 +121,7 @@ export function DeductionTable({ deductions }: { deductions: DashboardDeduction[
                 <TableCell className="text-right text-sm">
                   {d.payment ? (
                     <div>
-                      <div>RM {Number(d.payment.paid_amount).toFixed(2)}</div>
+                      <div><Amount value={Number(d.payment.paid_amount)} /></div>
                       <div className="text-xs text-muted-foreground">{format(parseISO(d.payment.payment_date), 'dd MMM')}</div>
                     </div>
                   ) : '—'}

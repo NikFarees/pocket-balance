@@ -2,6 +2,7 @@
 
 import { deleteIncome, updateIncome } from '@/app/actions/income'
 import { calcNet, calcStatutory } from '@/lib/statutory'
+import { Amount } from '@/components/Amount'
 import { Paginator } from '@/components/Paginator'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -18,8 +19,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 const PAGE_SIZE = 5
-const fmtRM = (n: number) => `RM ${Math.abs(n).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-const fmtAmt = (amount: number) => (amount < 0 ? `-${fmtRM(amount)}` : fmtRM(amount))
 
 type OtherDeductionRecord = { label: string; amount: number }
 type OtherDeductionEdit  = { id: string; label: string; amount: string }
@@ -73,11 +72,11 @@ function PayslipTable({ item }: { item: Income }) {
     <div className="mt-3 rounded-md border overflow-hidden text-sm">
       <div className="flex justify-between px-3 py-2 bg-muted/50 font-medium">
         <span>Basic Salary</span>
-        <span>{fmtRM(g)}</span>
+        <span><Amount value={g} /></span>
       </div>
       <div className="px-3 py-2 text-xs text-muted-foreground flex justify-between border-b">
         <span>Total Deductions</span>
-        <span>({fmtRM(totalEmpDeductions)})</span>
+        <span>(<Amount value={totalEmpDeductions} />)</span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
@@ -93,17 +92,17 @@ function PayslipTable({ item }: { item: Income }) {
             {statutoryRows.map(r => (
               <tr key={r.label} className="border-b last:border-0">
                 <td className="px-3 py-1.5">{r.label}</td>
-                <td className="px-3 py-1.5 text-right">{r.employer !== null ? r.employer.toFixed(2) : '—'}</td>
-                <td className="px-3 py-1.5 text-right">{r.employee.toFixed(2)}</td>
-                <td className="px-3 py-1.5 text-right">{r.total.toFixed(2)}</td>
+                <td className="px-3 py-1.5 text-right">{r.employer !== null ? <Amount value={r.employer} prefix="" /> : '—'}</td>
+                <td className="px-3 py-1.5 text-right"><Amount value={r.employee} prefix="" /></td>
+                <td className="px-3 py-1.5 text-right"><Amount value={r.total} prefix="" /></td>
               </tr>
             ))}
             {others.map(d => (
               <tr key={d.label} className="border-b last:border-0 text-muted-foreground">
                 <td className="px-3 py-1.5">{d.label}</td>
                 <td className="px-3 py-1.5 text-right">—</td>
-                <td className="px-3 py-1.5 text-right">{d.amount.toFixed(2)}</td>
-                <td className="px-3 py-1.5 text-right">{d.amount.toFixed(2)}</td>
+                <td className="px-3 py-1.5 text-right"><Amount value={d.amount} prefix="" /></td>
+                <td className="px-3 py-1.5 text-right"><Amount value={d.amount} prefix="" /></td>
               </tr>
             ))}
           </tbody>
@@ -111,7 +110,7 @@ function PayslipTable({ item }: { item: Income }) {
       </div>
       <div className="flex justify-between px-3 py-2 bg-muted/50 font-semibold border-t">
         <span>Net Salary</span>
-        <span>{fmtRM(Number(item.amount))}</span>
+        <span><Amount value={Math.abs(Number(item.amount))} /></span>
       </div>
     </div>
   )
@@ -248,11 +247,11 @@ export function IncomeHistory({ incomes }: { incomes: Income[] }) {
               <div className="text-right">
                 {item.gross_amount ? (
                   <>
-                    <p className="font-semibold text-sm">{fmtRM(Number(item.gross_amount))}</p>
-                    <p className="text-xs text-muted-foreground">Net: {fmtRM(Number(item.amount))}</p>
+                    <p className="font-semibold text-sm"><Amount value={Math.abs(Number(item.gross_amount))} /></p>
+                    <p className="text-xs text-muted-foreground">Net: <Amount value={Math.abs(Number(item.amount))} /></p>
                   </>
                 ) : (
-                  <p className={cn('font-semibold text-sm', Number(item.amount) < 0 && 'text-destructive')}>{fmtAmt(Number(item.amount))}</p>
+                  <p className={cn('font-semibold text-sm', Number(item.amount) < 0 && 'text-destructive')}><Amount value={Number(item.amount)} /></p>
                 )}
               </div>
               <div onClick={(ev) => ev.stopPropagation()}>
@@ -292,11 +291,11 @@ export function IncomeHistory({ incomes }: { incomes: Income[] }) {
                 <TableCell className="text-right">
                   {item.gross_amount ? (
                     <div>
-                      <p>{fmtRM(Number(item.gross_amount))}</p>
-                      <p className="text-xs text-muted-foreground">Net: {fmtRM(Number(item.amount))}</p>
+                      <p><Amount value={Math.abs(Number(item.gross_amount))} /></p>
+                      <p className="text-xs text-muted-foreground">Net: <Amount value={Math.abs(Number(item.amount))} /></p>
                     </div>
                   ) : (
-                    <span className={cn(Number(item.amount) < 0 && 'text-destructive')}>{fmtAmt(Number(item.amount))}</span>
+                    <span className={cn(Number(item.amount) < 0 && 'text-destructive')}><Amount value={Number(item.amount)} /></span>
                   )}
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">{item.notes ?? '—'}</TableCell>
@@ -329,7 +328,7 @@ export function IncomeHistory({ incomes }: { incomes: Income[] }) {
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Date</span><span className="text-sm font-medium">{format(parseISO(viewItem.income_date), 'd MMM yyyy')}</span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Source</span><span className="text-sm font-medium">{viewItem.source}</span></div>
               {!viewItem.gross_amount && (
-                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Amount</span><span className={cn('text-sm font-semibold', Number(viewItem.amount) < 0 && 'text-destructive')}>{fmtAmt(Number(viewItem.amount))}</span></div>
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Amount</span><span className={cn('text-sm font-semibold', Number(viewItem.amount) < 0 && 'text-destructive')}><Amount value={Number(viewItem.amount)} /></span></div>
               )}
               {viewItem.notes && <div className="flex justify-between"><span className="text-sm text-muted-foreground">Notes</span><span className="text-sm">{viewItem.notes}</span></div>}
               <PayslipTable item={viewItem} />
@@ -465,7 +464,7 @@ export function IncomeHistory({ incomes }: { incomes: Income[] }) {
                   {editNetPreview !== null && (
                     <div className="flex justify-between items-center pt-2 border-t font-semibold text-sm">
                       <span>Net Salary</span>
-                      <span>{fmtRM(editNetPreview)}</span>
+                      <span><Amount value={editNetPreview} /></span>
                     </div>
                   )}
                 </div>

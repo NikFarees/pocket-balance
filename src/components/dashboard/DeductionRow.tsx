@@ -1,6 +1,7 @@
 'use client'
 
 import { markDeductionPaid, unmarkDeductionPaid } from '@/app/actions/dashboard'
+import { Amount } from '@/components/Amount'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { TableCell, TableRow } from '@/components/ui/table'
@@ -62,7 +63,7 @@ export function DeductionRow({ deduction }: Props) {
         {deduction.due_date ? `${deduction.due_date}th` : '—'}
       </TableCell>
       <TableCell className="text-right font-medium">
-        RM {Number(deduction.expected_amount).toFixed(2)}
+        <Amount value={Number(deduction.expected_amount)} />
       </TableCell>
       <TableCell>
         {deduction.isPaid ? (
@@ -74,7 +75,7 @@ export function DeductionRow({ deduction }: Props) {
       <TableCell className="text-right text-sm hidden sm:table-cell">
         {deduction.payment ? (
           <div>
-            <div>RM {Number(deduction.payment.paid_amount).toFixed(2)}</div>
+            <div><Amount value={Number(deduction.payment.paid_amount)} /></div>
             <div className="text-xs text-muted-foreground">
               {format(parseISO(deduction.payment.payment_date), 'dd MMM')}
             </div>

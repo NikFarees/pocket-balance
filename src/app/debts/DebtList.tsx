@@ -2,6 +2,7 @@
 
 import { addDebtPayment, deleteDebt, deleteDebtPayment, settleDebt, unsettleDebt, updateDebt } from '@/app/actions/debts'
 import type { DebtPayment } from '@/app/actions/debts'
+import { Amount } from '@/components/Amount'
 import { Paginator } from '@/components/Paginator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -132,9 +133,9 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
                 {d.due_date && <p className="text-xs text-muted-foreground mt-0.5">Due {format(parseISO(d.due_date), 'dd MMM yyyy')}</p>}
               </div>
               <div className="text-right flex-shrink-0">
-                <p className="font-semibold text-sm">RM {Number(d.amount).toFixed(2)}</p>
+                <p className="font-semibold text-sm"><Amount value={Number(d.amount)} /></p>
                 {d.amountPaid > 0 && !d.is_settled && (
-                  <p className="text-xs text-muted-foreground">RM {d.remaining.toFixed(2)} left</p>
+                  <p className="text-xs text-muted-foreground"><Amount value={d.remaining} /> left</p>
                 )}
                 <div className="mt-0.5">
                   {d.is_settled
@@ -191,9 +192,9 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
                 <TableCell className="font-medium">{d.person_name}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{d.description ?? '—'}</TableCell>
                 <TableCell className="text-right">
-                  <p className="font-medium">RM {Number(d.amount).toFixed(2)}</p>
+                  <p className="font-medium"><Amount value={Number(d.amount)} /></p>
                   {d.amountPaid > 0 && !d.is_settled && (
-                    <p className="text-xs text-muted-foreground">RM {d.remaining.toFixed(2)} left</p>
+                    <p className="text-xs text-muted-foreground"><Amount value={d.remaining} /> left</p>
                   )}
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
@@ -242,7 +243,7 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
             <div className="space-y-3">
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Person</span><span className="text-sm font-medium">{viewItem.person_name}</span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Description</span><span className="text-sm">{viewItem.description ?? '—'}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Total Amount</span><span className="text-sm font-semibold">RM {Number(viewItem.amount).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Total Amount</span><span className="text-sm font-semibold"><Amount value={Number(viewItem.amount)} /></span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Due Date</span><span className="text-sm">{viewItem.due_date ? format(parseISO(viewItem.due_date), 'dd MMM yyyy') : '—'}</span></div>
               <div className="flex justify-between items-center"><span className="text-sm text-muted-foreground">Status</span>
                 {viewItem.is_settled
@@ -264,7 +265,7 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
                     {viewItem.payments.map((p) => (
                       <div key={p.id} className="flex items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <span className="text-sm font-medium">RM {Number(p.amount).toFixed(2)}</span>
+                          <span className="text-sm font-medium"><Amount value={Number(p.amount)} /></span>
                           <span className="text-xs text-muted-foreground ml-2">{format(parseISO(p.paid_date), 'dd MMM yyyy')}</span>
                           {p.notes && <p className="text-xs text-muted-foreground">{p.notes}</p>}
                         </div>
@@ -284,11 +285,11 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
                     ))}
                     <div className="border-t pt-2 mt-2 flex justify-between text-xs">
                       <span className="text-muted-foreground">Total paid</span>
-                      <span className="font-medium">RM {viewItem.amountPaid.toFixed(2)}</span>
+                      <span className="font-medium"><Amount value={viewItem.amountPaid} /></span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">Remaining</span>
-                      <span className="font-medium">RM {viewItem.remaining.toFixed(2)}</span>
+                      <span className="font-medium"><Amount value={viewItem.remaining} /></span>
                     </div>
                   </div>
                 )}
@@ -346,7 +347,7 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
           {payItem && (
             <form onSubmit={e => { e.preventDefault(); handlePay(new FormData(e.currentTarget)) }} className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                {payItem.person_name} · RM {payItem.remaining.toFixed(2)} remaining of RM {Number(payItem.amount).toFixed(2)}
+                {payItem.person_name} · <Amount value={payItem.remaining} /> remaining of <Amount value={Number(payItem.amount)} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pay_amount">Amount Paid (RM)</Label>

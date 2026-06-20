@@ -1,6 +1,7 @@
 'use client'
 
 import { deleteDeduction, toggleDeduction, updateDeduction } from '@/app/actions/deductions'
+import { Amount } from '@/components/Amount'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -87,7 +88,7 @@ export function DeductionList({ deductions }: { deductions: Deduction[] }) {
             </div>
             <div className="flex items-center gap-2">
               <div className="text-right">
-                <p className="font-semibold text-sm">RM {Number(d.expected_amount).toFixed(2)}</p>
+                <p className="font-semibold text-sm"><Amount value={Number(d.expected_amount)} /></p>
                 <div className="mt-0.5">
                   {d.is_active ? <Badge variant="default" className="text-xs">Active</Badge> : <Badge variant="secondary" className="text-xs">Inactive</Badge>}
                 </div>
@@ -133,7 +134,7 @@ export function DeductionList({ deductions }: { deductions: Deduction[] }) {
                 <TableCell className="font-medium">{d.name}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">{d.category ?? '—'}</TableCell>
                 <TableCell className="text-sm">{d.due_date ? `${d.due_date}th` : '—'}</TableCell>
-                <TableCell className="text-right">RM {Number(d.expected_amount).toFixed(2)}</TableCell>
+                <TableCell className="text-right"><Amount value={Number(d.expected_amount)} /></TableCell>
                 <TableCell>
                   {d.is_active ? <Badge variant="default">Active</Badge> : <Badge variant="secondary">Inactive</Badge>}
                 </TableCell>
@@ -171,7 +172,7 @@ export function DeductionList({ deductions }: { deductions: Deduction[] }) {
             <div className="space-y-3">
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Name</span><span className="text-sm font-medium">{viewItem.name}</span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Category</span><span className="text-sm">{viewItem.category ?? '—'}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Expected Amount</span><span className="text-sm font-semibold">RM {Number(viewItem.expected_amount).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-sm text-muted-foreground">Expected Amount</span><span className="text-sm font-semibold"><Amount value={Number(viewItem.expected_amount)} /></span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Due Date</span><span className="text-sm">{viewItem.due_date ? `${viewItem.due_date}th of month` : '—'}</span></div>
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Status</span><span>{viewItem.is_active ? <Badge variant="default">Active</Badge> : <Badge variant="secondary">Inactive</Badge>}</span></div>
               <Button variant="outline" className="w-full mt-2" onClick={() => setViewItem(null)}>Close</Button>

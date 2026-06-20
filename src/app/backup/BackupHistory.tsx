@@ -1,6 +1,7 @@
 'use client'
 
 import { deleteBackupTransaction, updateBackupTransaction } from '@/app/actions/backup'
+import { Amount } from '@/components/Amount'
 import { Paginator } from '@/components/Paginator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -93,7 +94,7 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
             <div className="flex items-center gap-2">
               <div className="text-right">
                 <p className={`font-semibold text-sm tabular-nums ${t.type === 'deposit' ? 'text-success' : 'text-destructive'}`}>
-                  {t.type === 'deposit' ? '+' : '−'}RM {Number(t.amount).toFixed(2)}
+                  <Amount value={Number(t.amount)} sign={t.type === 'deposit' ? '+' : '−'} />
                 </p>
                 <div className="mt-0.5">
                   <Badge variant={t.type === 'deposit' ? 'success' : 'destructive'} className="text-xs">
@@ -146,7 +147,7 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
                 <TableCell className="text-sm text-muted-foreground">{t.description ?? '—'}</TableCell>
                 <TableCell className="text-right font-medium">
                   <span className={t.type === 'withdrawal' ? 'text-destructive' : 'text-success'}>
-                    {t.type === 'withdrawal' ? '−' : '+'}RM {Number(t.amount).toFixed(2)}
+                    <Amount value={Number(t.amount)} sign={t.type === 'withdrawal' ? '−' : '+'} />
                   </span>
                 </TableCell>
                 <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -189,7 +190,7 @@ export function BackupHistory({ transactions }: { transactions: Transaction[] })
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">Amount</span>
                 <span className={`font-semibold tabular-nums ${viewTx.type === 'deposit' ? 'text-success' : 'text-destructive'}`}>
-                  {viewTx.type === 'deposit' ? '+' : '−'}RM {Number(viewTx.amount).toFixed(2)}
+                  <Amount value={Number(viewTx.amount)} sign={viewTx.type === 'deposit' ? '+' : '−'} />
                 </span>
               </div>
               <div className="flex justify-between">

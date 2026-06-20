@@ -1,5 +1,6 @@
 import { getDeductions } from '@/app/actions/deductions'
 import { getDeductionHistoryForMonth } from '@/app/actions/dashboard'
+import { Amount } from '@/components/Amount'
 import { AppHeader } from '@/components/AppHeader'
 import { MonthNav } from '@/components/MonthNav'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -72,10 +73,10 @@ export default async function DeductionsPage({
                         {!d.is_active && <span className="ml-1.5 text-xs text-muted-foreground">(inactive)</span>}
                       </TableCell>
                       <TableCell className="text-right text-sm text-muted-foreground">
-                        RM {Number(d.expected_amount).toFixed(2)}
+                        <Amount value={Number(d.expected_amount)} />
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        RM {Number(d.payment!.paid_amount).toFixed(2)}
+                        <Amount value={Number(d.payment!.paid_amount)} />
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
                         {format(parseISO(d.payment!.payment_date), 'dd MMM yyyy')}

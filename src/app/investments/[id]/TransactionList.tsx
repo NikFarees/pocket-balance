@@ -1,6 +1,7 @@
 'use client'
 
 import { deleteTransaction, updateTransaction } from '@/app/actions/investments'
+import { Amount } from '@/components/Amount'
 import { Paginator } from '@/components/Paginator'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -207,10 +208,10 @@ export function TransactionList({
             <div className="flex items-center gap-2">
               <div className="text-right">
                 <p className={`font-semibold text-sm tabular-nums ${t.type === 'sell' ? 'text-destructive' : t.type === 'dividend' ? 'text-muted-foreground' : 'text-success'}`}>
-                  {amountPrefix(t.type)}RM {Number(t.amount).toFixed(2)}
+                  <Amount value={Number(t.amount)} sign={amountPrefix(t.type)} />
                 </p>
                 {t.fees != null && (
-                  <p className="text-xs text-muted-foreground">fee RM {Number(t.fees).toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">fee <Amount value={Number(t.fees)} /></p>
                 )}
                 <div className="mt-0.5">
                   <TxBadge type={t.type} category={category} />
@@ -259,11 +260,11 @@ export function TransactionList({
                 </TableCell>
                 <TableCell className="text-right font-medium">
                   <span className={t.type === 'sell' ? 'text-destructive' : ''}>
-                    {amountPrefix(t.type)}RM {Number(t.amount).toFixed(2)}
+                    <Amount value={Number(t.amount)} sign={amountPrefix(t.type)} />
                   </span>
                 </TableCell>
                 <TableCell className="text-right text-sm text-muted-foreground">
-                  {t.fees != null ? `RM ${Number(t.fees).toFixed(2)}` : '—'}
+                  {t.fees != null ? <Amount value={Number(t.fees)} /> : '—'}
                 </TableCell>
                 {showQtyPriceCols && (
                   <TableCell className="text-right text-sm">
@@ -272,7 +273,7 @@ export function TransactionList({
                 )}
                 {showQtyPriceCols && (
                   <TableCell className="text-right text-sm">
-                    {t.price_per_unit != null ? `RM ${formatPrecise(Number(t.price_per_unit))}` : '—'}
+                    {t.price_per_unit != null ? <Amount value={Number(t.price_per_unit)} formatter={n => parseFloat(n.toFixed(8)).toString()} /> : '—'}
                   </TableCell>
                 )}
                 <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{t.notes ?? '—'}</TableCell>
@@ -314,20 +315,20 @@ export function TransactionList({
               )}
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Amount</span>
                 <span className={`text-sm font-semibold ${viewItem.type === 'sell' ? 'text-destructive' : ''}`}>
-                  {amountPrefix(viewItem.type)}RM {Number(viewItem.amount).toFixed(2)}
+                  <Amount value={Number(viewItem.amount)} sign={amountPrefix(viewItem.type)} />
                 </span>
               </div>
               {viewItem.fees != null && (
-                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Fees Paid</span><span className="text-sm text-muted-foreground">RM {Number(viewItem.fees).toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Fees Paid</span><span className="text-sm text-muted-foreground"><Amount value={Number(viewItem.fees)} /></span></div>
               )}
               {viewItem.fees != null && (
-                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Net (after fees)</span><span className="text-sm font-medium">RM {(Number(viewItem.amount) - Number(viewItem.fees)).toFixed(2)}</span></div>
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Net (after fees)</span><span className="text-sm font-medium"><Amount value={Number(viewItem.amount) - Number(viewItem.fees)} /></span></div>
               )}
               {viewItem.quantity != null && (
                 <div className="flex justify-between"><span className="text-sm text-muted-foreground">Quantity</span><span className="text-sm">{formatPrecise(Number(viewItem.quantity))}</span></div>
               )}
               {viewItem.price_per_unit != null && (
-                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Price / Unit</span><span className="text-sm">RM {formatPrecise(Number(viewItem.price_per_unit))}</span></div>
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Price / Unit</span><span className="text-sm"><Amount value={Number(viewItem.price_per_unit)} formatter={n => parseFloat(n.toFixed(8)).toString()} /></span></div>
               )}
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Notes</span><span className="text-sm">{viewItem.notes ?? '—'}</span></div>
               <Button variant="outline" className="w-full mt-2" onClick={() => setViewItem(null)}>Close</Button>
