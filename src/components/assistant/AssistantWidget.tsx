@@ -58,6 +58,12 @@ export function AssistantWidget() {
     if (open) inputRef.current?.focus()
   }, [open])
 
+  useEffect(() => {
+    const handler = () => setOpen(true)
+    window.addEventListener('open-assistant', handler)
+    return () => window.removeEventListener('open-assistant', handler)
+  }, [])
+
   async function send(text: string) {
     const trimmed = text.trim()
     if (!trimmed || loading) return
