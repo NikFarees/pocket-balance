@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,10 +10,9 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { cn } from '@/lib/utils'
-import { ChevronDown, Menu, X } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
 
 const standaloneLinks = [
   { href: '/', label: 'Dashboard' },
@@ -35,7 +34,6 @@ const assetLinks = [
 ]
 
 export function AppHeader() {
-  const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
 
@@ -103,90 +101,17 @@ export function AppHeader() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Link href="/profile" className="flex">
+          <Link href="/profile" className="hidden md:flex">
             <Avatar size="sm" className="cursor-pointer hover:opacity-80 transition-opacity">
               <AvatarFallback>
                 <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
               </AvatarFallback>
             </Avatar>
           </Link>
-          {/* Mobile hamburger */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden px-2"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label="Toggle menu"
-          >
-            {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-          </Button>
         </div>
       </div>
       </div>
 
-      {/* Mobile backdrop */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/40 md:hidden"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden border-t bg-popover shadow-lg rounded-b-lg z-40 relative px-4 py-3 flex flex-col gap-1">
-          {standaloneLinks.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                buttonVariants({ variant: 'ghost', size: 'sm' }),
-                'justify-start w-full',
-                pathname === l.href && 'bg-primary/10 text-primary font-medium'
-              )}
-            >
-              {l.label}
-            </Link>
-          ))}
-
-          {/* Finance section */}
-          <p className="text-xs text-muted-foreground uppercase tracking-wide px-2 pt-3 pb-1 border-t mt-1">Finance</p>
-          {financeLinks.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                buttonVariants({ variant: 'ghost', size: 'sm' }),
-                'justify-start w-full pl-4',
-                pathname === l.href && 'bg-primary/10 text-primary font-medium'
-              )}
-            >
-              {l.label}
-            </Link>
-          ))}
-
-          {/* Assets section */}
-          <p className="text-xs text-muted-foreground uppercase tracking-wide px-2 pt-3 pb-1 border-t mt-1">Assets</p>
-          {assetLinks.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                buttonVariants({ variant: 'ghost', size: 'sm' }),
-                'justify-start w-full pl-4',
-                pathname === l.href && 'bg-primary/10 text-primary font-medium'
-              )}
-            >
-              {l.label}
-            </Link>
-          ))}
-
-        </div>
-      )}
     </header>
   )
 }
