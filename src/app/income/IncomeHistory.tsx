@@ -19,8 +19,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 const PAGE_SIZE = 5
-const fmtRM = (n: number) => `RM ${Math.abs(n).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-const fmtAmt = (amount: number) => (amount < 0 ? `-${fmtRM(amount)}` : fmtRM(amount))
 
 type OtherDeductionRecord = { label: string; amount: number }
 type OtherDeductionEdit  = { id: string; label: string; amount: string }
