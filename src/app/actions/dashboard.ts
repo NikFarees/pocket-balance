@@ -37,7 +37,7 @@ export async function getDashboardData() {
 
     supabase
       .from('investment_transactions')
-      .select('type, amount')
+      .select('investment_id, type, amount, fees')
       .eq('user_id', user.id),
 
     supabase
@@ -111,11 +111,19 @@ export async function getDashboardData() {
     }
   }
 
-  const totalInvested = investmentTx
-    .filter(t => t.type === 'buy').reduce((s, t) => s + Number(t.amount), 0)
-  const totalDivested = investmentTx
-    .filter(t => t.type === 'sell').reduce((s, t) => s + Number(t.amount), 0)
-  const netInvested = totalInvested - totalDivested
+  const investmentTxByAccount = investmentTx.reduce<Record<string, { bought: number; sold: number; dividend: number; walletTopup: number; fees: number }>>((acc, t) => {
+    if (!acc[t.investment_id]) acc[t.investment_id] = { bought: 0, sold: 0, dividend: 0, walletTopup: 0, fees: 0 }
+    if (t.type === 'buy') acc[t.investment_id].bought += Number(t.amount)
+    else if (t.type === 'sell') acc[t.investment_id].sold += Number(t.amount)
+    else if (t.type === 'dividend') acc[t.investment_id].dividend += Number(t.amount)
+    else if (t.type === 'wallet_topup') acc[t.investment_id].walletTopup += Number(t.amount)
+    if (t.fees) acc[t.investment_id].fees += Number(t.fees)
+    return acc
+  }, {})
+  const netInvested = Object.values(investmentTxByAccount).reduce((sum, t) => {
+    const base = t.walletTopup > 0 ? t.walletTopup : (t.bought - t.sold)
+    return sum + base - t.fees + t.dividend
+  }, 0)
 
   const backupDeposits = backupTx
     .filter(t => t.type === 'deposit').reduce((s, t) => s + Number(t.amount), 0)
