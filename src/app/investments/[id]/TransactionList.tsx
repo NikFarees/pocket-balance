@@ -25,6 +25,7 @@ type Transaction = {
   type: TxType
   amount: number
   fees: number | null
+  asset: string | null
   quantity: number | null
   price_per_unit: number | null
   transaction_date: string
@@ -85,6 +86,7 @@ export function TransactionList({
   const [editType, setEditType] = useState<TxType>('buy')
   const [editAmount, setEditAmount] = useState('')
   const [editFees, setEditFees] = useState('')
+  const [editAsset, setEditAsset] = useState('')
   const [editQty, setEditQty] = useState('')
   const [editPrice, setEditPrice] = useState('')
   const [loadingId, setLoadingId] = useState<string | null>(null)
@@ -129,6 +131,7 @@ export function TransactionList({
     setEditType(t.type)
     setEditAmount(Number(t.amount).toFixed(2))
     setEditFees(t.fees != null ? formatPrecise(Number(t.fees)) : '')
+    setEditAsset(t.asset ?? '')
     setEditQty(t.quantity != null ? formatPrecise(Number(t.quantity)) : '')
     setEditPrice(t.price_per_unit != null ? formatPrecise(Number(t.price_per_unit)) : '')
   }
@@ -182,6 +185,7 @@ export function TransactionList({
 
   const showEditQtyPrice = category === 'trading' && editType !== 'wallet_topup'
   const showEditFees = editType !== 'dividend'
+  const showEditAsset = category === 'trading' && editType !== 'wallet_topup'
 
   return (
     <>
@@ -194,7 +198,10 @@ export function TransactionList({
             onClick={() => setViewItem(t)}
           >
             <div className="min-w-0">
-              <p className="font-medium text-sm">{format(parseISO(t.transaction_date), 'dd MMM yyyy')}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="font-medium text-sm">{format(parseISO(t.transaction_date), 'dd MMM yyyy')}</p>
+                {t.asset && <span className="text-xs font-semibold bg-muted px-1.5 py-0.5 rounded">{t.asset}</span>}
+              </div>
               {t.notes && <p className="text-xs text-muted-foreground mt-0.5">{t.notes}</p>}
             </div>
             <div className="flex items-center gap-2">
@@ -233,6 +240,7 @@ export function TransactionList({
             <TableRow>
               <TableHead>Date</TableHead>
               <TableHead>Type</TableHead>
+              <TableHead>Asset</TableHead>
               <TableHead className="text-right">Amount (RM)</TableHead>
               <TableHead className="text-right">Fees (RM)</TableHead>
               {showQtyPriceCols && <TableHead className="text-right">Qty</TableHead>}
@@ -246,6 +254,9 @@ export function TransactionList({
               <TableRow key={t.id} className="cursor-pointer" onClick={() => setViewItem(t)}>
                 <TableCell className="text-sm">{format(parseISO(t.transaction_date), 'dd MMM yyyy')}</TableCell>
                 <TableCell><TxBadge type={t.type} category={category} /></TableCell>
+                <TableCell className="text-sm font-medium">
+                  {t.asset ? <span className="bg-muted px-1.5 py-0.5 rounded text-xs font-semibold">{t.asset}</span> : '—'}
+                </TableCell>
                 <TableCell className="text-right font-medium">
                   <span className={t.type === 'sell' ? 'text-destructive' : ''}>
                     {amountPrefix(t.type)}RM {Number(t.amount).toFixed(2)}
@@ -298,6 +309,9 @@ export function TransactionList({
               <div className="flex justify-between items-center"><span className="text-sm text-muted-foreground">Type</span>
                 <TxBadge type={viewItem.type} category={category} />
               </div>
+              {viewItem.asset && (
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Asset</span><span className="text-sm font-semibold">{viewItem.asset}</span></div>
+              )}
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Amount</span>
                 <span className={`text-sm font-semibold ${viewItem.type === 'sell' ? 'text-destructive' : ''}`}>
                   {amountPrefix(viewItem.type)}RM {Number(viewItem.amount).toFixed(2)}
@@ -337,6 +351,20 @@ export function TransactionList({
                 ))}
               </div>
               <input type="hidden" name="type" value={editType} />
+
+              {showEditAsset && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit_asset">Asset / Ticker <span className="text-muted-foreground">(optional)</span></Label>
+                  <Input
+                    id="edit_asset" name="asset" type="text"
+                    placeholder="e.g. ETH"
+                    value={editAsset}
+                    onChange={e => setEditAsset(e.target.value.toUpperCase())}
+                    className="w-40 uppercase"
+                  />
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="tx_amount">Amount (RM)</Label>
