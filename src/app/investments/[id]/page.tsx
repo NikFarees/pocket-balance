@@ -1,4 +1,5 @@
 import { getInvestmentWithTransactions } from '@/app/actions/investments'
+import { Amount } from '@/components/Amount'
 import { AppHeader } from '@/components/AppHeader'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
@@ -50,14 +51,14 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
                 <Card>
                   <CardContent className="pt-4 pb-4 px-4">
                     <p className="text-xs text-muted-foreground">Available in Wallet</p>
-                    <p className="font-heading text-2xl font-bold tabular-nums text-blue-600 mt-1">RM {summary.walletBalance.toFixed(2)}</p>
+                    <p className="font-heading text-2xl font-bold tabular-nums text-blue-600 mt-1"><Amount value={summary.walletBalance} /></p>
                   </CardContent>
                 </Card>
               )}
               <Card>
                 <CardContent className="pt-4 pb-4 px-4">
                   <p className="text-xs text-muted-foreground">Net Invested</p>
-                  <p className="font-heading text-2xl font-bold tabular-nums text-success mt-1">RM {summary.netInvested.toFixed(2)}</p>
+                  <p className="font-heading text-2xl font-bold tabular-nums text-success mt-1"><Amount value={summary.netInvested} /></p>
                 </CardContent>
               </Card>
               {summary.hasQuantity && (
@@ -71,12 +72,12 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1 px-1 text-xs text-muted-foreground">
               {summary.hasWalletTopup && (
-                <span>Deposited: <span className="font-medium text-foreground">RM {summary.totalWalletTopup.toFixed(2)}</span></span>
+                <span>Deposited: <span className="font-medium text-foreground"><Amount value={summary.totalWalletTopup} /></span></span>
               )}
-              <span>Bought: <span className="font-medium text-foreground">RM {summary.totalBought.toFixed(2)}</span></span>
-              <span>Sold: <span className="font-medium text-foreground">RM {summary.totalSold.toFixed(2)}</span></span>
+              <span>Bought: <span className="font-medium text-foreground"><Amount value={summary.totalBought} /></span></span>
+              <span>Sold: <span className="font-medium text-foreground"><Amount value={summary.totalSold} /></span></span>
               {summary.hasFees && (
-                <span>Fees: <span className="font-medium text-foreground">RM {summary.totalFees.toFixed(2)}</span></span>
+                <span>Fees: <span className="font-medium text-foreground"><Amount value={summary.totalFees} /></span></span>
               )}
               {summary.hasQuantity && (
                 <>
@@ -94,25 +95,25 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Total Saved</p>
-                <p className="font-heading text-2xl font-bold tabular-nums text-success mt-1">RM {summary.totalBought.toFixed(2)}</p>
+                <p className="font-heading text-2xl font-bold tabular-nums text-success mt-1"><Amount value={summary.totalBought} /></p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Total Redeemed</p>
-                <p className="text-2xl font-bold text-destructive mt-1">RM {summary.totalSold.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-destructive mt-1"><Amount value={summary.totalSold} /></p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Total Dividends</p>
-                <p className="font-heading text-2xl font-bold tabular-nums mt-1">RM {summary.totalDividend.toFixed(2)}</p>
+                <p className="font-heading text-2xl font-bold tabular-nums mt-1"><Amount value={summary.totalDividend} /></p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Balance</p>
-                <p className="text-2xl font-bold mt-1">RM {summary.balance.toFixed(2)}</p>
+                <p className="text-2xl font-bold mt-1"><Amount value={summary.balance} /></p>
               </CardContent>
             </Card>
           </div>
@@ -124,25 +125,25 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Total Deposited</p>
-                <p className="font-heading text-2xl font-bold tabular-nums text-success mt-1">RM {summary.totalBought.toFixed(2)}</p>
+                <p className="font-heading text-2xl font-bold tabular-nums text-success mt-1"><Amount value={summary.totalBought} /></p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Total Withdrawn</p>
-                <p className="text-2xl font-bold text-destructive mt-1">RM {summary.totalSold.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-destructive mt-1"><Amount value={summary.totalSold} /></p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Total Dividends</p>
-                <p className="font-heading text-2xl font-bold tabular-nums mt-1">RM {summary.totalDividend.toFixed(2)}</p>
+                <p className="font-heading text-2xl font-bold tabular-nums mt-1"><Amount value={summary.totalDividend} /></p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Balance</p>
-                <p className="text-2xl font-bold mt-1">RM {summary.balance.toFixed(2)}</p>
+                <p className="text-2xl font-bold mt-1"><Amount value={summary.balance} /></p>
               </CardContent>
             </Card>
           </div>
