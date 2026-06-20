@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { TimezoneSync } from "@/components/TimezoneSync";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
+import { BottomNav } from "@/components/BottomNav";
 import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
@@ -45,10 +46,11 @@ export default async function RootLayout({
       className={`${frauncesDisplay.variable} ${hankenGrotesk.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <body className={`min-h-full flex flex-col${user ? ' pb-16 md:pb-0' : ''}`}>
         <ThemeProvider>
           <TimezoneSync />
           {children}
+          {user && <BottomNav />}
           {user && <AssistantWidget />}
           <Toaster richColors position="top-right" />
         </ThemeProvider>
