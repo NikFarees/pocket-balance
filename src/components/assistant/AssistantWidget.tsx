@@ -6,6 +6,7 @@ import { Check, Loader2, Mic, Send, Sparkles, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { ASSISTANT_MODELS, DEFAULT_ASSISTANT_MODEL } from '@/lib/ai/models'
 import { useSpeechRecognition } from './useSpeechRecognition'
@@ -37,6 +38,7 @@ const GREETING =
 
 export function AssistantWidget() {
   const [open, setOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const [items, setItems] = useState<ChatItem[]>([])
   const [input, setInput] = useState('')
   const [model, setModel] = useState<string>(DEFAULT_ASSISTANT_MODEL)
@@ -44,6 +46,14 @@ export function AssistantWidget() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   const { supported: micSupported, listening, toggle: toggleMic } = useSpeechRecognition(text => {
     setInput(prev => (prev ? `${prev} ${text}` : text))
@@ -57,6 +67,12 @@ export function AssistantWidget() {
   useEffect(() => {
     if (open) inputRef.current?.focus()
   }, [open])
+
+  useEffect(() => {
+    const handler = () => setOpen(true)
+    window.addEventListener('open-assistant', handler)
+    return () => window.removeEventListener('open-assistant', handler)
+  }, [])
 
   async function send(text: string) {
     const trimmed = text.trim()
@@ -143,25 +159,12 @@ export function AssistantWidget() {
     setItems(prev => prev.map(it => (it.id === id && it.kind === 'proposal' ? { ...it, status: 'cancelled' } : it)))
   }
 
-  if (!open) {
-    return (
-      <Button
-        size="icon-lg"
-        onClick={() => setOpen(true)}
-        aria-label="Open assistant"
-        className="fixed bottom-20 right-5 z-50 size-12 rounded-full shadow-lg md:bottom-5"
-      >
-        <Sparkles className="size-5" />
-      </Button>
-    )
-  }
-
-  return (
-    <div className="fixed bottom-20 right-5 z-50 flex h-[min(32rem,calc(100dvh-5.5rem))] w-[min(24rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-xl border bg-background shadow-2xl md:bottom-5 md:h-[min(32rem,calc(100dvh-2.5rem))]">
-      <header className="flex items-center justify-between border-b px-4 py-3">
+  const chatContent = (
+    <>
+      <header className="flex shrink-0 items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2 font-medium">
           <Sparkles className="size-4 text-primary" />
-          Assistant
+          <SheetTitle className="text-base font-medium">Assistant</SheetTitle>
         </div>
         <div className="flex items-center gap-1">
           <select
@@ -215,7 +218,7 @@ export function AssistantWidget() {
               <p className="font-medium">{describeProposal(item.proposal)}</p>
 
               {kind === 'delete' && item.status === 'pending' && (
-                <p className="mt-2 text-xs text-destructive">This permanently deletes the entry and can’t be undone.</p>
+                <p className="mt-2 text-xs text-destructive">This permanently deletes the entry and can't be undone.</p>
               )}
 
               {item.status === 'pending' && (
@@ -259,7 +262,7 @@ export function AssistantWidget() {
 
       <form
         onSubmit={e => { e.preventDefault(); send(input) }}
-        className="flex items-end gap-2 border-t p-3"
+        className="flex shrink-0 items-end gap-2 border-t p-3"
       >
         {micSupported && (
           <Button
@@ -280,12 +283,41 @@ export function AssistantWidget() {
           placeholder={listening ? 'Listening…' : 'Type or speak…'}
           autoComplete="off"
           rows={1}
-          className="min-h-9 max-h-32 resize-none"
+          className="min-h-9 max-h-24 resize-none"
         />
         <Button type="submit" size="icon" disabled={loading || !input.trim()} aria-label="Send">
           <Send className="size-4" />
         </Button>
       </form>
+    </>
+  )
+
+  if (!open) {
+    return (
+      <Button
+        size="icon-lg"
+        onClick={() => setOpen(true)}
+        aria-label="Open assistant"
+        className="hidden md:flex fixed bottom-5 right-5 z-50 size-12 rounded-full shadow-lg"
+      >
+        <Sparkles className="size-5" />
+      </Button>
+    )
+  }
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="bottom" className="h-[68vh] p-0 rounded-t-2xl flex flex-col">
+          {chatContent}
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  return (
+    <div className="fixed bottom-5 right-5 z-50 flex h-[min(26rem,calc(100dvh-2.5rem))] w-[min(24rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-xl border bg-background shadow-2xl">
+      {chatContent}
     </div>
   )
 }
