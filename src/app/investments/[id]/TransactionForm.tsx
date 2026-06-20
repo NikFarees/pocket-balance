@@ -46,34 +46,49 @@ export function TransactionForm({ investmentId, category }: { investmentId: stri
   const [type, setType] = useState<TxType>(config.types[0])
   const [loading, setLoading] = useState(false)
   const [amount, setAmount] = useState('')
+  const [fees, setFees] = useState('')
   const [qty, setQty] = useState('')
   const [price, setPrice] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
 
+  function net(a: string, f: string) {
+    const av = parseFloat(a)
+    const fv = parseFloat(f) || 0
+    return isNaN(av) ? NaN : av - fv
+  }
+
+  function recalcFromNet(a: string, f: string, q: string, p: string) {
+    const n = net(a, f)
+    if (isNaN(n) || n <= 0) return
+    const qv = parseFloat(q)
+    const pv = parseFloat(p)
+    if (!isNaN(qv) && qv > 0) setPrice(String(n / qv))
+    else if (!isNaN(pv) && pv > 0) setQty(String(n / pv))
+  }
+
   function handleAmountChange(val: string) {
     setAmount(val)
-    const a = parseFloat(val)
-    if (!isNaN(a) && a > 0) {
-      const q = parseFloat(qty)
-      const p = parseFloat(price)
-      if (!isNaN(q) && q > 0) setPrice(String(a / q))
-      else if (!isNaN(p) && p > 0) setQty(String(a / p))
-    }
+    recalcFromNet(val, fees, qty, price)
+  }
+
+  function handleFeesChange(val: string) {
+    setFees(val)
+    recalcFromNet(amount, val, qty, price)
   }
 
   function handleQtyChange(val: string) {
     setQty(val)
-    const q = parseFloat(val)
-    const a = parseFloat(amount)
-    if (!isNaN(q) && q > 0 && !isNaN(a) && a > 0) setPrice(String(a / q))
+    const qv = parseFloat(val)
+    const n = net(amount, fees)
+    if (!isNaN(qv) && qv > 0 && !isNaN(n) && n > 0) setPrice(String(n / qv))
   }
 
   function handlePriceChange(val: string) {
     setPrice(val)
-    const p = parseFloat(val)
-    const a = parseFloat(amount)
-    if (!isNaN(p) && p > 0 && !isNaN(a) && a > 0) setQty(String(a / p))
+    const pv = parseFloat(val)
+    const n = net(amount, fees)
+    if (!isNaN(pv) && pv > 0 && !isNaN(n) && n > 0) setQty(String(n / pv))
   }
 
   async function handleSubmit(formData: FormData) {
@@ -85,6 +100,7 @@ export function TransactionForm({ investmentId, category }: { investmentId: stri
       toast.success(`${config.successLabel[type]} recorded`)
       formRef.current?.reset()
       setAmount('')
+      setFees('')
       setQty('')
       setPrice('')
       setOpen(false)
@@ -102,6 +118,7 @@ export function TransactionForm({ investmentId, category }: { investmentId: stri
   }
 
   const showQtyPrice = category === 'trading' && type !== 'wallet_topup'
+  const showFees = type !== 'dividend'
 
   return (
     <Card>
@@ -139,6 +156,25 @@ export function TransactionForm({ investmentId, category }: { investmentId: stri
               <Label htmlFor="transaction_date">Date</Label>
               <Input id="transaction_date" name="transaction_date" type="date" defaultValue={format(new Date(), 'yyyy-MM-dd')} required />
             </div>
+            {showFees && (
+              <div className="space-y-2">
+                <Label htmlFor="fees">Fees Paid (RM) <span className="text-muted-foreground">(optional)</span></Label>
+                <Input
+                  id="fees" name="fees" type="text" inputMode="decimal"
+                  placeholder="0.00"
+                  value={fees}
+                  onChange={e => handleFeesChange(e.target.value)}
+                />
+              </div>
+            )}
+            {showFees && (
+              <div className="space-y-2">
+                <Label className="text-muted-foreground text-xs">Net (after fees)</Label>
+                <div className="h-10 flex items-center px-3 rounded-md border bg-muted text-sm tabular-nums">
+                  {(() => { const n = net(amount, fees); return (!isNaN(n) && amount) ? `RM ${n.toFixed(2)}` : '—' })()}
+                </div>
+              </div>
+            )}
             {showQtyPrice && (
               <>
                 <div className="space-y-2">
