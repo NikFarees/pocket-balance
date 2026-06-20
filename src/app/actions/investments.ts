@@ -52,6 +52,7 @@ export async function getInvestmentWithTransactions(id: string) {
   const totalSold = transactions.filter(t => t.type === 'sell').reduce((s, t) => s + Number(t.amount), 0)
   const totalDividend = transactions.filter(t => t.type === 'dividend').reduce((s, t) => s + Number(t.amount), 0)
   const totalWalletTopup = transactions.filter(t => t.type === 'wallet_topup').reduce((s, t) => s + Number(t.amount), 0)
+  const totalFees = transactions.reduce((s, t) => s + (t.fees ? Number(t.fees) : 0), 0)
   const totalQtyBought = transactions.filter(t => t.type === 'buy' && t.quantity).reduce((s, t) => s + Number(t.quantity), 0)
   const totalQtySold = transactions.filter(t => t.type === 'sell' && t.quantity).reduce((s, t) => s + Number(t.quantity), 0)
 
@@ -64,14 +65,16 @@ export async function getInvestmentWithTransactions(id: string) {
       totalSold,
       totalDividend,
       totalWalletTopup,
+      totalFees,
       walletBalance: totalWalletTopup - totalBought + totalSold,
-      netInvested: totalBought - totalSold,
+      netInvested: totalBought - totalSold - totalFees,
       balance: totalBought + totalDividend - totalSold,
       totalQtyBought,
       totalQtySold,
       netQty: totalQtyBought - totalQtySold,
       hasQuantity: transactions.some(t => t.quantity),
       hasWalletTopup: transactions.some(t => t.type === 'wallet_topup'),
+      hasFees: transactions.some(t => t.fees),
     },
   }
 }
@@ -170,6 +173,8 @@ export async function addTransaction(investmentId: string, formData: FormData) {
 
   const type = formData.get('type') as 'buy' | 'sell' | 'dividend' | 'wallet_topup'
   const amount = parseFloat(formData.get('amount') as string)
+  const feesRaw = formData.get('fees') as string
+  const fees = feesRaw ? parseFloat(feesRaw) : null
   const quantityRaw = formData.get('quantity') as string
   const priceRaw = formData.get('price_per_unit') as string
   const noQtyPrice = type === 'dividend' || type === 'wallet_topup'
@@ -180,6 +185,7 @@ export async function addTransaction(investmentId: string, formData: FormData) {
 
   if (!['buy', 'sell', 'dividend', 'wallet_topup'].includes(type)) return { error: 'Invalid type' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
+  if (fees !== null && (isNaN(fees) || fees < 0)) return { error: 'Enter a valid fees amount' }
   if (!transaction_date) return { error: 'Date is required' }
   if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
@@ -188,6 +194,7 @@ export async function addTransaction(investmentId: string, formData: FormData) {
     investment_id: investmentId,
     type,
     amount,
+    fees,
     quantity,
     price_per_unit,
     transaction_date,
@@ -207,6 +214,8 @@ export async function updateTransaction(id: string, investmentId: string, formDa
 
   const type = formData.get('type') as 'buy' | 'sell' | 'dividend' | 'wallet_topup'
   const amount = parseFloat(formData.get('amount') as string)
+  const feesRaw = formData.get('fees') as string
+  const fees = feesRaw ? parseFloat(feesRaw) : null
   const quantityRaw = formData.get('quantity') as string
   const priceRaw = formData.get('price_per_unit') as string
   const noQtyPrice = type === 'dividend' || type === 'wallet_topup'
@@ -217,12 +226,13 @@ export async function updateTransaction(id: string, investmentId: string, formDa
 
   if (!['buy', 'sell', 'dividend', 'wallet_topup'].includes(type)) return { error: 'Invalid type' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
+  if (fees !== null && (isNaN(fees) || fees < 0)) return { error: 'Enter a valid fees amount' }
   if (!transaction_date) return { error: 'Date is required' }
   if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
   const { error } = await supabase
     .from('investment_transactions')
-    .update({ type, amount, quantity, price_per_unit, transaction_date, notes })
+    .update({ type, amount, fees, quantity, price_per_unit, transaction_date, notes })
     .eq('id', id)
     .eq('user_id', user.id)
 

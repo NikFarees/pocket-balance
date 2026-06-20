@@ -1,0 +1,2 @@
+ALTER TABLE investment_transactions
+  ADD COLUMN IF NOT EXISTS fees NUMERIC DEFAULT NULL;

@@ -73,6 +73,14 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
                 <p className="text-2xl font-bold text-destructive mt-1">RM {summary.totalSold.toFixed(2)}</p>
               </CardContent>
             </Card>
+            {summary.hasFees && (
+              <Card>
+                <CardContent className="pt-4 pb-4 px-4">
+                  <p className="text-xs text-muted-foreground">Total Fees Paid</p>
+                  <p className="text-2xl font-bold text-warning mt-1">RM {summary.totalFees.toFixed(2)}</p>
+                </CardContent>
+              </Card>
+            )}
             <Card className="col-span-2 sm:col-span-1">
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Net Invested</p>

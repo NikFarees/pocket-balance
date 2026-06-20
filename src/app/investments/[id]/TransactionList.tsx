@@ -24,6 +24,7 @@ type Transaction = {
   id: string
   type: TxType
   amount: number
+  fees: number | null
   quantity: number | null
   price_per_unit: number | null
   transaction_date: string
@@ -83,6 +84,7 @@ export function TransactionList({
   const [editItem, setEditItem] = useState<Transaction | null>(null)
   const [editType, setEditType] = useState<TxType>('buy')
   const [editAmount, setEditAmount] = useState('')
+  const [editFees, setEditFees] = useState('')
   const [editQty, setEditQty] = useState('')
   const [editPrice, setEditPrice] = useState('')
   const [loadingId, setLoadingId] = useState<string | null>(null)
@@ -126,33 +128,48 @@ export function TransactionList({
     setEditItem(t)
     setEditType(t.type)
     setEditAmount(Number(t.amount).toFixed(2))
+    setEditFees(t.fees != null ? formatPrecise(Number(t.fees)) : '')
     setEditQty(t.quantity != null ? formatPrecise(Number(t.quantity)) : '')
     setEditPrice(t.price_per_unit != null ? formatPrecise(Number(t.price_per_unit)) : '')
   }
 
+  function editNet(a: string, f: string) {
+    const av = parseFloat(a)
+    const fv = parseFloat(f) || 0
+    return isNaN(av) ? NaN : av - fv
+  }
+
+  function recalcEdit(a: string, f: string, q: string, p: string) {
+    const n = editNet(a, f)
+    if (isNaN(n) || n <= 0) return
+    const qv = parseFloat(q)
+    const pv = parseFloat(p)
+    if (!isNaN(qv) && qv > 0) setEditPrice(String(n / qv))
+    else if (!isNaN(pv) && pv > 0) setEditQty(String(n / pv))
+  }
+
   function handleEditAmountChange(val: string) {
     setEditAmount(val)
-    const a = parseFloat(val)
-    if (!isNaN(a) && a > 0) {
-      const q = parseFloat(editQty)
-      const p = parseFloat(editPrice)
-      if (!isNaN(q) && q > 0) setEditPrice(String(a / q))
-      else if (!isNaN(p) && p > 0) setEditQty(String(a / p))
-    }
+    recalcEdit(val, editFees, editQty, editPrice)
+  }
+
+  function handleEditFeesChange(val: string) {
+    setEditFees(val)
+    recalcEdit(editAmount, val, editQty, editPrice)
   }
 
   function handleEditQtyChange(val: string) {
     setEditQty(val)
-    const q = parseFloat(val)
-    const a = parseFloat(editAmount)
-    if (!isNaN(q) && q > 0 && !isNaN(a) && a > 0) setEditPrice(String(a / q))
+    const qv = parseFloat(val)
+    const n = editNet(editAmount, editFees)
+    if (!isNaN(qv) && qv > 0 && !isNaN(n) && n > 0) setEditPrice(String(n / qv))
   }
 
   function handleEditPriceChange(val: string) {
     setEditPrice(val)
-    const p = parseFloat(val)
-    const a = parseFloat(editAmount)
-    if (!isNaN(p) && p > 0 && !isNaN(a) && a > 0) setEditQty(String(a / p))
+    const pv = parseFloat(val)
+    const n = editNet(editAmount, editFees)
+    if (!isNaN(pv) && pv > 0 && !isNaN(n) && n > 0) setEditQty(String(n / pv))
   }
 
   function amountPrefix(type: TxType) {
@@ -164,6 +181,7 @@ export function TransactionList({
   }
 
   const showEditQtyPrice = category === 'trading' && editType !== 'wallet_topup'
+  const showEditFees = editType !== 'dividend'
 
   return (
     <>
@@ -184,6 +202,9 @@ export function TransactionList({
                 <p className={`font-semibold text-sm tabular-nums ${t.type === 'sell' ? 'text-destructive' : t.type === 'dividend' ? 'text-muted-foreground' : 'text-success'}`}>
                   {amountPrefix(t.type)}RM {Number(t.amount).toFixed(2)}
                 </p>
+                {t.fees != null && (
+                  <p className="text-xs text-muted-foreground">fee RM {Number(t.fees).toFixed(2)}</p>
+                )}
                 <div className="mt-0.5">
                   <TxBadge type={t.type} category={category} />
                 </div>
@@ -213,6 +234,7 @@ export function TransactionList({
               <TableHead>Date</TableHead>
               <TableHead>Type</TableHead>
               <TableHead className="text-right">Amount (RM)</TableHead>
+              <TableHead className="text-right">Fees (RM)</TableHead>
               {showQtyPriceCols && <TableHead className="text-right">Qty</TableHead>}
               {showQtyPriceCols && <TableHead className="text-right">Price/unit</TableHead>}
               <TableHead className="hidden md:table-cell">Notes</TableHead>
@@ -228,6 +250,9 @@ export function TransactionList({
                   <span className={t.type === 'sell' ? 'text-destructive' : ''}>
                     {amountPrefix(t.type)}RM {Number(t.amount).toFixed(2)}
                   </span>
+                </TableCell>
+                <TableCell className="text-right text-sm text-muted-foreground">
+                  {t.fees != null ? `RM ${Number(t.fees).toFixed(2)}` : '—'}
                 </TableCell>
                 {showQtyPriceCols && (
                   <TableCell className="text-right text-sm">
@@ -278,6 +303,12 @@ export function TransactionList({
                   {amountPrefix(viewItem.type)}RM {Number(viewItem.amount).toFixed(2)}
                 </span>
               </div>
+              {viewItem.fees != null && (
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Fees Paid</span><span className="text-sm text-muted-foreground">RM {Number(viewItem.fees).toFixed(2)}</span></div>
+              )}
+              {viewItem.fees != null && (
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Net (after fees)</span><span className="text-sm font-medium">RM {(Number(viewItem.amount) - Number(viewItem.fees)).toFixed(2)}</span></div>
+              )}
               {viewItem.quantity != null && (
                 <div className="flex justify-between"><span className="text-sm text-muted-foreground">Quantity</span><span className="text-sm">{formatPrecise(Number(viewItem.quantity))}</span></div>
               )}
@@ -319,6 +350,25 @@ export function TransactionList({
                   <Label htmlFor="tx_date">Date</Label>
                   <Input id="tx_date" name="transaction_date" type="date" defaultValue={editItem.transaction_date} required />
                 </div>
+                {showEditFees && (
+                  <div className="space-y-2">
+                    <Label htmlFor="tx_fees">Fees Paid (RM) <span className="text-muted-foreground">(optional)</span></Label>
+                    <Input
+                      id="tx_fees" name="fees" type="text" inputMode="decimal"
+                      placeholder="0.00"
+                      value={editFees}
+                      onChange={e => handleEditFeesChange(e.target.value)}
+                    />
+                  </div>
+                )}
+                {showEditFees && (
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground text-xs">Net (after fees)</Label>
+                    <div className="h-10 flex items-center px-3 rounded-md border bg-muted text-sm tabular-nums">
+                      {(() => { const n = editNet(editAmount, editFees); return (!isNaN(n) && editAmount) ? `RM ${n.toFixed(2)}` : '—' })()}
+                    </div>
+                  </div>
+                )}
                 {showEditQtyPrice && (
                   <>
                     <div className="space-y-2">
