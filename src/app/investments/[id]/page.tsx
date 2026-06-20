@@ -69,37 +69,19 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
                 </Card>
               )}
             </div>
-            <div className="flex flex-wrap gap-x-5 gap-y-1 px-1 text-sm">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 px-1 text-xs text-muted-foreground">
               {summary.hasWalletTopup && (
-                <span>
-                  <span className="text-muted-foreground">Deposited </span>
-                  <span className="font-medium">RM {summary.totalWalletTopup.toFixed(2)}</span>
-                </span>
+                <span>Deposited: <span className="font-medium text-foreground">RM {summary.totalWalletTopup.toFixed(2)}</span></span>
               )}
-              <span>
-                <span className="text-muted-foreground">Bought </span>
-                <span className="font-medium">RM {summary.totalBought.toFixed(2)}</span>
-              </span>
-              <span>
-                <span className="text-muted-foreground">Sold </span>
-                <span className="font-medium">RM {summary.totalSold.toFixed(2)}</span>
-              </span>
+              <span>Bought: <span className="font-medium text-foreground">RM {summary.totalBought.toFixed(2)}</span></span>
+              <span>Sold: <span className="font-medium text-foreground">RM {summary.totalSold.toFixed(2)}</span></span>
               {summary.hasFees && (
-                <span>
-                  <span className="text-muted-foreground">Fees </span>
-                  <span className="font-medium">RM {summary.totalFees.toFixed(2)}</span>
-                </span>
+                <span>Fees: <span className="font-medium text-foreground">RM {summary.totalFees.toFixed(2)}</span></span>
               )}
               {summary.hasQuantity && (
                 <>
-                  <span>
-                    <span className="text-muted-foreground">Qty Bought </span>
-                    <span className="font-medium">{summary.totalQtyBought.toFixed(4)}</span>
-                  </span>
-                  <span>
-                    <span className="text-muted-foreground">Qty Sold </span>
-                    <span className="font-medium">{summary.totalQtySold.toFixed(4)}</span>
-                  </span>
+                  <span>Qty Bought: <span className="font-medium text-foreground">{summary.totalQtyBought.toFixed(4)}</span></span>
+                  <span>Qty Sold: <span className="font-medium text-foreground">{summary.totalQtySold.toFixed(4)}</span></span>
                 </>
               )}
             </div>
