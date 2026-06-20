@@ -1,4 +1,5 @@
 import { getAllDailyTargets, getDailyTarget } from '@/app/actions/settings'
+import { Amount } from '@/components/Amount'
 import { AppHeader } from '@/components/AppHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
@@ -19,7 +20,7 @@ export default async function SettingsPage() {
             <p className="text-sm text-muted-foreground">Current daily target</p>
             {current ? (
               <p className="text-3xl font-bold mt-1">
-                RM {Number(current.daily_amount).toFixed(2)}
+                <Amount value={Number(current.daily_amount)} />
                 <span className="text-sm font-normal text-muted-foreground ml-2">/ day</span>
               </p>
             ) : (

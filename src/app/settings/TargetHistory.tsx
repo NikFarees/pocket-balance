@@ -1,6 +1,7 @@
 'use client'
 
 import { deleteDailyTarget } from '@/app/actions/settings'
+import { Amount } from '@/components/Amount'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -56,7 +57,7 @@ export function TargetHistory({ targets, currentId }: { targets: Target[]; curre
               {format(parseISO(t.effective_from), 'dd MMM yyyy')}
             </TableCell>
             <TableCell className="text-right">
-              RM {Number(t.daily_amount).toFixed(2)}
+              <Amount value={Number(t.daily_amount)} />
             </TableCell>
             <TableCell>
               {t.id === currentId
