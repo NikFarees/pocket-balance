@@ -18,7 +18,7 @@ import { toast } from 'sonner'
 const PAGE_SIZE = 5
 
 type Category = 'trading' | 'unit_trust' | 'savings'
-type TxType = 'buy' | 'sell' | 'dividend'
+type TxType = 'buy' | 'sell' | 'dividend' | 'wallet_topup'
 
 type Transaction = {
   id: string
@@ -31,19 +31,20 @@ type Transaction = {
 }
 
 const TX_LABELS: Record<Category, Record<TxType, string>> = {
-  trading:    { buy: 'Buy',     sell: 'Sell',     dividend: 'Dividend' },
-  unit_trust: { buy: 'Save',    sell: 'Redeem',   dividend: 'Dividend' },
-  savings:    { buy: 'Deposit', sell: 'Withdraw', dividend: 'Dividend' },
+  trading:    { wallet_topup: 'Top Up', buy: 'Buy',     sell: 'Sell',     dividend: 'Dividend' },
+  unit_trust: { wallet_topup: 'Top Up', buy: 'Save',    sell: 'Redeem',   dividend: 'Dividend' },
+  savings:    { wallet_topup: 'Top Up', buy: 'Deposit', sell: 'Withdraw', dividend: 'Dividend' },
 }
 
 const TX_SUCCESS: Record<Category, Record<TxType, string>> = {
-  trading:    { buy: 'Purchase',   sell: 'Sale',        dividend: 'Dividend' },
-  unit_trust: { buy: 'Saving',     sell: 'Redemption',  dividend: 'Dividend' },
-  savings:    { buy: 'Deposit',    sell: 'Withdrawal',  dividend: 'Dividend' },
+  trading:    { wallet_topup: 'Wallet Top Up', buy: 'Purchase',   sell: 'Sale',        dividend: 'Dividend' },
+  unit_trust: { wallet_topup: 'Top Up',        buy: 'Saving',     sell: 'Redemption',  dividend: 'Dividend' },
+  savings:    { wallet_topup: 'Top Up',        buy: 'Deposit',    sell: 'Withdrawal',  dividend: 'Dividend' },
 }
 
 function TxBadge({ type, category }: { type: TxType; category: Category }) {
   const label = TX_LABELS[category][type]
+  if (type === 'wallet_topup') return <Badge className="bg-blue-600 text-white">{label}</Badge>
   if (type === 'buy') return <Badge variant="success">{label}</Badge>
   if (type === 'sell') return <Badge variant="destructive">{label}</Badge>
   return <Badge variant="secondary">{label}</Badge>
@@ -51,15 +52,20 @@ function TxBadge({ type, category }: { type: TxType; category: Category }) {
 
 function txButtonClass(t: TxType, active: TxType) {
   const isActive = t === active
+  if (t === 'wallet_topup') return isActive ? 'bg-blue-600 text-white' : 'hover:bg-muted'
   if (t === 'buy') return isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
   if (t === 'sell') return isActive ? 'bg-destructive text-destructive-foreground' : 'hover:bg-muted'
   return isActive ? 'bg-secondary text-secondary-foreground' : 'hover:bg-muted'
 }
 
 const CATEGORY_TX_TYPES: Record<Category, TxType[]> = {
-  trading:    ['buy', 'sell'],
+  trading:    ['wallet_topup', 'buy', 'sell'],
   unit_trust: ['buy', 'sell', 'dividend'],
   savings:    ['buy', 'sell', 'dividend'],
+}
+
+function formatPrecise(n: number) {
+  return parseFloat(n.toFixed(8)).toString()
 }
 
 export function TransactionList({
@@ -76,6 +82,9 @@ export function TransactionList({
   const [viewItem, setViewItem] = useState<Transaction | null>(null)
   const [editItem, setEditItem] = useState<Transaction | null>(null)
   const [editType, setEditType] = useState<TxType>('buy')
+  const [editAmount, setEditAmount] = useState('')
+  const [editQty, setEditQty] = useState('')
+  const [editPrice, setEditPrice] = useState('')
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [editLoading, setEditLoading] = useState(false)
   const [page, setPage] = useState(1)
@@ -86,7 +95,7 @@ export function TransactionList({
   const safePage = Math.min(page, totalPages)
   const paged = transactions.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
-  const showQtyPrice = category === 'trading' && hasQuantity
+  const showQtyPriceCols = category === 'trading' && hasQuantity
   const availableTypes = CATEGORY_TX_TYPES[category]
 
   async function handleDelete(id: string) {
@@ -116,6 +125,34 @@ export function TransactionList({
   function openEdit(t: Transaction) {
     setEditItem(t)
     setEditType(t.type)
+    setEditAmount(Number(t.amount).toFixed(2))
+    setEditQty(t.quantity != null ? formatPrecise(Number(t.quantity)) : '')
+    setEditPrice(t.price_per_unit != null ? formatPrecise(Number(t.price_per_unit)) : '')
+  }
+
+  function handleEditAmountChange(val: string) {
+    setEditAmount(val)
+    const a = parseFloat(val)
+    if (!isNaN(a) && a > 0) {
+      const q = parseFloat(editQty)
+      const p = parseFloat(editPrice)
+      if (!isNaN(q) && q > 0) setEditPrice(String(a / q))
+      else if (!isNaN(p) && p > 0) setEditQty(String(a / p))
+    }
+  }
+
+  function handleEditQtyChange(val: string) {
+    setEditQty(val)
+    const q = parseFloat(val)
+    const a = parseFloat(editAmount)
+    if (!isNaN(q) && q > 0 && !isNaN(a) && a > 0) setEditPrice(String(a / q))
+  }
+
+  function handleEditPriceChange(val: string) {
+    setEditPrice(val)
+    const p = parseFloat(val)
+    const a = parseFloat(editAmount)
+    if (!isNaN(p) && p > 0 && !isNaN(a) && a > 0) setEditQty(String(a / p))
   }
 
   function amountPrefix(type: TxType) {
@@ -125,6 +162,8 @@ export function TransactionList({
   if (transactions.length === 0) {
     return <p className="text-sm text-muted-foreground text-center py-8">No transactions yet.</p>
   }
+
+  const showEditQtyPrice = category === 'trading' && editType !== 'wallet_topup'
 
   return (
     <>
@@ -174,8 +213,8 @@ export function TransactionList({
               <TableHead>Date</TableHead>
               <TableHead>Type</TableHead>
               <TableHead className="text-right">Amount (RM)</TableHead>
-              {showQtyPrice && <TableHead className="text-right">Qty</TableHead>}
-              {showQtyPrice && <TableHead className="text-right">Price/unit</TableHead>}
+              {showQtyPriceCols && <TableHead className="text-right">Qty</TableHead>}
+              {showQtyPriceCols && <TableHead className="text-right">Price/unit</TableHead>}
               <TableHead className="hidden md:table-cell">Notes</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -190,14 +229,14 @@ export function TransactionList({
                     {amountPrefix(t.type)}RM {Number(t.amount).toFixed(2)}
                   </span>
                 </TableCell>
-                {showQtyPrice && (
+                {showQtyPriceCols && (
                   <TableCell className="text-right text-sm">
-                    {t.quantity ? Number(t.quantity).toFixed(4) : '—'}
+                    {t.quantity != null ? formatPrecise(Number(t.quantity)) : '—'}
                   </TableCell>
                 )}
-                {showQtyPrice && (
+                {showQtyPriceCols && (
                   <TableCell className="text-right text-sm">
-                    {t.price_per_unit ? `RM ${Number(t.price_per_unit).toFixed(2)}` : '—'}
+                    {t.price_per_unit != null ? `RM ${formatPrecise(Number(t.price_per_unit))}` : '—'}
                   </TableCell>
                 )}
                 <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{t.notes ?? '—'}</TableCell>
@@ -239,11 +278,11 @@ export function TransactionList({
                   {amountPrefix(viewItem.type)}RM {Number(viewItem.amount).toFixed(2)}
                 </span>
               </div>
-              {viewItem.quantity !== null && (
-                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Quantity</span><span className="text-sm">{Number(viewItem.quantity).toFixed(4)}</span></div>
+              {viewItem.quantity != null && (
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Quantity</span><span className="text-sm">{formatPrecise(Number(viewItem.quantity))}</span></div>
               )}
-              {viewItem.price_per_unit !== null && (
-                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Price / Unit</span><span className="text-sm">RM {Number(viewItem.price_per_unit).toFixed(2)}</span></div>
+              {viewItem.price_per_unit != null && (
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Price / Unit</span><span className="text-sm">RM {formatPrecise(Number(viewItem.price_per_unit))}</span></div>
               )}
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Notes</span><span className="text-sm">{viewItem.notes ?? '—'}</span></div>
               <Button variant="outline" className="w-full mt-2" onClick={() => setViewItem(null)}>Close</Button>
@@ -270,21 +309,35 @@ export function TransactionList({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="tx_amount">Amount (RM)</Label>
-                  <Input id="tx_amount" name="amount" type="text" inputMode="decimal" defaultValue={Number(editItem.amount).toFixed(2)} required />
+                  <Input
+                    id="tx_amount" name="amount" type="text" inputMode="decimal" required
+                    value={editAmount}
+                    onChange={e => handleEditAmountChange(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="tx_date">Date</Label>
                   <Input id="tx_date" name="transaction_date" type="date" defaultValue={editItem.transaction_date} required />
                 </div>
-                {category === 'trading' && (
+                {showEditQtyPrice && (
                   <>
                     <div className="space-y-2">
                       <Label htmlFor="tx_qty">Quantity <span className="text-muted-foreground">(optional)</span></Label>
-                      <Input id="tx_qty" name="quantity" type="number" step="0.000001" min="0" defaultValue={editItem.quantity ?? ''} placeholder="e.g. 1.5" />
+                      <Input
+                        id="tx_qty" name="quantity" type="text" inputMode="decimal"
+                        placeholder="e.g. 1.5"
+                        value={editQty}
+                        onChange={e => handleEditQtyChange(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="tx_price">Price/unit <span className="text-muted-foreground">(optional)</span></Label>
-                      <Input id="tx_price" name="price_per_unit" type="number" step="0.0001" min="0" defaultValue={editItem.price_per_unit ?? ''} placeholder="e.g. 380.00" />
+                      <Input
+                        id="tx_price" name="price_per_unit" type="text" inputMode="decimal"
+                        placeholder="e.g. 380.00"
+                        value={editPrice}
+                        onChange={e => handleEditPriceChange(e.target.value)}
+                      />
                     </div>
                   </>
                 )}
