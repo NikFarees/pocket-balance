@@ -11,20 +11,23 @@ export async function getInvestments() {
 
   const [{ data: investments }, { data: txs }] = await Promise.all([
     supabase.from('investments').select('*').eq('user_id', user.id).order('name'),
-    supabase.from('investment_transactions').select('investment_id, type, amount').eq('user_id', user.id),
+    supabase.from('investment_transactions').select('investment_id, type, amount, fees').eq('user_id', user.id),
   ])
 
-  const txsByInvestment = (txs ?? []).reduce<Record<string, { bought: number; sold: number; dividend: number }>>((acc, t) => {
-    if (!acc[t.investment_id]) acc[t.investment_id] = { bought: 0, sold: 0, dividend: 0 }
+  const txsByInvestment = (txs ?? []).reduce<Record<string, { bought: number; sold: number; dividend: number; walletTopup: number; fees: number }>>((acc, t) => {
+    if (!acc[t.investment_id]) acc[t.investment_id] = { bought: 0, sold: 0, dividend: 0, walletTopup: 0, fees: 0 }
     if (t.type === 'buy') acc[t.investment_id].bought += Number(t.amount)
     else if (t.type === 'sell') acc[t.investment_id].sold += Number(t.amount)
     else if (t.type === 'dividend') acc[t.investment_id].dividend += Number(t.amount)
+    else if (t.type === 'wallet_topup') acc[t.investment_id].walletTopup += Number(t.amount)
+    if (t.fees) acc[t.investment_id].fees += Number(t.fees)
     return acc
   }, {})
 
   return (investments ?? []).map(inv => {
-    const t = txsByInvestment[inv.id] ?? { bought: 0, sold: 0, dividend: 0 }
-    return { ...inv, balance: t.bought + t.dividend - t.sold }
+    const t = txsByInvestment[inv.id] ?? { bought: 0, sold: 0, dividend: 0, walletTopup: 0, fees: 0 }
+    const base = t.walletTopup > 0 ? t.walletTopup : (t.bought - t.sold)
+    return { ...inv, balance: base - t.fees + t.dividend }
   })
 }
 
@@ -51,6 +54,8 @@ export async function getInvestmentWithTransactions(id: string) {
   const totalBought = transactions.filter(t => t.type === 'buy').reduce((s, t) => s + Number(t.amount), 0)
   const totalSold = transactions.filter(t => t.type === 'sell').reduce((s, t) => s + Number(t.amount), 0)
   const totalDividend = transactions.filter(t => t.type === 'dividend').reduce((s, t) => s + Number(t.amount), 0)
+  const totalWalletTopup = transactions.filter(t => t.type === 'wallet_topup').reduce((s, t) => s + Number(t.amount), 0)
+  const totalFees = transactions.reduce((s, t) => s + (t.fees ? Number(t.fees) : 0), 0)
   const totalQtyBought = transactions.filter(t => t.type === 'buy' && t.quantity).reduce((s, t) => s + Number(t.quantity), 0)
   const totalQtySold = transactions.filter(t => t.type === 'sell' && t.quantity).reduce((s, t) => s + Number(t.quantity), 0)
 
@@ -62,12 +67,17 @@ export async function getInvestmentWithTransactions(id: string) {
       totalBought,
       totalSold,
       totalDividend,
-      netInvested: totalBought - totalSold,
+      totalWalletTopup,
+      totalFees,
+      walletBalance: totalWalletTopup - totalBought + totalSold,
+      netInvested: totalBought - totalSold - totalFees,
       balance: totalBought + totalDividend - totalSold,
       totalQtyBought,
       totalQtySold,
       netQty: totalQtyBought - totalQtySold,
       hasQuantity: transactions.some(t => t.quantity),
+      hasWalletTopup: transactions.some(t => t.type === 'wallet_topup'),
+      hasFees: transactions.some(t => t.fees),
     },
   }
 }
@@ -164,18 +174,24 @@ export async function addTransaction(investmentId: string, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const type = formData.get('type') as 'buy' | 'sell' | 'dividend'
+  const type = formData.get('type') as 'buy' | 'sell' | 'dividend' | 'wallet_topup'
   const amount = parseFloat(formData.get('amount') as string)
+  const feesRaw = formData.get('fees') as string
+  const fees = feesRaw ? parseFloat(feesRaw) : null
+  const asset = (formData.get('asset') as string).trim() || null
   const quantityRaw = formData.get('quantity') as string
   const priceRaw = formData.get('price_per_unit') as string
-  const quantity = type === 'dividend' ? null : (quantityRaw ? parseFloat(quantityRaw) : null)
-  const price_per_unit = type === 'dividend' ? null : (priceRaw ? parseFloat(priceRaw) : null)
+  const noQtyPrice = type === 'dividend' || type === 'wallet_topup'
+  const quantity = noQtyPrice ? null : (quantityRaw ? parseFloat(quantityRaw) : null)
+  const price_per_unit = noQtyPrice ? null : (priceRaw ? parseFloat(priceRaw) : null)
   const transaction_date = formData.get('transaction_date') as string
   const notes = (formData.get('notes') as string).trim() || null
 
-  if (!['buy', 'sell', 'dividend'].includes(type)) return { error: 'Invalid type' }
+  if (!['buy', 'sell', 'dividend', 'wallet_topup'].includes(type)) return { error: 'Invalid type' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
+  if (fees !== null && (isNaN(fees) || fees < 0)) return { error: 'Enter a valid fees amount' }
   if (!transaction_date) return { error: 'Date is required' }
+  if (exceedsLength(asset, MAX_SHORT_TEXT)) return { error: 'Asset name is too long' }
   if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
   const { error } = await supabase.from('investment_transactions').insert({
@@ -183,6 +199,8 @@ export async function addTransaction(investmentId: string, formData: FormData) {
     investment_id: investmentId,
     type,
     amount,
+    fees,
+    asset,
     quantity,
     price_per_unit,
     transaction_date,
@@ -200,23 +218,29 @@ export async function updateTransaction(id: string, investmentId: string, formDa
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const type = formData.get('type') as 'buy' | 'sell' | 'dividend'
+  const type = formData.get('type') as 'buy' | 'sell' | 'dividend' | 'wallet_topup'
   const amount = parseFloat(formData.get('amount') as string)
+  const feesRaw = formData.get('fees') as string
+  const fees = feesRaw ? parseFloat(feesRaw) : null
+  const asset = (formData.get('asset') as string).trim() || null
   const quantityRaw = formData.get('quantity') as string
   const priceRaw = formData.get('price_per_unit') as string
-  const quantity = type === 'dividend' ? null : (quantityRaw ? parseFloat(quantityRaw) : null)
-  const price_per_unit = type === 'dividend' ? null : (priceRaw ? parseFloat(priceRaw) : null)
+  const noQtyPrice = type === 'dividend' || type === 'wallet_topup'
+  const quantity = noQtyPrice ? null : (quantityRaw ? parseFloat(quantityRaw) : null)
+  const price_per_unit = noQtyPrice ? null : (priceRaw ? parseFloat(priceRaw) : null)
   const transaction_date = formData.get('transaction_date') as string
   const notes = (formData.get('notes') as string).trim() || null
 
-  if (!['buy', 'sell', 'dividend'].includes(type)) return { error: 'Invalid type' }
+  if (!['buy', 'sell', 'dividend', 'wallet_topup'].includes(type)) return { error: 'Invalid type' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
+  if (fees !== null && (isNaN(fees) || fees < 0)) return { error: 'Enter a valid fees amount' }
   if (!transaction_date) return { error: 'Date is required' }
+  if (exceedsLength(asset, MAX_SHORT_TEXT)) return { error: 'Asset name is too long' }
   if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
 
   const { error } = await supabase
     .from('investment_transactions')
-    .update({ type, amount, quantity, price_per_unit, transaction_date, notes })
+    .update({ type, amount, fees, asset, quantity, price_per_unit, transaction_date, notes })
     .eq('id', id)
     .eq('user_id', user.id)
 
