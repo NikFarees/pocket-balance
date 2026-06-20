@@ -1,10 +1,9 @@
 import { getIncomes } from '@/app/actions/income'
 import { AppHeader } from '@/components/AppHeader'
+import { Amount } from '@/components/Amount'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { IncomeForm } from './IncomeForm'
 import { IncomeHistory } from './IncomeHistory'
-
-const fmtRM = (n: number) => `RM ${n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 export default async function IncomePage() {
   const incomes = await getIncomes()
@@ -29,15 +28,15 @@ export default async function IncomePage() {
             <CardContent className="px-4 pb-4 space-y-1">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Your contribution (employee)</span>
-                <span>{fmtRM(epfEmployee)}</span>
+                <span><Amount value={epfEmployee} /></span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Employer&apos;s contribution</span>
-                <span>{fmtRM(epfEmployer)}</span>
+                <span><Amount value={epfEmployer} /></span>
               </div>
               <div className="flex justify-between text-sm font-semibold border-t pt-1 mt-1">
                 <span>Total</span>
-                <span>{fmtRM(epfTotal)}</span>
+                <span><Amount value={epfTotal} /></span>
               </div>
             </CardContent>
           </Card>
