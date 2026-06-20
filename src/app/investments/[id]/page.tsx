@@ -127,7 +127,7 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
                 <p className="font-heading text-2xl font-bold tabular-nums mt-1">RM {summary.totalDividend.toFixed(2)}</p>
               </CardContent>
             </Card>
-            <Card className="col-span-2 sm:col-span-1">
+            <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Balance</p>
                 <p className="text-2xl font-bold mt-1">RM {summary.balance.toFixed(2)}</p>
@@ -157,7 +157,7 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
                 <p className="font-heading text-2xl font-bold tabular-nums mt-1">RM {summary.totalDividend.toFixed(2)}</p>
               </CardContent>
             </Card>
-            <Card className="col-span-2 sm:col-span-1">
+            <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Balance</p>
                 <p className="text-2xl font-bold mt-1">RM {summary.balance.toFixed(2)}</p>
