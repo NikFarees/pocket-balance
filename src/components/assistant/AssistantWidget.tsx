@@ -6,7 +6,7 @@ import { Check, Loader2, Mic, Send, Sparkles, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { ASSISTANT_MODELS, DEFAULT_ASSISTANT_MODEL } from '@/lib/ai/models'
 import { useSpeechRecognition } from './useSpeechRecognition'
@@ -33,8 +33,7 @@ type ChatItem =
 let idCounter = 0
 const nextId = () => `m${++idCounter}`
 
-const GREETING =
-  "Hi! Tell me an expense, income, debt, or savings move — e.g. \"RM5 for lunch today\" — or ask things like \"how much did I spend this month?\""
+const GREETING = "Hi! What can I help you track?"
 
 export function AssistantWidget() {
   const [open, setOpen] = useState(false)
@@ -164,7 +163,7 @@ export function AssistantWidget() {
       <header className="flex shrink-0 items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2 font-medium">
           <Sparkles className="size-4 text-primary" />
-          <SheetTitle className="text-base font-medium">Assistant</SheetTitle>
+          <span className="text-base font-medium">Assistant</span>
         </div>
         <div className="flex items-center gap-1">
           <select
@@ -308,7 +307,7 @@ export function AssistantWidget() {
   if (isMobile) {
     return (
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" className="h-[68vh] p-0 rounded-t-2xl flex flex-col">
+        <SheetContent side="bottom" showCloseButton={false} className="!h-[55vh] p-0 rounded-t-2xl flex flex-col">
           {chatContent}
         </SheetContent>
       </Sheet>
