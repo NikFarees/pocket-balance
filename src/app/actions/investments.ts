@@ -51,6 +51,7 @@ export async function getInvestmentWithTransactions(id: string) {
   const totalBought = transactions.filter(t => t.type === 'buy').reduce((s, t) => s + Number(t.amount), 0)
   const totalSold = transactions.filter(t => t.type === 'sell').reduce((s, t) => s + Number(t.amount), 0)
   const totalDividend = transactions.filter(t => t.type === 'dividend').reduce((s, t) => s + Number(t.amount), 0)
+  const totalWalletTopup = transactions.filter(t => t.type === 'wallet_topup').reduce((s, t) => s + Number(t.amount), 0)
   const totalQtyBought = transactions.filter(t => t.type === 'buy' && t.quantity).reduce((s, t) => s + Number(t.quantity), 0)
   const totalQtySold = transactions.filter(t => t.type === 'sell' && t.quantity).reduce((s, t) => s + Number(t.quantity), 0)
 
@@ -62,12 +63,15 @@ export async function getInvestmentWithTransactions(id: string) {
       totalBought,
       totalSold,
       totalDividend,
+      totalWalletTopup,
+      walletBalance: totalWalletTopup - totalBought + totalSold,
       netInvested: totalBought - totalSold,
       balance: totalBought + totalDividend - totalSold,
       totalQtyBought,
       totalQtySold,
       netQty: totalQtyBought - totalQtySold,
       hasQuantity: transactions.some(t => t.quantity),
+      hasWalletTopup: transactions.some(t => t.type === 'wallet_topup'),
     },
   }
 }
@@ -164,16 +168,17 @@ export async function addTransaction(investmentId: string, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const type = formData.get('type') as 'buy' | 'sell' | 'dividend'
+  const type = formData.get('type') as 'buy' | 'sell' | 'dividend' | 'wallet_topup'
   const amount = parseFloat(formData.get('amount') as string)
   const quantityRaw = formData.get('quantity') as string
   const priceRaw = formData.get('price_per_unit') as string
-  const quantity = type === 'dividend' ? null : (quantityRaw ? parseFloat(quantityRaw) : null)
-  const price_per_unit = type === 'dividend' ? null : (priceRaw ? parseFloat(priceRaw) : null)
+  const noQtyPrice = type === 'dividend' || type === 'wallet_topup'
+  const quantity = noQtyPrice ? null : (quantityRaw ? parseFloat(quantityRaw) : null)
+  const price_per_unit = noQtyPrice ? null : (priceRaw ? parseFloat(priceRaw) : null)
   const transaction_date = formData.get('transaction_date') as string
   const notes = (formData.get('notes') as string).trim() || null
 
-  if (!['buy', 'sell', 'dividend'].includes(type)) return { error: 'Invalid type' }
+  if (!['buy', 'sell', 'dividend', 'wallet_topup'].includes(type)) return { error: 'Invalid type' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
   if (!transaction_date) return { error: 'Date is required' }
   if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }
@@ -200,16 +205,17 @@ export async function updateTransaction(id: string, investmentId: string, formDa
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const type = formData.get('type') as 'buy' | 'sell' | 'dividend'
+  const type = formData.get('type') as 'buy' | 'sell' | 'dividend' | 'wallet_topup'
   const amount = parseFloat(formData.get('amount') as string)
   const quantityRaw = formData.get('quantity') as string
   const priceRaw = formData.get('price_per_unit') as string
-  const quantity = type === 'dividend' ? null : (quantityRaw ? parseFloat(quantityRaw) : null)
-  const price_per_unit = type === 'dividend' ? null : (priceRaw ? parseFloat(priceRaw) : null)
+  const noQtyPrice = type === 'dividend' || type === 'wallet_topup'
+  const quantity = noQtyPrice ? null : (quantityRaw ? parseFloat(quantityRaw) : null)
+  const price_per_unit = noQtyPrice ? null : (priceRaw ? parseFloat(priceRaw) : null)
   const transaction_date = formData.get('transaction_date') as string
   const notes = (formData.get('notes') as string).trim() || null
 
-  if (!['buy', 'sell', 'dividend'].includes(type)) return { error: 'Invalid type' }
+  if (!['buy', 'sell', 'dividend', 'wallet_topup'].includes(type)) return { error: 'Invalid type' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
   if (!transaction_date) return { error: 'Date is required' }
   if (exceedsLength(notes, MAX_LONG_TEXT)) return { error: 'Notes is too long' }

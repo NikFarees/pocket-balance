@@ -12,28 +12,29 @@ import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 type Category = 'trading' | 'unit_trust' | 'savings'
-type TxType = 'buy' | 'sell' | 'dividend'
+type TxType = 'buy' | 'sell' | 'dividend' | 'wallet_topup'
 
 const TX_CONFIG: Record<Category, { types: TxType[]; labels: Record<TxType, string>; successLabel: Record<TxType, string> }> = {
   trading: {
-    types: ['buy', 'sell'],
-    labels: { buy: 'Buy', sell: 'Sell', dividend: 'Dividend' },
-    successLabel: { buy: 'Purchase', sell: 'Sale', dividend: 'Dividend' },
+    types: ['wallet_topup', 'buy', 'sell'],
+    labels: { wallet_topup: 'Top Up Wallet', buy: 'Buy', sell: 'Sell', dividend: 'Dividend' },
+    successLabel: { wallet_topup: 'Wallet Top Up', buy: 'Purchase', sell: 'Sale', dividend: 'Dividend' },
   },
   unit_trust: {
     types: ['buy', 'sell', 'dividend'],
-    labels: { buy: 'Save', sell: 'Redeem', dividend: 'Dividend' },
-    successLabel: { buy: 'Saving', sell: 'Redemption', dividend: 'Dividend' },
+    labels: { wallet_topup: 'Top Up', buy: 'Save', sell: 'Redeem', dividend: 'Dividend' },
+    successLabel: { wallet_topup: 'Top Up', buy: 'Saving', sell: 'Redemption', dividend: 'Dividend' },
   },
   savings: {
     types: ['buy', 'sell', 'dividend'],
-    labels: { buy: 'Deposit', sell: 'Withdraw', dividend: 'Dividend' },
-    successLabel: { buy: 'Deposit', sell: 'Withdrawal', dividend: 'Dividend' },
+    labels: { wallet_topup: 'Top Up', buy: 'Deposit', sell: 'Withdraw', dividend: 'Dividend' },
+    successLabel: { wallet_topup: 'Top Up', buy: 'Deposit', sell: 'Withdrawal', dividend: 'Dividend' },
   },
 }
 
 function txButtonClass(type: TxType, active: TxType) {
   const isActive = type === active
+  if (type === 'wallet_topup') return isActive ? 'bg-blue-600 text-white' : 'hover:bg-muted'
   if (type === 'buy') return isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
   if (type === 'sell') return isActive ? 'bg-destructive text-destructive-foreground' : 'hover:bg-muted'
   return isActive ? 'bg-secondary text-secondary-foreground' : 'hover:bg-muted'
@@ -42,10 +43,38 @@ function txButtonClass(type: TxType, active: TxType) {
 export function TransactionForm({ investmentId, category }: { investmentId: string; category: Category }) {
   const config = TX_CONFIG[category]
   const [open, setOpen] = useState(false)
-  const [type, setType] = useState<TxType>('buy')
+  const [type, setType] = useState<TxType>(config.types[0])
   const [loading, setLoading] = useState(false)
+  const [amount, setAmount] = useState('')
+  const [qty, setQty] = useState('')
+  const [price, setPrice] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
+
+  function handleAmountChange(val: string) {
+    setAmount(val)
+    const a = parseFloat(val)
+    if (!isNaN(a) && a > 0) {
+      const q = parseFloat(qty)
+      const p = parseFloat(price)
+      if (!isNaN(q) && q > 0) setPrice(String(a / q))
+      else if (!isNaN(p) && p > 0) setQty(String(a / p))
+    }
+  }
+
+  function handleQtyChange(val: string) {
+    setQty(val)
+    const q = parseFloat(val)
+    const a = parseFloat(amount)
+    if (!isNaN(q) && q > 0 && !isNaN(a) && a > 0) setPrice(String(a / q))
+  }
+
+  function handlePriceChange(val: string) {
+    setPrice(val)
+    const p = parseFloat(val)
+    const a = parseFloat(amount)
+    if (!isNaN(p) && p > 0 && !isNaN(a) && a > 0) setQty(String(a / p))
+  }
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
@@ -55,6 +84,9 @@ export function TransactionForm({ investmentId, category }: { investmentId: stri
     } else {
       toast.success(`${config.successLabel[type]} recorded`)
       formRef.current?.reset()
+      setAmount('')
+      setQty('')
+      setPrice('')
       setOpen(false)
       router.refresh()
     }
@@ -69,7 +101,7 @@ export function TransactionForm({ investmentId, category }: { investmentId: stri
     )
   }
 
-  const showQtyPrice = category === 'trading'
+  const showQtyPrice = category === 'trading' && type !== 'wallet_topup'
 
   return (
     <Card>
@@ -93,10 +125,15 @@ export function TransactionForm({ investmentId, category }: { investmentId: stri
           </div>
           <input type="hidden" name="type" value={type} />
 
-          <div className={`grid gap-4 ${showQtyPrice ? 'grid-cols-2' : 'grid-cols-2'}`}>
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="amount">Amount (RM)</Label>
-              <Input id="amount" name="amount" type="text" inputMode="decimal" placeholder="0.00" required />
+              <Input
+                id="amount" name="amount" type="text" inputMode="decimal"
+                placeholder="0.00" required
+                value={amount}
+                onChange={e => handleAmountChange(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="transaction_date">Date</Label>
@@ -105,12 +142,22 @@ export function TransactionForm({ investmentId, category }: { investmentId: stri
             {showQtyPrice && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="quantity">Quantity <span className="text-muted-foreground">(optional, e.g. grams)</span></Label>
-                  <Input id="quantity" name="quantity" type="number" step="0.000001" min="0" placeholder="e.g. 1.5" />
+                  <Label htmlFor="quantity">Quantity <span className="text-muted-foreground">(optional)</span></Label>
+                  <Input
+                    id="quantity" name="quantity" type="text" inputMode="decimal"
+                    placeholder="e.g. 1.5"
+                    value={qty}
+                    onChange={e => handleQtyChange(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="price_per_unit">Price per unit <span className="text-muted-foreground">(optional)</span></Label>
-                  <Input id="price_per_unit" name="price_per_unit" type="number" step="0.0001" min="0" placeholder="e.g. 380.00" />
+                  <Label htmlFor="price_per_unit">Price/unit <span className="text-muted-foreground">(optional)</span></Label>
+                  <Input
+                    id="price_per_unit" name="price_per_unit" type="text" inputMode="decimal"
+                    placeholder="e.g. 380.00"
+                    value={price}
+                    onChange={e => handlePriceChange(e.target.value)}
+                  />
                 </div>
               </>
             )}

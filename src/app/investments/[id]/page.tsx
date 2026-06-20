@@ -45,6 +45,22 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
         {/* Summary cards — trading */}
         {category === 'trading' && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {summary.hasWalletTopup && (
+              <>
+                <Card>
+                  <CardContent className="pt-4 pb-4 px-4">
+                    <p className="text-xs text-muted-foreground">Wallet Deposited</p>
+                    <p className="font-heading text-2xl font-bold tabular-nums text-blue-600 mt-1">RM {summary.totalWalletTopup.toFixed(2)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="col-span-1">
+                  <CardContent className="pt-4 pb-4 px-4">
+                    <p className="text-xs text-muted-foreground">Available in Wallet</p>
+                    <p className="text-2xl font-bold mt-1">RM {summary.walletBalance.toFixed(2)}</p>
+                  </CardContent>
+                </Card>
+              </>
+            )}
             <Card>
               <CardContent className="pt-4 pb-4 px-4">
                 <p className="text-xs text-muted-foreground">Total Invested</p>
