@@ -1,4 +1,5 @@
 import { getSubscriptions } from '@/app/actions/subscriptions'
+import { Amount } from '@/components/Amount'
 import { AppHeader } from '@/components/AppHeader'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SubscriptionForm } from './SubscriptionForm'
@@ -22,14 +23,14 @@ export default async function SubscriptionsPage() {
             <CardContent className="pt-4 pb-4 px-4">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Monthly Cost</p>
               <p className="font-heading text-2xl font-bold tabular-nums mt-1">
-                RM {monthlyCost.toFixed(2)}
+                <Amount value={monthlyCost} />
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4 pb-4 px-4">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Yearly Cost</p>
-              <p className="font-heading text-2xl font-bold tabular-nums mt-1">RM {yearlyCost.toFixed(2)}</p>
+              <p className="font-heading text-2xl font-bold tabular-nums mt-1"><Amount value={yearlyCost} /></p>
             </CardContent>
           </Card>
           <Card className={expiringSoon > 0 ? 'border-warning/30 bg-warning/10 dark:bg-warning/14 dark:border-warning/22' : ''}>
