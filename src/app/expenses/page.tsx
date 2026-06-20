@@ -60,7 +60,7 @@ export default async function ExpensesPage({
                 <p className={`text-xs font-medium uppercase tracking-wider ${yesterdayOverspend > 0 ? 'text-warning/80' : 'text-muted-foreground'}`}>Effective Target</p>
                 <p className={`font-heading text-2xl font-bold tabular-nums mt-1 ${yesterdayOverspend > 0 ? 'text-warning' : ''}`}>{effectiveTarget !== null ? <Amount value={effectiveTarget} /> : '—'}</p>
                 {yesterdayOverspend > 0 && (
-                  <p className="text-xs text-warning mt-1">−RM {yesterdayOverspend.toFixed(2)} carry-forward</p>
+                  <p className="text-xs text-warning mt-1">−<Amount value={yesterdayOverspend} /> carry-forward</p>
                 )}
               </CardContent>
             </Card>
