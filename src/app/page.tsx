@@ -1,4 +1,5 @@
 import { getDashboardData } from '@/app/actions/dashboard'
+import { Amount } from '@/components/Amount'
 import { AppHeader } from '@/components/AppHeader'
 import { DeductionTable } from '@/components/dashboard/DeductionTable'
 import { buttonVariants } from '@/components/ui/button'
@@ -42,11 +43,11 @@ export default async function DashboardPage() {
                 {dailyTarget !== null ? (
                   <div>
                     <p className={cn('font-heading text-2xl font-bold tabular-nums text-glow', (carryForward + todaySpend) > dailyTarget && 'text-destructive')}>
-                      RM {fmt(carryForward + todaySpend)}<span className="text-base font-normal text-muted-foreground"> / RM {fmt(dailyTarget)}</span>
+                      <Amount value={carryForward + todaySpend} /><span className="text-base font-normal text-muted-foreground"> / <Amount value={dailyTarget} /></span>
                     </p>
                     {carryForward > 0 && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        includes RM {fmt(carryForward)} carried forward from previous days
+                        includes <Amount value={carryForward} /> carried forward from previous days
                       </p>
                     )}
                   </div>
@@ -67,10 +68,10 @@ export default async function DashboardPage() {
                 <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Liabilities</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4 space-y-2">
-                <p className="font-heading text-3xl font-bold tabular-nums">RM {fmt(totalLiabilities)}</p>
+                <p className="font-heading text-3xl font-bold tabular-nums"><Amount value={totalLiabilities} /></p>
                 <div className="space-y-1">
                   <Progress value={paidPercent} className="h-1.5" />
-                  <p className="text-xs text-muted-foreground">RM {fmt(totalPaid)} paid</p>
+                  <p className="text-xs text-muted-foreground"><Amount value={totalPaid} /> paid</p>
                 </div>
               </CardContent>
             </Card>
@@ -83,7 +84,7 @@ export default async function DashboardPage() {
                 <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Subscriptions</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
-                <p className="font-heading text-3xl font-bold tabular-nums">RM {fmt(subscriptionMonthlyCost)}<span className="text-base font-normal text-muted-foreground">/mo</span></p>
+                <p className="font-heading text-3xl font-bold tabular-nums"><Amount value={subscriptionMonthlyCost} /><span className="text-base font-normal text-muted-foreground">/mo</span></p>
                 {subscriptionExpiringSoon > 0 ? (
                   <p className="text-xs text-warning mt-0.5">{subscriptionExpiringSoon} renewing within 30 days</p>
                 ) : (
@@ -100,7 +101,7 @@ export default async function DashboardPage() {
                 <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Investments</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
-                <p className="font-heading text-3xl font-bold tabular-nums">RM {fmt(netInvested)}</p>
+                <p className="font-heading text-3xl font-bold tabular-nums"><Amount value={netInvested} /></p>
                 <p className="text-xs text-muted-foreground mt-0.5">net invested</p>
               </CardContent>
             </Card>
@@ -113,7 +114,7 @@ export default async function DashboardPage() {
                 <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Backup Fund</CardTitle>
               </CardHeader>
               <CardContent className="px-4 pb-4">
-                <p className="font-heading text-3xl font-bold tabular-nums">RM {fmt(backupBalance)}</p>
+                <p className="font-heading text-3xl font-bold tabular-nums"><Amount value={backupBalance} /></p>
                 <p className="text-xs text-muted-foreground mt-0.5">balance</p>
               </CardContent>
             </Card>
@@ -128,7 +129,7 @@ export default async function DashboardPage() {
               <CardContent className="px-4 pb-4">
                 {epfTotal > 0 ? (
                   <>
-                    <p className="font-heading text-3xl font-bold tabular-nums">RM {fmt(epfTotal)}</p>
+                    <p className="font-heading text-3xl font-bold tabular-nums"><Amount value={epfTotal} /></p>
                     <p className="text-xs text-muted-foreground mt-0.5">accumulated</p>
                   </>
                 ) : (
