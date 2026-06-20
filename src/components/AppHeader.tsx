@@ -144,7 +144,7 @@ export function AppHeader() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Link href="/profile" className="hidden md:flex">
+          <Link href="/profile" className="flex">
             <Avatar size="sm" className="cursor-pointer hover:opacity-80 transition-opacity">
               <AvatarFallback>
                 <svg xmlns="http://www.w3.org/2000/svg" className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
