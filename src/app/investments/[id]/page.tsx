@@ -44,71 +44,65 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
 
         {/* Summary cards — trading */}
         {category === 'trading' && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {summary.hasWalletTopup && (
-              <>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {summary.hasWalletTopup && (
                 <Card>
-                  <CardContent className="pt-4 pb-4 px-4">
-                    <p className="text-xs text-muted-foreground">Wallet Deposited</p>
-                    <p className="font-heading text-2xl font-bold tabular-nums text-blue-600 mt-1">RM {summary.totalWalletTopup.toFixed(2)}</p>
-                  </CardContent>
-                </Card>
-                <Card className="col-span-1">
                   <CardContent className="pt-4 pb-4 px-4">
                     <p className="text-xs text-muted-foreground">Available in Wallet</p>
-                    <p className="text-2xl font-bold mt-1">RM {summary.walletBalance.toFixed(2)}</p>
+                    <p className="font-heading text-2xl font-bold tabular-nums text-blue-600 mt-1">RM {summary.walletBalance.toFixed(2)}</p>
                   </CardContent>
                 </Card>
-              </>
-            )}
-            <Card>
-              <CardContent className="pt-4 pb-4 px-4">
-                <p className="text-xs text-muted-foreground">Total Invested</p>
-                <p className="font-heading text-2xl font-bold tabular-nums text-success mt-1">RM {summary.totalBought.toFixed(2)}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-4 pb-4 px-4">
-                <p className="text-xs text-muted-foreground">Total Sold</p>
-                <p className="text-2xl font-bold text-destructive mt-1">RM {summary.totalSold.toFixed(2)}</p>
-              </CardContent>
-            </Card>
-            {summary.hasFees && (
+              )}
               <Card>
                 <CardContent className="pt-4 pb-4 px-4">
-                  <p className="text-xs text-muted-foreground">Total Fees Paid</p>
-                  <p className="text-2xl font-bold text-warning mt-1">RM {summary.totalFees.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">Net Invested</p>
+                  <p className="font-heading text-2xl font-bold tabular-nums text-success mt-1">RM {summary.netInvested.toFixed(2)}</p>
                 </CardContent>
               </Card>
-            )}
-            <Card className="col-span-2 sm:col-span-1">
-              <CardContent className="pt-4 pb-4 px-4">
-                <p className="text-xs text-muted-foreground">Net Invested</p>
-                <p className="text-2xl font-bold mt-1">RM {summary.netInvested.toFixed(2)}</p>
-              </CardContent>
-            </Card>
-            {summary.hasQuantity && (
-              <>
-                <Card>
-                  <CardContent className="pt-4 pb-4 px-4">
-                    <p className="text-xs text-muted-foreground">Total Qty Bought</p>
-                    <p className="text-2xl font-bold mt-1">{summary.totalQtyBought.toFixed(4)}</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="pt-4 pb-4 px-4">
-                    <p className="text-xs text-muted-foreground">Total Qty Sold</p>
-                    <p className="text-2xl font-bold mt-1">{summary.totalQtySold.toFixed(4)}</p>
-                  </CardContent>
-                </Card>
+              {summary.hasQuantity && (
                 <Card>
                   <CardContent className="pt-4 pb-4 px-4">
                     <p className="text-xs text-muted-foreground">Net Holding</p>
                     <p className="text-2xl font-bold mt-1">{summary.netQty.toFixed(4)}</p>
                   </CardContent>
                 </Card>
-              </>
-            )}
+              )}
+            </div>
+            <div className="flex flex-wrap gap-x-5 gap-y-1 px-1 text-sm">
+              {summary.hasWalletTopup && (
+                <span>
+                  <span className="text-muted-foreground">Deposited </span>
+                  <span className="font-medium">RM {summary.totalWalletTopup.toFixed(2)}</span>
+                </span>
+              )}
+              <span>
+                <span className="text-muted-foreground">Bought </span>
+                <span className="font-medium">RM {summary.totalBought.toFixed(2)}</span>
+              </span>
+              <span>
+                <span className="text-muted-foreground">Sold </span>
+                <span className="font-medium">RM {summary.totalSold.toFixed(2)}</span>
+              </span>
+              {summary.hasFees && (
+                <span>
+                  <span className="text-muted-foreground">Fees </span>
+                  <span className="font-medium">RM {summary.totalFees.toFixed(2)}</span>
+                </span>
+              )}
+              {summary.hasQuantity && (
+                <>
+                  <span>
+                    <span className="text-muted-foreground">Qty Bought </span>
+                    <span className="font-medium">{summary.totalQtyBought.toFixed(4)}</span>
+                  </span>
+                  <span>
+                    <span className="text-muted-foreground">Qty Sold </span>
+                    <span className="font-medium">{summary.totalQtySold.toFixed(4)}</span>
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         )}
 
