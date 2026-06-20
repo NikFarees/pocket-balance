@@ -10,11 +10,12 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { cn } from '@/lib/utils'
-import { ChevronDown, Menu, Wallet, CreditCard, FileText, RefreshCw, Target, Shield, UserCircle } from 'lucide-react'
+import { ChevronDown, Menu, Wallet, CreditCard, FileText, RefreshCw, Target, Shield, UserCircle, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { useBalanceVisibility } from '@/components/BalanceVisibilityProvider'
 
 const standaloneLinks = [
   { href: '/', label: 'Dashboard' },
@@ -69,6 +70,7 @@ export function AppHeader() {
   const pathname = usePathname()
   const router = useRouter()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const { hidden, toggle } = useBalanceVisibility()
 
   const isFinanceActive = financeLinks.some(l => pathname === l.href)
   const isAssetsActive = assetLinks.some(l => pathname === l.href)
@@ -144,6 +146,13 @@ export function AppHeader() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          <button
+            onClick={toggle}
+            aria-label={hidden ? 'Show amounts' : 'Hide amounts'}
+            className="inline-flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            {hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
           <Link href="/profile" className="flex">
             <Avatar size="sm" className="cursor-pointer hover:opacity-80 transition-opacity">
               <AvatarFallback>

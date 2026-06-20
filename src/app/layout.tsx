@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, Hanken_Grotesk, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { BalanceVisibilityProvider } from "@/components/BalanceVisibilityProvider";
 import { TimezoneSync } from "@/components/TimezoneSync";
 import { AssistantWidget } from "@/components/assistant/AssistantWidget";
 import { BottomNav } from "@/components/BottomNav";
@@ -48,11 +49,13 @@ export default async function RootLayout({
     >
       <body className={`min-h-full flex flex-col${user ? ' pb-16 md:pb-0' : ''}`}>
         <ThemeProvider>
-          <TimezoneSync />
-          {children}
-          {user && <BottomNav />}
-          {user && <AssistantWidget />}
-          <Toaster richColors position="top-right" />
+          <BalanceVisibilityProvider>
+            <TimezoneSync />
+            {children}
+            {user && <BottomNav />}
+            {user && <AssistantWidget />}
+            <Toaster richColors position="top-right" />
+          </BalanceVisibilityProvider>
         </ThemeProvider>
       </body>
     </html>
