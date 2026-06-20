@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, startTransition, useContext, useEffect, useState } from 'react'
 
 const LS_KEY = 'pb-amounts-hidden'
 
@@ -18,7 +18,9 @@ export function BalanceVisibilityProvider({ children }: { children: React.ReactN
   const [hidden, setHidden] = useState(false)
 
   useEffect(() => {
-    setHidden(localStorage.getItem(LS_KEY) === 'true')
+    startTransition(() => {
+      setHidden(localStorage.getItem(LS_KEY) === 'true')
+    })
   }, [])
 
   function toggle() {
