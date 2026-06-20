@@ -149,7 +149,7 @@ export function AssistantWidget() {
         size="icon-lg"
         onClick={() => setOpen(true)}
         aria-label="Open assistant"
-        className="fixed bottom-5 right-5 z-50 size-12 rounded-full shadow-lg"
+        className="fixed bottom-20 right-5 z-50 size-12 rounded-full shadow-lg md:bottom-5"
       >
         <Sparkles className="size-5" />
       </Button>
@@ -157,7 +157,7 @@ export function AssistantWidget() {
   }
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex h-[min(32rem,calc(100dvh-2.5rem))] w-[min(24rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-xl border bg-background shadow-2xl">
+    <div className="fixed bottom-20 right-5 z-50 flex h-[min(32rem,calc(100dvh-5.5rem))] w-[min(24rem,calc(100vw-2.5rem))] flex-col overflow-hidden rounded-xl border bg-background shadow-2xl md:bottom-5 md:h-[min(32rem,calc(100dvh-2.5rem))]">
       <header className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2 font-medium">
           <Sparkles className="size-4 text-primary" />

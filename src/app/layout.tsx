@@ -46,11 +46,11 @@ export default async function RootLayout({
       className={`${frauncesDisplay.variable} ${hankenGrotesk.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col pb-16 md:pb-0">
+      <body className={`min-h-full flex flex-col${user ? ' pb-16 md:pb-0' : ''}`}>
         <ThemeProvider>
           <TimezoneSync />
           {children}
-          <BottomNav />
+          {user && <BottomNav />}
           {user && <AssistantWidget />}
           <Toaster richColors position="top-right" />
         </ThemeProvider>

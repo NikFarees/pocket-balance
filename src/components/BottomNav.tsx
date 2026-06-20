@@ -110,6 +110,8 @@ export function BottomNav() {
           {/* More button */}
           <button
             onClick={() => setDrawerOpen(true)}
+            aria-expanded={drawerOpen}
+            aria-label={drawerOpen ? 'Close navigation menu' : 'Open navigation menu'}
             className={cn(
               'flex-1 flex flex-col items-center justify-center py-2',
               drawerOpen ? 'text-primary' : 'text-muted-foreground'
@@ -123,7 +125,7 @@ export function BottomNav() {
 
       {/* Left side drawer */}
       <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <SheetContent side="left" className="w-72 p-0">
+        <SheetContent side="left" className="!w-72 p-0">
           <SheetHeader className="px-4 py-4 border-b">
             <SheetTitle className="font-heading text-primary">PennyWise</SheetTitle>
           </SheetHeader>
