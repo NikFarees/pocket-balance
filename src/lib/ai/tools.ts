@@ -1,4 +1,17 @@
-import type Anthropic from '@anthropic-ai/sdk'
+/**
+ * Tool schema shape. Written in Anthropic's `input_schema` form and converted to
+ * Gemini `functionDeclarations` at runtime in the assistant route. Kept as a local
+ * type so the app does not depend on the Anthropic SDK package.
+ */
+export interface Tool {
+  name: string
+  description: string
+  input_schema: {
+    type: 'object'
+    properties: Record<string, unknown>
+    required?: string[]
+  }
+}
 
 /**
  * Tool + prompt definitions for the PocketBalance assistant.
@@ -46,7 +59,7 @@ export const READ_TOOL_NAMES = new Set([
   'find_entries',
 ])
 
-export const TOOLS: Anthropic.Tool[] = [
+export const TOOLS: Tool[] = [
   // ---- WRITE TOOLS (propose-then-confirm) ----
   {
     name: 'add_expense',

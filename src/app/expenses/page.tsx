@@ -108,7 +108,7 @@ export default async function ExpensesPage({
   const data = await getMonthExpensesData(selectedMonth)
   if (!data) return null
 
-  const { expenses, total, monthLabel } = data
+  const { expenses, total } = data
   const totalPages = Math.max(1, Math.ceil(expenses.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
   const paged = expenses.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)

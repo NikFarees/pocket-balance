@@ -13,7 +13,6 @@ import { Loader2, Settings2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { DeductionForm } from './DeductionForm'
 
 type Deduction = {
   id: string
