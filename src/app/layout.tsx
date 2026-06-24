@@ -29,6 +29,7 @@ const geistMono = Geist_Mono({
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 const description =
   "Free daily personal finance tracker for Malaysia. Track income (with EPF, SOCSO and EIS), bills, debts, investments and an emergency fund, all in Ringgit. Includes a voice and text AI assistant.";
 
@@ -41,6 +42,9 @@ export const metadata: Metadata = {
   description,
   applicationName: "PennyWise",
   category: "finance",
+  ...(googleSiteVerification
+    ? { verification: { google: googleSiteVerification } }
+    : {}),
   keywords: [
     "personal finance tracker",
     "budget app Malaysia",
