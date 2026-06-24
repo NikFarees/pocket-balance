@@ -39,11 +39,6 @@ const TX_LABELS: Record<Category, Record<TxType, string>> = {
   savings:    { wallet_topup: 'Top Up', buy: 'Deposit', sell: 'Withdraw', dividend: 'Dividend' },
 }
 
-const TX_SUCCESS: Record<Category, Record<TxType, string>> = {
-  trading:    { wallet_topup: 'Wallet Top Up', buy: 'Purchase',   sell: 'Sale',        dividend: 'Dividend' },
-  unit_trust: { wallet_topup: 'Top Up',        buy: 'Saving',     sell: 'Redemption',  dividend: 'Dividend' },
-  savings:    { wallet_topup: 'Top Up',        buy: 'Deposit',    sell: 'Withdrawal',  dividend: 'Dividend' },
-}
 
 function TxBadge({ type, category }: { type: TxType; category: Category }) {
   const label = TX_LABELS[category][type]

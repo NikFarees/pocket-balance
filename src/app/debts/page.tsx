@@ -15,8 +15,6 @@ export default async function DebtsPage() {
   const totalTheyOwe = theyOwe.filter(d => !d.is_settled).reduce((s, d) => s + d.remaining, 0)
   const netPosition = totalTheyOwe - totalIOwe
 
-  const fmt = (n: number) => n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
