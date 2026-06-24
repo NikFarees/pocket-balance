@@ -13,16 +13,16 @@ const tabs = [
     isActive: (pathname: string) => pathname === '/',
   },
   {
-    label: 'Expenses',
-    icon: Receipt,
-    href: '/expenses',
-    isActive: (pathname: string) => pathname.startsWith('/expenses'),
-  },
-  {
     label: 'Insights',
     icon: BarChart2,
     href: '/insights',
     isActive: (pathname: string) => pathname.startsWith('/insights'),
+  },
+  {
+    label: 'Expenses',
+    icon: Receipt,
+    href: '/expenses',
+    isActive: (pathname: string) => pathname.startsWith('/expenses'),
   },
   {
     label: 'Notes',
