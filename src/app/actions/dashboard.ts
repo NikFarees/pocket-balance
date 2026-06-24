@@ -1,13 +1,13 @@
 'use server'
 
 import { serverNow } from '@/lib/server-date'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerUser } from '@/lib/supabase/server'
 import { addDays, differenceInDays, format, parseISO, startOfDay, startOfMonth, subDays } from 'date-fns'
 
 export async function getDashboardData() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return null
+  const supabase = await createClient()
 
   const now = await serverNow()
   const currentMonth = format(startOfMonth(now), 'yyyy-MM-dd')
@@ -181,9 +181,9 @@ export async function getDashboardData() {
 }
 
 export async function getDeductionHistoryForMonth(month: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return null
+  const supabase = await createClient()
 
   const [deductionsRes, paymentsRes] = await Promise.all([
     supabase.from('deductions').select('*').eq('user_id', user.id).order('name'),
@@ -200,9 +200,9 @@ export async function getDeductionHistoryForMonth(month: string) {
 }
 
 export async function markDeductionPaid(deductionId: string, amount: number) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const now = await serverNow()
   const currentMonth = format(startOfMonth(now), 'yyyy-MM-dd')
@@ -220,9 +220,9 @@ export async function markDeductionPaid(deductionId: string, amount: number) {
 }
 
 export async function unmarkDeductionPaid(paymentId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('deduction_payments')

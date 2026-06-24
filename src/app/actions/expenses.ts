@@ -1,15 +1,15 @@
 'use server'
 
 import { serverNow, serverToday } from '@/lib/server-date'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerUser } from '@/lib/supabase/server'
 import { exceedsLength, MAX_SHORT_TEXT } from '@/lib/validation'
 import { addDays, endOfMonth, format, parseISO, startOfMonth, subDays } from 'date-fns'
 import { revalidatePath } from 'next/cache'
 
 export async function getExpensesPageData() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return null
+  const supabase = await createClient()
 
   const today = await serverNow()
   const yesterday = subDays(today, 1)
@@ -83,9 +83,9 @@ export async function getExpensesPageData() {
 }
 
 export async function getMonthExpensesData(month: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return null
+  const supabase = await createClient()
 
   const monthStart = parseISO(month)
   const { data } = await supabase
@@ -106,9 +106,9 @@ export async function getMonthExpensesData(month: string) {
 }
 
 export async function addExpense(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const amount = parseFloat(formData.get('amount') as string)
   const description = (formData.get('description') as string).trim()
@@ -135,9 +135,9 @@ export async function addExpense(formData: FormData) {
 }
 
 export async function updateExpense(id: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const amount = parseFloat(formData.get('amount') as string)
   const description = (formData.get('description') as string).trim()
@@ -161,9 +161,9 @@ export async function updateExpense(id: string, formData: FormData) {
 }
 
 export async function deleteExpense(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('expenses')

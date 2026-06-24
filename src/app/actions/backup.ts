@@ -1,14 +1,14 @@
 'use server'
 
 import { serverToday } from '@/lib/server-date'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerUser } from '@/lib/supabase/server'
 import { exceedsLength, MAX_SHORT_TEXT } from '@/lib/validation'
 import { revalidatePath } from 'next/cache'
 
 export async function getBackupData() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return null
+  const supabase = await createClient()
 
   const { data } = await supabase
     .from('backup_fund_transactions')
@@ -25,9 +25,9 @@ export async function getBackupData() {
 }
 
 export async function addBackupTransaction(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const type = formData.get('type') as 'deposit' | 'withdrawal'
   const amount = parseFloat(formData.get('amount') as string)
@@ -56,9 +56,9 @@ export async function addBackupTransaction(formData: FormData) {
 }
 
 export async function updateBackupTransaction(id: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const type = formData.get('type') as 'deposit' | 'withdrawal'
   const amount = parseFloat(formData.get('amount') as string)
@@ -85,9 +85,9 @@ export async function updateBackupTransaction(id: string, formData: FormData) {
 }
 
 export async function deleteBackupTransaction(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('backup_fund_transactions')
