@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerUser } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
 export async function login(formData: FormData) {
@@ -93,9 +93,9 @@ export async function resetPassword(formData: FormData) {
 }
 
 export async function changePassword(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const currentPassword = formData.get('currentPassword') as string
   const newPassword = formData.get('newPassword') as string

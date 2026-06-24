@@ -1,7 +1,7 @@
 'use server'
 
 import { serverToday } from '@/lib/server-date'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerUser } from '@/lib/supabase/server'
 import { exceedsLength, MAX_LONG_TEXT, MAX_SHORT_TEXT } from '@/lib/validation'
 import { addDays, addMonths, differenceInDays, format, parseISO } from 'date-fns'
 import { revalidatePath } from 'next/cache'
@@ -55,9 +55,9 @@ async function fetchSubsAndRenewals(supabase: Awaited<ReturnType<typeof createCl
 }
 
 export async function getSubscriptions() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const today = await serverToday()
   const todayDate = parseISO(today)
@@ -189,9 +189,9 @@ function parseSubscriptionFormData(formData: FormData) {
 }
 
 export async function createSubscription(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const result = parseSubscriptionFormData(formData)
   if ('validationError' in result) return { error: result.validationError }
@@ -205,9 +205,9 @@ export async function createSubscription(formData: FormData) {
 }
 
 export async function updateSubscription(id: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const result = parseSubscriptionFormData(formData)
   if ('validationError' in result) return { error: result.validationError }
@@ -225,9 +225,9 @@ export async function updateSubscription(id: string, formData: FormData) {
 }
 
 export async function renewSubscription(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { data: sub, error: fetchError } = await supabase
     .from('subscriptions')
@@ -280,9 +280,9 @@ export async function renewSubscription(id: string) {
 }
 
 export async function addSubscriptionRenewal(subscriptionId: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const renewed_on = (formData.get('renewed_on') as string) || await serverToday()
   const amount_paid = parseFloat(formData.get('amount_paid') as string)
@@ -306,9 +306,9 @@ export async function addSubscriptionRenewal(subscriptionId: string, formData: F
 }
 
 export async function updateSubscriptionRenewal(renewalId: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const renewed_on = (formData.get('renewed_on') as string)
   const amount_paid = parseFloat(formData.get('amount_paid') as string)
@@ -330,9 +330,9 @@ export async function updateSubscriptionRenewal(renewalId: string, formData: For
 }
 
 export async function deleteSubscriptionRenewal(renewalId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { data: renewal } = await supabase
     .from('subscription_renewals')
@@ -359,9 +359,9 @@ export async function deleteSubscriptionRenewal(renewalId: string) {
 }
 
 export async function toggleSubscriptionActive(id: string, isActive: boolean) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('subscriptions')
@@ -376,9 +376,9 @@ export async function toggleSubscriptionActive(id: string, isActive: boolean) {
 }
 
 export async function deleteSubscription(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('subscriptions')

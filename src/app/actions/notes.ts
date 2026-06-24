@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerUser } from '@/lib/supabase/server'
 import { exceedsLength, MAX_SHORT_TEXT, MAX_NOTE_BODY } from '@/lib/validation'
 import { revalidatePath } from 'next/cache'
 
@@ -13,9 +13,9 @@ export type Note = {
 }
 
 export async function getNotesData() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return null
+  const supabase = await createClient()
 
   const { data } = await supabase
     .from('notes')
@@ -27,9 +27,9 @@ export async function getNotesData() {
 }
 
 export async function addNote(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const title = (formData.get('title') as string).trim()
   const body = (formData.get('body') as string).trim() || null
@@ -51,9 +51,9 @@ export async function addNote(formData: FormData) {
 }
 
 export async function updateNote(id: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const title = (formData.get('title') as string).trim()
   const body = (formData.get('body') as string).trim() || null
@@ -75,9 +75,9 @@ export async function updateNote(id: string, formData: FormData) {
 }
 
 export async function deleteNote(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('notes')

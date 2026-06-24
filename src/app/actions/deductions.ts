@@ -1,13 +1,13 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerUser } from '@/lib/supabase/server'
 import { exceedsLength, MAX_SHORT_TEXT } from '@/lib/validation'
 import { revalidatePath } from 'next/cache'
 
 export async function getDeductions() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return []
+  const supabase = await createClient()
 
   const { data } = await supabase
     .from('deductions')
@@ -19,9 +19,9 @@ export async function getDeductions() {
 }
 
 export async function createDeduction(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const name = (formData.get('name') as string).trim()
   const expected_amount = parseFloat(formData.get('expected_amount') as string)
@@ -50,9 +50,9 @@ export async function createDeduction(formData: FormData) {
 }
 
 export async function updateDeduction(id: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const name = (formData.get('name') as string).trim()
   const expected_amount = parseFloat(formData.get('expected_amount') as string)
@@ -78,9 +78,9 @@ export async function updateDeduction(id: string, formData: FormData) {
 }
 
 export async function toggleDeduction(id: string, is_active: boolean) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('deductions')
@@ -96,9 +96,9 @@ export async function toggleDeduction(id: string, is_active: boolean) {
 }
 
 export async function deleteDeduction(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('deductions')
