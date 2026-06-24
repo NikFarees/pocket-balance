@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Receipt, FileText, TrendingUp, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Receipt, BarChart2, TrendingUp, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const tabs = [
@@ -19,10 +19,10 @@ const tabs = [
     isActive: (pathname: string) => pathname.startsWith('/expenses'),
   },
   {
-    label: 'Notes',
-    icon: FileText,
-    href: '/notes',
-    isActive: (pathname: string) => pathname.startsWith('/notes'),
+    label: 'Insights',
+    icon: BarChart2,
+    href: '/insights',
+    isActive: (pathname: string) => pathname.startsWith('/insights'),
   },
   {
     label: 'Investments',
