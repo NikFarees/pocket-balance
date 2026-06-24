@@ -15,11 +15,38 @@ export async function SummaryCardsSection() {
   const data = await getDashboardSummaryData()
   if (!data) return null
   const { currentMonth, deductionsWithStatus, summary } = data
-  const { totalLiabilities, totalPaid, netInvested, backupBalance, epfTotal, subscriptionMonthlyCost, subscriptionExpiringSoon } = summary
+  const { totalLiabilities, totalPaid, netInvested, backupBalance, epfTotal, subscriptionMonthlyCost, subscriptionExpiringSoon, monthlyExpenseTotal, monthlyExpenseBudget } = summary
   const paidPercent = totalLiabilities > 0 ? Math.min(100, (totalPaid / totalLiabilities) * 100) : 0
+  const expensePercent = monthlyExpenseBudget && monthlyExpenseBudget > 0 ? Math.min(100, (monthlyExpenseTotal / monthlyExpenseBudget) * 100) : 0
+  const expenseOver = monthlyExpenseBudget !== null && monthlyExpenseTotal > monthlyExpenseBudget
 
   return (
     <>
+      {/* Expenses vs Budget */}
+      {monthlyExpenseBudget !== null && (
+        <Link href="/expenses" className={cardLink}>
+          <Card className={cardHover}>
+            <CardHeader className="pb-1 pt-4 px-4">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Expenses vs Budget</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4 space-y-2">
+              <p className="font-heading text-3xl font-bold tabular-nums">
+                <Amount value={monthlyExpenseTotal} />
+                <span className="text-base font-normal text-muted-foreground"> / <Amount value={monthlyExpenseBudget} /></span>
+              </p>
+              <div className="space-y-1">
+                <Progress value={expensePercent} className={cn('h-1.5', expenseOver && '[&>div]:bg-destructive')} />
+                <p className={cn('text-xs', expenseOver ? 'text-destructive' : 'text-muted-foreground')}>
+                  {expenseOver
+                    ? <><Amount value={monthlyExpenseTotal - monthlyExpenseBudget} /> over budget</>
+                    : <><Amount value={monthlyExpenseBudget - monthlyExpenseTotal} /> remaining</>}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      )}
+
       {/* Monthly Liabilities */}
       <Link href="/deductions" className={cardLink}>
         <Card className={cardHover}>

@@ -2,7 +2,7 @@
 
 import { serverNow } from '@/lib/server-date'
 import { createClient, getServerUser } from '@/lib/supabase/server'
-import { addDays, differenceInDays, format, parseISO, startOfDay, startOfMonth, subDays } from 'date-fns'
+import { addDays, differenceInDays, format, getDaysInMonth, parseISO, startOfDay, startOfMonth, subDays } from 'date-fns'
 
 export async function getDashboardData() {
   const user = await getServerUser()
@@ -240,13 +240,16 @@ export async function getDashboardSummaryData() {
   const now = await serverNow()
   const currentMonth = format(startOfMonth(now), 'yyyy-MM-dd')
 
-  const [incomesRes, deductionsRes, paymentsRes, investmentTxRes, backupTxRes, allIncomesEpfRes, subscriptionsRes] = await Promise.all([
+  const monthEnd = format(new Date(now.getFullYear(), now.getMonth() + 1, 0), 'yyyy-MM-dd')
+  const todayStr = format(now, 'yyyy-MM-dd')
+
+  const [incomesRes, deductionsRes, paymentsRes, investmentTxRes, backupTxRes, allIncomesEpfRes, subscriptionsRes, dailyTargetRes, monthExpensesRes] = await Promise.all([
     supabase
       .from('incomes')
       .select('amount')
       .eq('user_id', user.id)
       .gte('income_date', currentMonth)
-      .lte('income_date', format(new Date(now.getFullYear(), now.getMonth() + 1, 0), 'yyyy-MM-dd')),
+      .lte('income_date', monthEnd),
 
     supabase
       .from('deductions')
@@ -281,6 +284,22 @@ export async function getDashboardSummaryData() {
       .select('current_cost, renewal_cost, billing_cycle, custom_days, next_renewal, is_active')
       .eq('user_id', user.id)
       .eq('is_active', true),
+
+    supabase
+      .from('daily_targets')
+      .select('daily_amount')
+      .eq('user_id', user.id)
+      .lte('effective_from', todayStr)
+      .order('effective_from', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+
+    supabase
+      .from('expenses')
+      .select('amount')
+      .eq('user_id', user.id)
+      .gte('expense_date', currentMonth)
+      .lte('expense_date', monthEnd),
   ])
 
   const incomes = incomesRes.data ?? []
@@ -290,6 +309,11 @@ export async function getDashboardSummaryData() {
   const backupTx = backupTxRes.data ?? []
   const allIncomesEpf = allIncomesEpfRes.data ?? []
   const activeSubs = subscriptionsRes.data ?? []
+  const dailyTarget = dailyTargetRes.data ? Number(dailyTargetRes.data.daily_amount) : null
+  const monthExpenses = monthExpensesRes.data ?? []
+
+  const monthlyExpenseTotal = monthExpenses.reduce((sum, e) => sum + Number(e.amount), 0)
+  const monthlyExpenseBudget = dailyTarget !== null ? dailyTarget * getDaysInMonth(now) : null
 
   const totalLiabilities = deductions.reduce((sum, d) => sum + Number(d.expected_amount), 0)
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.paid_amount), 0)
@@ -356,6 +380,8 @@ export async function getDashboardSummaryData() {
       epfTotal,
       subscriptionMonthlyCost,
       subscriptionExpiringSoon,
+      monthlyExpenseTotal,
+      monthlyExpenseBudget,
     },
   }
 }
