@@ -3,6 +3,8 @@
  * Gemini `functionDeclarations` at runtime in the assistant route. Kept as a local
  * type so the app does not depend on the Anthropic SDK package.
  */
+import { EXPENSE_CATEGORIES } from '@/lib/validation'
+
 export interface Tool {
   name: string
   description: string
@@ -96,7 +98,7 @@ export const TOOLS: Tool[] = [
       properties: {
         amount: { type: 'number', description: 'Amount spent in Malaysian Ringgit (RM). Must be positive.' },
         description: { type: 'string', description: 'Short description of the expense, e.g. "Lunch at mamak".' },
-        category: { type: 'string', description: 'Optional free-text category, e.g. "Food", "Transport".' },
+        category: { type: 'string', enum: [...EXPENSE_CATEGORIES], description: 'Expense category. Pick the closest from the list; use "Other" if none fit. Omit only if truly unclear.' },
         expense_date: { type: 'string', description: "Date in 'yyyy-MM-dd'. Omit to use today." },
       },
       required: ['amount', 'description'],
@@ -183,7 +185,7 @@ export const TOOLS: Tool[] = [
         id: { type: 'string', description: 'Expense id from find_entries.' },
         amount: { type: 'number', description: 'New amount in RM (positive).' },
         description: { type: 'string', description: 'New description.' },
-        category: { type: 'string', description: 'Optional free-text category.' },
+        category: { type: 'string', enum: [...EXPENSE_CATEGORIES], description: 'Expense category from the fixed list; use "Other" if none fit.' },
       },
       required: ['id', 'amount', 'description'],
     },
@@ -606,7 +608,7 @@ export const TOOLS: Tool[] = [
   {
     name: 'get_month_summary',
     description:
-      'Get a summary of a month: total income, total expenses, total recurring deductions, and the resulting net. Call this to answer questions like "how much did I spend this month?" or "where is my money going?".',
+      'Get a summary of a month: total income, total expenses, total recurring deductions, the resulting net, and a per-category expense breakdown (`by_category`: each fixed category with its total for the month). Call this to answer "how much did I spend this month?", "where is my money going?", or "how much on food this month?".',
     input_schema: {
       type: 'object',
       properties: {
@@ -670,8 +672,8 @@ export function systemPrompt(today: string): string {
     '- The conversation history includes lines like "Done: Add expense ..." or "User cancelled: ..." describing your earlier actions. Use them to resolve follow-ups such as "remove it", "delete that", or "the dinner one" — they refer to those recent entries; look them up with find_entries and act.',
     '- To answer a question about the user\'s finances, call a read tool (get_today_status, get_month_summary, get_backup_balance, get_debts_summary) and base your answer ONLY on the returned data. Never invent numbers.',
     '- To answer anything about the user\'s notes or plans, call get_notes and base your answer ONLY on the returned note content. If they ask you to assess a plan, read the notes first with get_notes, then give your view.',
-    '- When the user states an amount and a purpose (e.g. "RM5 for lunch"), call add_expense. Infer a sensible category when obvious (food, transport, groceries, etc.), but leave it out if unsure.',
-    '- The expense `category` is free text and inconsistent (e.g. "drink" vs "drinks"), so do NOT give per-category breakdowns in summaries — report totals and net instead, unless the user explicitly asks about a specific category.',
+    `- When the user states an amount and a purpose (e.g. "RM5 for lunch"), call add_expense. The expense category is a FIXED set — exactly one of: ${EXPENSE_CATEGORIES.join(', ')}. Pick the closest match (lunch/food/drinks → "Food & Drinks"; petrol/grab/parking → "Transport"; clothes/Shopee → "Shopping"; clinic/medicine → "Health"); use "Other" when nothing fits. Never invent a category outside this list.`,
+    '- Expense categories are clean and finite, so you MAY give per-category breakdowns when asked (e.g. "how much on food this month?"). Use get_month_summary — its by_category field has the per-category totals for the month.',
     '- If a request is ambiguous (e.g. you cannot tell expense vs income, or which investment), ask one short clarifying question instead of guessing.',
     '- To settle / pay off / cancel a debt, use settle_debt (NOT delete). For a partial repayment use add_debt_payment (it auto-settles when fully paid). find_entries(kind:"debt") returns is_settled.',
     '- Investments: add_investment creates the account itself — ask which category (trading / unit_trust / savings) if unclear. add_investment_transaction logs a buy/sell/dividend on an EXISTING investment. Use find_entries(kind:"investment") to edit, delete, or archive an investment.',

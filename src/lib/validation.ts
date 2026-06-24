@@ -8,6 +8,11 @@ export const EXPENSE_CATEGORIES = [
 
 export type ExpenseCategory = typeof EXPENSE_CATEGORIES[number]
 
+/** True if the category is empty/null or one of the allowed EXPENSE_CATEGORIES. */
+export function isValidExpenseCategory(value: string | null | undefined): boolean {
+  return !value || (EXPENSE_CATEGORIES as readonly string[]).includes(value)
+}
+
 export const MAX_SHORT_TEXT = 200
 export const MAX_LONG_TEXT = 1000
 export const MAX_NOTE_BODY = 20000

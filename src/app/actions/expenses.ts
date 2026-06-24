@@ -2,7 +2,7 @@
 
 import { serverNow, serverToday } from '@/lib/server-date'
 import { createClient, getServerUser } from '@/lib/supabase/server'
-import { exceedsLength, MAX_SHORT_TEXT } from '@/lib/validation'
+import { exceedsLength, isValidExpenseCategory, MAX_SHORT_TEXT } from '@/lib/validation'
 import { addDays, endOfMonth, format, parseISO, startOfMonth, subDays } from 'date-fns'
 import { revalidatePath } from 'next/cache'
 
@@ -119,6 +119,7 @@ export async function addExpense(formData: FormData) {
   if (!description) return { error: 'Description is required' }
   if (exceedsLength(description, MAX_SHORT_TEXT)) return { error: 'Description is too long' }
   if (exceedsLength(category, MAX_SHORT_TEXT)) return { error: 'Category is too long' }
+  if (!isValidExpenseCategory(category)) return { error: 'Invalid category' }
 
   const { error } = await supabase.from('expenses').insert({
     user_id: user.id,
@@ -147,6 +148,7 @@ export async function updateExpense(id: string, formData: FormData) {
   if (!description) return { error: 'Description is required' }
   if (exceedsLength(description, MAX_SHORT_TEXT)) return { error: 'Description is too long' }
   if (exceedsLength(category, MAX_SHORT_TEXT)) return { error: 'Category is too long' }
+  if (!isValidExpenseCategory(category)) return { error: 'Invalid category' }
 
   const { error } = await supabase
     .from('expenses')

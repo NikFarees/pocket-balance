@@ -66,7 +66,7 @@ async function getMonthSummary(month?: string) {
   const [incomesRes, expensesRes, deductionsRes] = await Promise.all([
     supabase.from('incomes').select('amount').eq('user_id', user.id)
       .gte('income_date', monthStart).lte('income_date', monthEnd),
-    supabase.from('expenses').select('amount').eq('user_id', user.id)
+    supabase.from('expenses').select('amount, category').eq('user_id', user.id)
       .gte('expense_date', monthStart).lte('expense_date', monthEnd),
     supabase.from('deductions').select('expected_amount').eq('user_id', user.id).eq('is_active', true),
   ])
@@ -75,14 +75,24 @@ async function getMonthSummary(month?: string) {
   const expenseTotal = (expensesRes.data ?? []).reduce((s, e) => s + Number(e.amount), 0)
   const deductionsTotal = (deductionsRes.data ?? []).reduce((s, d) => s + Number(d.expected_amount), 0)
 
-  // No per-category breakdown: `category` is free text and noisy ("drink" vs
-  // "drinks"), so totals + net are the useful summary.
+  // Per-category breakdown: categories are a fixed, clean set, so this is a
+  // useful answer for "how much on food this month?". null → 'Uncategorised'.
+  const byCategory: Record<string, number> = {}
+  for (const e of expensesRes.data ?? []) {
+    const cat = (e.category as string | null) || 'Uncategorised'
+    byCategory[cat] = (byCategory[cat] ?? 0) + Number(e.amount)
+  }
+  const by_category = Object.entries(byCategory)
+    .map(([category, total]) => ({ category, total }))
+    .sort((a, b) => b.total - a.total)
+
   return {
     month: format(base, 'MMMM yyyy'),
     income_total: incomeTotal,
     expense_total: expenseTotal,
     recurring_deductions_total: deductionsTotal,
     net: incomeTotal - expenseTotal - deductionsTotal,
+    by_category,
   }
 }
 
