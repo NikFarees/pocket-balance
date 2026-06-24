@@ -258,6 +258,46 @@ async function findEntries(
         .slice(0, limit)
       return { entries }
     }
+    case 'investment': {
+      let q = supabase.from('investments')
+        .select('id, name, category, is_active')
+        .eq('user_id', user.id)
+      if (like) q = q.ilike('name', like)
+      const { data } = await q.order('name').limit(limit)
+      return { entries: data ?? [] }
+    }
+    case 'deduction': {
+      let q = supabase.from('deductions')
+        .select('id, name, expected_amount, due_date, category, is_active')
+        .eq('user_id', user.id)
+      if (like) q = q.ilike('name', like)
+      const { data } = await q.order('name').limit(limit)
+      return { entries: data ?? [] }
+    }
+    case 'subscription': {
+      let q = supabase.from('subscriptions')
+        .select('id, name, provider, current_cost, billing_cycle, next_renewal, is_active')
+        .eq('user_id', user.id)
+      if (like) q = q.ilike('name', like)
+      const { data } = await q.order('next_renewal', { ascending: true }).limit(limit)
+      return { entries: data ?? [] }
+    }
+    case 'note': {
+      let q = supabase.from('notes')
+        .select('id, title, updated_at')
+        .eq('user_id', user.id)
+      if (like) q = q.ilike('title', like)
+      const { data } = await q.order('updated_at', { ascending: false }).limit(limit)
+      return { entries: data ?? [] }
+    }
+    case 'daily_target': {
+      const { data } = await supabase.from('daily_targets')
+        .select('id, daily_amount, effective_from')
+        .eq('user_id', user.id)
+        .order('effective_from', { ascending: false })
+        .limit(limit)
+      return { entries: data ?? [] }
+    }
     default:
       return { error: `Unknown kind: ${kind}` }
   }

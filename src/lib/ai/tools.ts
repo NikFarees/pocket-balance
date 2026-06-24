@@ -48,6 +48,32 @@ export const WRITE_TOOL_NAMES = new Set([
   'delete_debt',
   'delete_backup_transaction',
   'delete_investment_transaction',
+  // debts: settle / payment
+  'settle_debt',
+  'unsettle_debt',
+  'add_debt_payment',
+  // investments (the account)
+  'add_investment',
+  'update_investment',
+  'delete_investment',
+  'toggle_investment',
+  // deductions (liabilities)
+  'add_deduction',
+  'update_deduction',
+  'delete_deduction',
+  'toggle_deduction',
+  'mark_deduction_paid',
+  // subscriptions (lite: renew / toggle / delete)
+  'renew_subscription',
+  'toggle_subscription',
+  'delete_subscription',
+  // notes
+  'add_note',
+  'update_note',
+  'delete_note',
+  // daily target
+  'set_daily_target',
+  'delete_daily_target',
 ])
 
 export const READ_TOOL_NAMES = new Set([
@@ -297,6 +323,279 @@ export const TOOLS: Tool[] = [
     },
   },
 
+  // ---- DEBTS: settle / unsettle / record payment ----
+  {
+    name: 'settle_debt',
+    description:
+      "Mark a debt as settled / paid-off / cancelled. Use when the user says a debt is done, cleared, paid back, or to cancel it. Get the `id` from find_entries(kind:'debt'); do NOT delete the debt for this.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Debt id from find_entries(kind:'debt')." },
+        summary: { type: 'string', description: 'Short human label of the debt, e.g. "Ali — RM50".' },
+      },
+      required: ['id', 'summary'],
+    },
+  },
+  {
+    name: 'unsettle_debt',
+    description: "Re-open a previously settled debt (mark it unsettled again). Get the `id` from find_entries(kind:'debt').",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Debt id from find_entries(kind:'debt')." },
+        summary: { type: 'string', description: 'Short human label of the debt.' },
+      },
+      required: ['id', 'summary'],
+    },
+  },
+  {
+    name: 'add_debt_payment',
+    description:
+      "Record a partial payment toward a debt (the debt auto-settles once fully paid). Use when the user pays back part of what they owe / collects part of what's owed to them. Get `debt_id` from find_entries(kind:'debt').",
+    input_schema: {
+      type: 'object',
+      properties: {
+        debt_id: { type: 'string', description: "Debt id from find_entries(kind:'debt')." },
+        amount: { type: 'number', description: 'Payment amount in RM. Must be positive.' },
+        paid_date: { type: 'string', description: "Date in 'yyyy-MM-dd'. Omit to use today." },
+        notes: { type: 'string', description: 'Optional notes.' },
+      },
+      required: ['debt_id', 'amount'],
+    },
+  },
+
+  // ---- INVESTMENTS (the account itself) ----
+  {
+    name: 'add_investment',
+    description:
+      'Create a new investment account/holding. category: "trading" (gold/stocks — buy/sell with quantity), "unit_trust" (e.g. ASNB — save/redeem/dividend), or "savings" (e.g. Tabung Haji — deposit/withdraw/dividend). Ask the user which category if it is not clear. To log a buy/sell/dividend on an EXISTING investment, use add_investment_transaction instead.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Name of the investment, e.g. "ASNB", "Gold", "Tabung Haji".' },
+        category: { type: 'string', enum: ['trading', 'unit_trust', 'savings'], description: 'trading / unit_trust / savings.' },
+        notes: { type: 'string', description: 'Optional notes.' },
+      },
+      required: ['name', 'category'],
+    },
+  },
+  {
+    name: 'update_investment',
+    description: "Edit an existing investment's name, category, or notes. Get the `id` from find_entries(kind:'investment').",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Investment id from find_entries(kind:'investment')." },
+        name: { type: 'string', description: 'New name.' },
+        category: { type: 'string', enum: ['trading', 'unit_trust', 'savings'], description: 'trading / unit_trust / savings.' },
+        notes: { type: 'string', description: 'Optional notes.' },
+      },
+      required: ['id', 'name', 'category'],
+    },
+  },
+  {
+    name: 'delete_investment',
+    description: "Delete an investment AND all of its transactions. Get the `id` from find_entries(kind:'investment'). This is irreversible.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Investment id from find_entries(kind:'investment')." },
+        summary: { type: 'string', description: 'Short human label of the investment.' },
+      },
+      required: ['id', 'summary'],
+    },
+  },
+  {
+    name: 'toggle_investment',
+    description: "Archive or re-activate an investment. Set `active` to the desired end state (true = active, false = archived). Get the `id` from find_entries(kind:'investment').",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Investment id from find_entries(kind:'investment')." },
+        active: { type: 'boolean', description: 'Desired state: true = active, false = archived.' },
+        summary: { type: 'string', description: 'Short human label of the investment.' },
+      },
+      required: ['id', 'active', 'summary'],
+    },
+  },
+
+  // ---- DEDUCTIONS (recurring liabilities) ----
+  {
+    name: 'add_deduction',
+    description:
+      'Create a recurring liability / deduction (e.g. car loan, insurance, rent) with a monthly expected amount. due_date is the day of the month (1–31) it is due.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Name of the liability, e.g. "Car loan", "Astro".' },
+        expected_amount: { type: 'number', description: 'Expected monthly amount in RM. Must be positive.' },
+        due_date: { type: 'number', description: 'Optional day of month it is due (1–31).' },
+        category: { type: 'string', description: 'Optional category.' },
+      },
+      required: ['name', 'expected_amount'],
+    },
+  },
+  {
+    name: 'update_deduction',
+    description: "Edit a recurring liability. Get the `id` from find_entries(kind:'deduction').",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Liability id from find_entries(kind:'deduction')." },
+        name: { type: 'string', description: 'New name.' },
+        expected_amount: { type: 'number', description: 'New expected monthly amount in RM.' },
+        due_date: { type: 'number', description: 'Optional day of month (1–31).' },
+        category: { type: 'string', description: 'Optional category.' },
+      },
+      required: ['id', 'name', 'expected_amount'],
+    },
+  },
+  {
+    name: 'delete_deduction',
+    description: "Delete a recurring liability. Get the `id` from find_entries(kind:'deduction').",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Liability id from find_entries(kind:'deduction')." },
+        summary: { type: 'string', description: 'Short human label of the liability.' },
+      },
+      required: ['id', 'summary'],
+    },
+  },
+  {
+    name: 'toggle_deduction',
+    description: "Pause or re-activate a recurring liability. Set `active` to the desired end state (true = active, false = paused). Get the `id` from find_entries(kind:'deduction').",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Liability id from find_entries(kind:'deduction')." },
+        active: { type: 'boolean', description: 'Desired state: true = active, false = paused.' },
+        summary: { type: 'string', description: 'Short human label of the liability.' },
+      },
+      required: ['id', 'active', 'summary'],
+    },
+  },
+  {
+    name: 'mark_deduction_paid',
+    description:
+      "Mark a recurring liability as paid for the current month. Get `deduction_id` from find_entries(kind:'deduction'); default `amount` to that liability's expected_amount unless the user gives a different amount.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        deduction_id: { type: 'string', description: "Liability id from find_entries(kind:'deduction')." },
+        amount: { type: 'number', description: 'Amount paid in RM (usually the expected_amount).' },
+      },
+      required: ['deduction_id', 'amount'],
+    },
+  },
+
+  // ---- SUBSCRIPTIONS (renew / toggle / delete — no create/edit here) ----
+  {
+    name: 'renew_subscription',
+    description:
+      "Renew a subscription: advances its next renewal date by its billing cycle and logs the renewal. Get the `id` from find_entries(kind:'subscription'). To CREATE or EDIT a subscription, tell the user to use the Subscriptions form (it has too many fields for chat).",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Subscription id from find_entries(kind:'subscription')." },
+        summary: { type: 'string', description: 'Short human label of the subscription, e.g. "Netflix".' },
+      },
+      required: ['id', 'summary'],
+    },
+  },
+  {
+    name: 'toggle_subscription',
+    description: "Pause or resume a subscription. Set `active` to the desired end state (true = active, false = paused). Get the `id` from find_entries(kind:'subscription').",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Subscription id from find_entries(kind:'subscription')." },
+        active: { type: 'boolean', description: 'Desired state: true = active, false = paused.' },
+        summary: { type: 'string', description: 'Short human label of the subscription.' },
+      },
+      required: ['id', 'active', 'summary'],
+    },
+  },
+  {
+    name: 'delete_subscription',
+    description: "Delete / cancel a subscription. Get the `id` from find_entries(kind:'subscription').",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Subscription id from find_entries(kind:'subscription')." },
+        summary: { type: 'string', description: 'Short human label of the subscription.' },
+      },
+      required: ['id', 'summary'],
+    },
+  },
+
+  // ---- NOTES ----
+  {
+    name: 'add_note',
+    description: 'Create a new note (free-form plan/target/info). body is plain text.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Note title.' },
+        body: { type: 'string', description: 'Optional note body (plain text).' },
+      },
+      required: ['title'],
+    },
+  },
+  {
+    name: 'update_note',
+    description: "Edit a note's title or body. Get the `id` from find_entries(kind:'note'). Provide the full new title; copy the unchanged one if only editing the body.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Note id from find_entries(kind:'note')." },
+        title: { type: 'string', description: 'New title.' },
+        body: { type: 'string', description: 'New body (plain text).' },
+      },
+      required: ['id', 'title'],
+    },
+  },
+  {
+    name: 'delete_note',
+    description: "Delete a note. Get the `id` from find_entries(kind:'note').",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Note id from find_entries(kind:'note')." },
+        summary: { type: 'string', description: 'Short human label of the note (its title).' },
+      },
+      required: ['id', 'summary'],
+    },
+  },
+
+  // ---- DAILY TARGET ----
+  {
+    name: 'set_daily_target',
+    description:
+      'Set the daily spending limit/target, effective from a date (defaults today). This adds a new effective-from entry to the target history rather than editing in place.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        daily_amount: { type: 'number', description: 'New daily spending target in RM. Must be positive.' },
+        effective_from: { type: 'string', description: "Date the target takes effect, 'yyyy-MM-dd'. Omit for today." },
+      },
+      required: ['daily_amount'],
+    },
+  },
+  {
+    name: 'delete_daily_target',
+    description: "Delete a daily-target history entry. Get the `id` from find_entries(kind:'daily_target').",
+    input_schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: "Daily-target id from find_entries(kind:'daily_target')." },
+        summary: { type: 'string', description: 'Short human label of the target entry.' },
+      },
+      required: ['id', 'summary'],
+    },
+  },
+
   // ---- READ TOOLS (executed server-side) ----
   {
     name: 'get_today_status',
@@ -340,14 +639,14 @@ export const TOOLS: Tool[] = [
   {
     name: 'find_entries',
     description:
-      "Look up the user's recent entries (with their database IDs) so you can edit or delete a specific one. ALWAYS call this before any update_* or delete_* tool, and use only the IDs it returns. Optionally narrow with `date` (a single day) or `contains` (a text fragment matching the description / person / investment name).",
+      "Look up the user's existing records (with their database IDs) so you can target a specific one for any edit, delete, settle, toggle, renew, mark-paid, or payment tool. ALWAYS call this before such a tool, and use only the IDs it returns. `kind` selects the record type: 'debt' returns is_settled; 'investment'/'deduction'/'subscription' return is_active. Optionally narrow with `date` (a single day, where applicable) or `contains` (a text fragment matching the description / person / name / title).",
     input_schema: {
       type: 'object',
       properties: {
         kind: {
           type: 'string',
-          enum: ['expense', 'income', 'debt', 'backup', 'investment_transaction'],
-          description: 'Which kind of entry to look up.',
+          enum: ['expense', 'income', 'debt', 'backup', 'investment_transaction', 'investment', 'deduction', 'subscription', 'note', 'daily_target'],
+          description: 'Which kind of record to look up.',
         },
         date: { type: 'string', description: "Optional 'yyyy-MM-dd' to filter to a single day." },
         contains: { type: 'string', description: 'Optional text fragment to match.' },
@@ -374,6 +673,13 @@ export function systemPrompt(today: string): string {
     '- When the user states an amount and a purpose (e.g. "RM5 for lunch"), call add_expense. Infer a sensible category when obvious (food, transport, groceries, etc.), but leave it out if unsure.',
     '- The expense `category` is free text and inconsistent (e.g. "drink" vs "drinks"), so do NOT give per-category breakdowns in summaries — report totals and net instead, unless the user explicitly asks about a specific category.',
     '- If a request is ambiguous (e.g. you cannot tell expense vs income, or which investment), ask one short clarifying question instead of guessing.',
+    '- To settle / pay off / cancel a debt, use settle_debt (NOT delete). For a partial repayment use add_debt_payment (it auto-settles when fully paid). find_entries(kind:"debt") returns is_settled.',
+    '- Investments: add_investment creates the account itself — ask which category (trading / unit_trust / savings) if unclear. add_investment_transaction logs a buy/sell/dividend on an EXISTING investment. Use find_entries(kind:"investment") to edit, delete, or archive an investment.',
+    '- Liabilities are "deductions": add_deduction / update_deduction / delete_deduction / toggle_deduction, and mark_deduction_paid to mark the current month paid (default the amount to its expected_amount). find_entries(kind:"deduction").',
+    '- Subscriptions: you can renew_subscription, pause/resume (toggle_subscription), or delete_subscription — but to CREATE or EDIT a subscription, tell the user to use the Subscriptions form (too many fields for chat). find_entries(kind:"subscription").',
+    '- Notes: add_note / update_note / delete_note (find_entries(kind:"note")); use get_notes to read them.',
+    '- Daily spending target: set_daily_target sets a new limit effective from a date. find_entries(kind:"daily_target") to delete an entry.',
+    '- For any toggle_* tool, `active` is the desired END state (true = active/resumed, false = archived/paused).',
     '- Format money as RM followed by the amount (e.g. RM5.00). Keep replies short and conversational.',
   ].join('\n')
 }
