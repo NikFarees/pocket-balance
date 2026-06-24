@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Fraunces, Hanken_Grotesk, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
@@ -31,6 +31,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "PennyWise",
   description: "Personal daily financial tracker",
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#2f7d54" },
+    { media: "(prefers-color-scheme: dark)", color: "#d9b067" },
+  ],
 };
 
 export default function RootLayout({
