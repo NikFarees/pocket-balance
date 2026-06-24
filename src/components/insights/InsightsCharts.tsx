@@ -5,13 +5,12 @@ import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 import { SpendingTrendChart } from './SpendingTrendChart'
 import { CategoryBreakdownChart } from './CategoryBreakdownChart'
-import { IncomeVsExpenseChart } from './IncomeVsExpenseChart'
 
 export async function InsightsCharts() {
   const data = await getInsightsData(6)
   if (!data) return null
 
-  const { spendingTrend, incomeVsExpense, categoryBreakdown, currentMonthLabel, monthlyExpenseTotal, monthlyExpenseBudget } = data
+  const { spendingTrend, categoryBreakdown, currentMonthLabel, monthlyExpenseTotal, monthlyExpenseBudget } = data
 
   const expensePercent = monthlyExpenseBudget && monthlyExpenseBudget > 0
     ? Math.min(100, (monthlyExpenseTotal / monthlyExpenseBudget) * 100)
@@ -48,15 +47,6 @@ export async function InsightsCharts() {
         </CardHeader>
         <CardContent className="px-4 pb-4">
           <SpendingTrendChart data={spendingTrend} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-2 pt-4 px-4">
-          <CardTitle className="text-sm font-semibold">Income vs Expenses — Last 6 Months</CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          <IncomeVsExpenseChart data={incomeVsExpense} />
         </CardContent>
       </Card>
 
