@@ -14,13 +14,12 @@ export function Logo({ className }: { className?: string }) {
       <g
         fill="none"
         stroke="#f5f1e6"
-        strokeWidth="56"
+        strokeWidth="54"
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <path d="M158 132 V300" />
-        <path d="M158 132 H252 C306 132 306 232 252 232 H158" />
-        <path d="M150 300 L196 388 L256 312 L316 388 L362 300" />
+        <path d="M168 140 H250 C300 140 300 236 250 236 H168" />
+        <path d="M168 140 V312 L214 388 L256 326 L298 388 L344 312" />
       </g>
     </svg>
   )
