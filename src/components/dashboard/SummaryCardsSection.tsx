@@ -15,7 +15,7 @@ export async function SummaryCardsSection() {
   const data = await getDashboardSummaryData()
   if (!data) return null
   const { currentMonth, deductionsWithStatus, summary } = data
-  const { totalLiabilities, totalPaid, freeBalance, netInvested, backupBalance, epfTotal, subscriptionMonthlyCost, subscriptionExpiringSoon } = summary
+  const { totalLiabilities, totalPaid, netInvested, backupBalance, epfTotal, subscriptionMonthlyCost, subscriptionExpiringSoon } = summary
   const paidPercent = totalLiabilities > 0 ? Math.min(100, (totalPaid / totalLiabilities) * 100) : 0
 
   return (

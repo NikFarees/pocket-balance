@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Receipt, FileText, TrendingUp, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Receipt, BarChart2, FileText, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const tabs = [
@@ -19,16 +19,16 @@ const tabs = [
     isActive: (pathname: string) => pathname.startsWith('/expenses'),
   },
   {
+    label: 'Insights',
+    icon: BarChart2,
+    href: '/insights',
+    isActive: (pathname: string) => pathname.startsWith('/insights'),
+  },
+  {
     label: 'Notes',
     icon: FileText,
     href: '/notes',
     isActive: (pathname: string) => pathname.startsWith('/notes'),
-  },
-  {
-    label: 'Investments',
-    icon: TrendingUp,
-    href: '/investments',
-    isActive: (pathname: string) => pathname.startsWith('/investments'),
   },
 ];
 
@@ -63,7 +63,7 @@ export function BottomNav() {
           <span className="text-[10px] mt-0.5">AI</span>
         </button>
 
-        {/* Notes, Investments */}
+        {/* Insights, Notes */}
         {tabs.slice(2).map(({ label, icon: Icon, href, isActive }) => (
           <Link
             key={href}

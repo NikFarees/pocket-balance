@@ -10,7 +10,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { cn } from '@/lib/utils'
-import { ChevronDown, Menu, Wallet, CreditCard, FileText, RefreshCw, Target, Shield, UserCircle, Eye, EyeOff } from 'lucide-react'
+import { ChevronDown, Menu, Wallet, CreditCard, FileText, RefreshCw, Target, Shield, UserCircle, Eye, EyeOff, BarChart2 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -20,6 +20,7 @@ import { useBalanceVisibility } from '@/components/BalanceVisibilityProvider'
 const standaloneLinks = [
   { href: '/', label: 'Dashboard' },
   { href: '/expenses', label: 'Expenses' },
+  { href: '/insights', label: 'Insights' },
   { href: '/debts', label: 'Debts' },
   { href: '/notes', label: 'Notes' },
 ]
@@ -37,6 +38,12 @@ const assetLinks = [
 ]
 
 const drawerGroups = [
+  {
+    label: 'Analyse',
+    links: [
+      { label: 'Insights', href: '/insights', icon: BarChart2 },
+    ],
+  },
   {
     label: 'Track',
     links: [
