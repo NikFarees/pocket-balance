@@ -2,7 +2,7 @@
 
 import { serverNow } from '@/lib/server-date'
 import { createClient, getServerUser } from '@/lib/supabase/server'
-import { endOfMonth, format, parseISO, startOfMonth, subMonths } from 'date-fns'
+import { endOfMonth, format, getDaysInMonth, parseISO, startOfMonth, subMonths } from 'date-fns'
 
 export async function getInsightsData(months = 6) {
   const user = await getServerUser()
@@ -15,7 +15,9 @@ export async function getInsightsData(months = 6) {
   const currentMonthStart = format(startOfMonth(now), 'yyyy-MM-dd')
   const currentMonthEnd = format(endOfMonth(now), 'yyyy-MM-dd')
 
-  const [expensesRes, incomesRes] = await Promise.all([
+  const todayStr = format(now, 'yyyy-MM-dd')
+
+  const [expensesRes, incomesRes, dailyTargetRes] = await Promise.all([
     supabase
       .from('expenses')
       .select('expense_date, amount, category')
@@ -29,6 +31,15 @@ export async function getInsightsData(months = 6) {
       .eq('user_id', user.id)
       .gte('income_date', windowStart)
       .lte('income_date', windowEnd),
+
+    supabase
+      .from('daily_targets')
+      .select('daily_amount')
+      .eq('user_id', user.id)
+      .lte('effective_from', todayStr)
+      .order('effective_from', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   const expenses = expensesRes.data ?? []
@@ -86,5 +97,9 @@ export async function getInsightsData(months = 6) {
 
   const currentMonthLabel = format(now, 'MMMM yyyy')
 
-  return { spendingTrend, incomeVsExpense, categoryBreakdown, currentMonthLabel }
+  const monthlyExpenseTotal = currentMonthExpenses.reduce((sum, e) => sum + Number(e.amount), 0)
+  const dailyTarget = dailyTargetRes.data ? Number(dailyTargetRes.data.daily_amount) : null
+  const monthlyExpenseBudget = dailyTarget !== null ? dailyTarget * getDaysInMonth(now) : null
+
+  return { spendingTrend, incomeVsExpense, categoryBreakdown, currentMonthLabel, monthlyExpenseTotal, monthlyExpenseBudget }
 }
