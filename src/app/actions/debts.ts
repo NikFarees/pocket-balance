@@ -1,7 +1,7 @@
 'use server'
 
 import { serverToday } from '@/lib/server-date'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerUser } from '@/lib/supabase/server'
 import { exceedsLength, MAX_LONG_TEXT, MAX_SHORT_TEXT } from '@/lib/validation'
 import { revalidatePath } from 'next/cache'
 
@@ -15,9 +15,9 @@ export type DebtPayment = {
 }
 
 export async function getDebts() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return null
+  const supabase = await createClient()
 
   const [debtsRes, paymentsRes] = await Promise.all([
     supabase
@@ -57,9 +57,9 @@ export async function getDebts() {
 }
 
 export async function createDebt(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const type = formData.get('type') as string
   const person_name = (formData.get('person_name') as string)?.trim()
@@ -85,9 +85,9 @@ export async function createDebt(formData: FormData) {
 }
 
 export async function settleDebt(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('debts')
@@ -101,9 +101,9 @@ export async function settleDebt(id: string) {
 }
 
 export async function unsettleDebt(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('debts')
@@ -117,9 +117,9 @@ export async function unsettleDebt(id: string) {
 }
 
 export async function updateDebt(id: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const person_name = (formData.get('person_name') as string)?.trim()
   const amount = parseFloat(formData.get('amount') as string)
@@ -143,9 +143,9 @@ export async function updateDebt(id: string, formData: FormData) {
 }
 
 export async function deleteDebt(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('debts')
@@ -159,9 +159,9 @@ export async function deleteDebt(id: string) {
 }
 
 export async function addDebtPayment(debtId: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const amount = parseFloat(formData.get('amount') as string)
   const paid_date = (formData.get('paid_date') as string) || await serverToday()
@@ -210,9 +210,9 @@ export async function addDebtPayment(debtId: string, formData: FormData) {
 }
 
 export async function deleteDebtPayment(paymentId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   // Get the payment to find the parent debt
   const { data: payment } = await supabase

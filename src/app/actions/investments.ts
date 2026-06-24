@@ -1,13 +1,13 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerUser } from '@/lib/supabase/server'
 import { exceedsLength, MAX_LONG_TEXT, MAX_SHORT_TEXT } from '@/lib/validation'
 import { revalidatePath } from 'next/cache'
 
 export async function getInvestments() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return []
+  const supabase = await createClient()
 
   const [{ data: investments }, { data: txs }] = await Promise.all([
     supabase.from('investments').select('*').eq('user_id', user.id).order('name'),
@@ -32,9 +32,9 @@ export async function getInvestments() {
 }
 
 export async function getInvestmentWithTransactions(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return null
+  const supabase = await createClient()
 
   const [investmentRes, txRes] = await Promise.all([
     supabase.from('investments').select('*').eq('id', id).eq('user_id', user.id).single(),
@@ -83,9 +83,9 @@ export async function getInvestmentWithTransactions(id: string) {
 }
 
 export async function createInvestment(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const name = (formData.get('name') as string).trim()
   const category = (formData.get('category') as string) || 'trading'
@@ -109,9 +109,9 @@ export async function createInvestment(formData: FormData) {
 }
 
 export async function updateInvestment(id: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const name = (formData.get('name') as string).trim()
   const category = (formData.get('category') as string) || 'trading'
@@ -136,9 +136,9 @@ export async function updateInvestment(id: string, formData: FormData) {
 }
 
 export async function toggleInvestment(id: string, is_active: boolean) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('investments')
@@ -153,9 +153,9 @@ export async function toggleInvestment(id: string, is_active: boolean) {
 }
 
 export async function deleteInvestment(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('investments')
@@ -170,9 +170,9 @@ export async function deleteInvestment(id: string) {
 }
 
 export async function addTransaction(investmentId: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const type = formData.get('type') as 'buy' | 'sell' | 'dividend' | 'wallet_topup'
   const amount = parseFloat(formData.get('amount') as string)
@@ -214,9 +214,9 @@ export async function addTransaction(investmentId: string, formData: FormData) {
 }
 
 export async function updateTransaction(id: string, investmentId: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const type = formData.get('type') as 'buy' | 'sell' | 'dividend' | 'wallet_topup'
   const amount = parseFloat(formData.get('amount') as string)
@@ -251,9 +251,9 @@ export async function updateTransaction(id: string, investmentId: string, formDa
 }
 
 export async function deleteTransaction(id: string, investmentId: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('investment_transactions')

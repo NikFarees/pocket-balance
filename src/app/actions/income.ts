@@ -1,15 +1,15 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerUser } from '@/lib/supabase/server'
 import { calcNet } from '@/lib/statutory'
 import { exceedsLength, MAX_LONG_TEXT, MAX_SHORT_TEXT } from '@/lib/validation'
 import { endOfMonth, format, parseISO, startOfMonth } from 'date-fns'
 import { revalidatePath } from 'next/cache'
 
 export async function getIncomes() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return []
+  const supabase = await createClient()
 
   const { data } = await supabase
     .from('incomes')
@@ -21,9 +21,9 @@ export async function getIncomes() {
 }
 
 export async function getIncomesForMonth(month: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return []
+  const supabase = await createClient()
 
   const monthStart = format(startOfMonth(parseISO(month)), 'yyyy-MM-dd')
   const monthEnd = format(endOfMonth(parseISO(month)), 'yyyy-MM-dd')
@@ -40,9 +40,9 @@ export async function getIncomesForMonth(month: string) {
 }
 
 export async function createIncome(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const source = (formData.get('source') as string)?.trim()
   const income_date = formData.get('income_date') as string
@@ -102,9 +102,9 @@ export async function createIncome(formData: FormData) {
 }
 
 export async function updateIncome(id: string, formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const source = (formData.get('source') as string)?.trim()
   const income_date = formData.get('income_date') as string
@@ -166,9 +166,9 @@ export async function updateIncome(id: string, formData: FormData) {
 }
 
 export async function deleteIncome(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('incomes')

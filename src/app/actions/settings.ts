@@ -1,13 +1,13 @@
 'use server'
 
 import { serverToday } from '@/lib/server-date'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getServerUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export async function getDailyTarget() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return null
+  const supabase = await createClient()
 
   const today = await serverToday()
 
@@ -24,9 +24,9 @@ export async function getDailyTarget() {
 }
 
 export async function getAllDailyTargets() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return []
+  const supabase = await createClient()
 
   const { data } = await supabase
     .from('daily_targets')
@@ -38,9 +38,9 @@ export async function getAllDailyTargets() {
 }
 
 export async function setDailyTarget(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const daily_amount = parseFloat(formData.get('daily_amount') as string)
   const effective_from = (formData.get('effective_from') as string) || await serverToday()
@@ -61,9 +61,9 @@ export async function setDailyTarget(formData: FormData) {
 }
 
 export async function deleteDailyTarget(id: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
   if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
 
   const { error } = await supabase
     .from('daily_targets')
