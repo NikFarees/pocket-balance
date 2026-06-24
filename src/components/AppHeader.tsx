@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ThemeToggle } from '@/components/ThemeToggle'
+import { Logo } from '@/components/Logo'
 import { cn } from '@/lib/utils'
 import { ChevronDown, Menu, Wallet, CreditCard, FileText, RefreshCw, Target, Shield, TrendingUp, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
@@ -85,7 +86,10 @@ export function AppHeader() {
           >
             <Menu className="size-5" />
           </button>
-          <Link href="/" className="font-heading font-semibold text-lg text-primary tracking-tight">PennyWise</Link>
+          <Link href="/" className="flex items-center gap-2 font-heading font-semibold text-lg text-primary tracking-tight">
+            <Logo className="size-7" />
+            PennyWise
+          </Link>
         </div>
 
         {/* Desktop nav */}
@@ -166,7 +170,10 @@ export function AppHeader() {
     <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
       <SheetContent side="left" className="!w-72 p-0 md:hidden">
         <SheetHeader className="px-4 py-4 border-b">
-          <SheetTitle className="font-heading text-primary">PennyWise</SheetTitle>
+          <SheetTitle className="flex items-center gap-2 font-heading text-primary">
+            <Logo className="size-6" />
+            PennyWise
+          </SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col py-2">
           {drawerGroups.map(({ label, links }) => (
