@@ -70,7 +70,7 @@ export const TOOLS: Tool[] = [
       properties: {
         amount: { type: 'number', description: 'Amount spent in Malaysian Ringgit (RM). Must be positive.' },
         description: { type: 'string', description: 'Short description of the expense, e.g. "Lunch at mamak".' },
-        category: { type: 'string', description: 'Optional free-text category, e.g. "Food", "Transport".' },
+        category: { type: 'string', enum: ['Food & Drinks', 'Transport', 'Shopping', 'Health', 'Other'], description: 'Expense category. Pick the closest match from the enum.' },
         expense_date: { type: 'string', description: "Date in 'yyyy-MM-dd'. Omit to use today." },
       },
       required: ['amount', 'description'],
@@ -157,7 +157,7 @@ export const TOOLS: Tool[] = [
         id: { type: 'string', description: 'Expense id from find_entries.' },
         amount: { type: 'number', description: 'New amount in RM (positive).' },
         description: { type: 'string', description: 'New description.' },
-        category: { type: 'string', description: 'Optional free-text category.' },
+        category: { type: 'string', enum: ['Food & Drinks', 'Transport', 'Shopping', 'Health', 'Other'], description: 'Expense category. Pick the closest match from the enum.' },
       },
       required: ['id', 'amount', 'description'],
     },
@@ -371,8 +371,8 @@ export function systemPrompt(today: string): string {
     '- The conversation history includes lines like "Done: Add expense ..." or "User cancelled: ..." describing your earlier actions. Use them to resolve follow-ups such as "remove it", "delete that", or "the dinner one" — they refer to those recent entries; look them up with find_entries and act.',
     '- To answer a question about the user\'s finances, call a read tool (get_today_status, get_month_summary, get_backup_balance, get_debts_summary) and base your answer ONLY on the returned data. Never invent numbers.',
     '- To answer anything about the user\'s notes or plans, call get_notes and base your answer ONLY on the returned note content. If they ask you to assess a plan, read the notes first with get_notes, then give your view.',
-    '- When the user states an amount and a purpose (e.g. "RM5 for lunch"), call add_expense. Infer a sensible category when obvious (food, transport, groceries, etc.), but leave it out if unsure.',
-    '- The expense `category` is free text and inconsistent (e.g. "drink" vs "drinks"), so do NOT give per-category breakdowns in summaries — report totals and net instead, unless the user explicitly asks about a specific category.',
+    '- When the user states an amount and a purpose (e.g. "RM5 for lunch"), call add_expense. Always pick the closest category from the enum: "Food & Drinks", "Transport", "Shopping", "Health", "Other". Use "Other" when unsure.',
+    '- Expense categories are fixed: "Food & Drinks", "Transport", "Shopping", "Health", "Other". Never use free-text values like "Food" or "Groceries".',
     '- If a request is ambiguous (e.g. you cannot tell expense vs income, or which investment), ask one short clarifying question instead of guessing.',
     '- Format money as RM followed by the amount (e.g. RM5.00). Keep replies short and conversational.',
   ].join('\n')
