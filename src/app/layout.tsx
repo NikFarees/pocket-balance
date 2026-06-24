@@ -26,6 +26,7 @@ const hankenGrotesk = Hanken_Grotesk({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
