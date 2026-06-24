@@ -239,7 +239,6 @@ export async function getDashboardSummaryData() {
 
   const now = await serverNow()
   const currentMonth = format(startOfMonth(now), 'yyyy-MM-dd')
-  const todayStr = format(now, 'yyyy-MM-dd')
 
   const [incomesRes, deductionsRes, paymentsRes, investmentTxRes, backupTxRes, allIncomesEpfRes, subscriptionsRes] = await Promise.all([
     supabase
