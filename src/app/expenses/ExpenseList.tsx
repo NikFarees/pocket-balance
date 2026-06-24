@@ -15,6 +15,7 @@ import { Loader2, Settings2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { EXPENSE_CATEGORIES } from '@/lib/validation'
 
 const PAGE_SIZE = 5
 
@@ -189,8 +190,18 @@ export function ExpenseList({ expenses }: { expenses: Expense[] }) {
                 <Input id="edit_amount" name="amount" type="number" step="0.01" min="0" defaultValue={Number(editItem.amount).toFixed(2)} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit_cat">Category <span className="text-muted-foreground">(optional)</span></Label>
-                <Input id="edit_cat" name="category" defaultValue={editItem.category ?? ''} placeholder="optional" />
+                <Label htmlFor="edit_cat">Category</Label>
+                <select
+                  id="edit_cat"
+                  name="category"
+                  defaultValue={editItem.category ?? ''}
+                  className="h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-secondary/60"
+                >
+                  <option value="">Select category</option>
+                  {EXPENSE_CATEGORIES.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
               </div>
               <div className="flex gap-2 justify-end">
                 <Button type="button" variant="outline" onClick={() => setEditItem(null)}>Cancel</Button>

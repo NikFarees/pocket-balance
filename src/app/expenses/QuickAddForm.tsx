@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { EXPENSE_CATEGORIES } from '@/lib/validation'
 import { format } from 'date-fns'
 import { Loader2, Plus, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -61,12 +62,18 @@ export function QuickAddForm() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category">Category <span className="text-muted-foreground">(optional)</span></Label>
-              <Input
+              <Label htmlFor="category">Category</Label>
+              <select
                 id="category"
                 name="category"
-                placeholder="e.g. Food, Transport"
-              />
+                defaultValue=""
+                className="h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-secondary/60"
+              >
+                <option value="">Select category</option>
+                {EXPENSE_CATEGORIES.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="space-y-2">
