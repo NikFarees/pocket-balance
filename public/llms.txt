@@ -1,15 +1,15 @@
 # PennyWise
 
-> PennyWise is a free personal daily finance tracker for Malaysia. It helps users manage income, recurring bills and subscriptions, daily expenses, debts, investments, and an emergency backup fund — with a running daily budget and carry-forward overspend logic. All amounts are in Malaysian Ringgit (RM).
+> PennyWise is a free personal daily finance tracker for Malaysia. It helps users manage income, recurring bills and subscriptions, daily expenses, debts, investments, and an emergency backup fund. It keeps a running daily budget and carries any overspending forward to the next day. All amounts are in Malaysian Ringgit (RM).
 
 ## What it does
-- Daily budget with carry-forward: set a daily spending limit; overspend carries to the next day so the running balance reflects reality.
-- Income tracking with Malaysian statutory deductions: auto-calculates EPF, SOCSO, EIS and accepts PCB tax to store true net take-home pay.
-- Recurring deductions and subscriptions: track monthly bills, mark them paid, see what is outstanding.
-- Debts: track money you owe and money owed to you; mark settled.
+- Daily budget that carries forward: set a daily spending limit; whatever you overspend one day rolls into the next, so the balance shown is the money you have left.
+- Income with Malaysian statutory deductions: works out EPF, SOCSO and EIS, accepts PCB, and stores your real take-home pay.
+- Recurring bills and subscriptions: track monthly bills, mark them paid, see what is still due.
+- Debts: track money you owe and money owed to you, and mark a debt settled once it is paid.
 - Investments: trading (buy/sell with quantity and price), unit trust / ASNB (save/redeem/dividend), savings / Tabung Haji (deposit/withdraw/dividend).
 - Backup/emergency fund: deposits and withdrawals.
-- AI assistant: log entries and ask questions by voice or text; every write is proposed and user-confirmed before saving.
+- AI assistant: add entries and ask questions by voice or text; the assistant suggests each entry and saves nothing until you confirm.
 
 ## Who it is for
 Individuals in Malaysia who want a simple daily view of personal cash flow in Ringgit (RM).
@@ -18,6 +18,6 @@ Individuals in Malaysia who want a simple daily view of personal cash flow in Ri
 Free to use with an email account. Data is per-user and protected by row-level security; optional two-factor authentication (TOTP) is supported. The app itself is private and requires login; the public marketing page describes the product.
 
 ## Key public pages
-- / — overview of features and FAQ
-- /signup — create a free account
-- /login — sign in
+- /: overview of features and FAQ
+- /signup: create a free account
+- /login: sign in

@@ -30,12 +30,12 @@ const geistMono = Geist_Mono({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const description =
-  "Free personal daily finance tracker for Malaysia. Track income, EPF/SOCSO/EIS, bills, daily budget with carry-forward, debts, investments and an emergency fund — all in Ringgit (RM), with a voice & text AI assistant.";
+  "Free daily personal finance tracker for Malaysia. Track income (with EPF, SOCSO and EIS), bills, debts, investments and an emergency fund, all in Ringgit. Includes a voice and text AI assistant.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "PennyWise — Daily Personal Finance Tracker for Malaysia",
+    default: "PennyWise: Daily Personal Finance Tracker for Malaysia",
     template: "%s · PennyWise",
   },
   description,
@@ -55,14 +55,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "PennyWise",
-    title: "PennyWise — Daily Personal Finance Tracker for Malaysia",
+    title: "PennyWise: Daily Personal Finance Tracker for Malaysia",
     description,
     url: siteUrl,
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "PennyWise" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "PennyWise — Daily Personal Finance Tracker for Malaysia",
+    title: "PennyWise: Daily Personal Finance Tracker for Malaysia",
     description,
     images: ["/og.png"],
   },
