@@ -41,10 +41,13 @@ export async function proxy(request: NextRequest) {
   const isAuthRoute = isPublicAuthRoute || isPasswordResetRoute
   // `/mfa` requires a user but is the step-up page, so it is allowed without aal2.
   const isMfaRoute = pathname === '/mfa'
+  // `/` serves the public marketing landing to logged-out visitors (and crawlers);
+  // logged-in users get the dashboard from the same route.
+  const isPublicMarketing = pathname === '/'
 
-  // No session: only public auth routes and the MFA page are permitted. (A user
-  // with no session on /mfa is sent to /login, which is correct.)
-  if (!user && !isAuthRoute && !isMfaRoute) {
+  // No session: only public auth routes, the MFA page, and the public landing are
+  // permitted. (A user with no session on /mfa is sent to /login, which is correct.)
+  if (!user && !isAuthRoute && !isMfaRoute && !isPublicMarketing) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
@@ -79,6 +82,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    // Exclude Next internals, image assets, and public SEO files (robots, sitemap,
+    // manifest, llms.txt) so crawlers can fetch them without an auth redirect.
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|txt|xml|ico)$).*)',
   ],
 }
