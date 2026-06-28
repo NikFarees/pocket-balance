@@ -65,7 +65,7 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
                 <Card className={summary.hasWalletTopup ? 'col-span-2 sm:col-span-1' : ''}>
                   <CardContent className="pt-4 pb-4 px-4">
                     <p className="text-xs text-muted-foreground">Net Holding</p>
-                    <p className="text-2xl font-bold mt-1">{summary.netQty.toFixed(4)}</p>
+                    <p className="text-2xl font-bold mt-1">{parseFloat(summary.netQty.toFixed(7)).toString()}</p>
                   </CardContent>
                 </Card>
               )}
@@ -81,8 +81,8 @@ export default async function InvestmentDetailPage({ params }: { params: Promise
               )}
               {summary.hasQuantity && (
                 <>
-                  <span>Qty Bought: <span className="font-medium text-foreground">{summary.totalQtyBought.toFixed(4)}</span></span>
-                  <span>Qty Sold: <span className="font-medium text-foreground">{summary.totalQtySold.toFixed(4)}</span></span>
+                  <span>Qty Bought: <span className="font-medium text-foreground">{parseFloat(summary.totalQtyBought.toFixed(7)).toString()}</span></span>
+                  <span>Qty Sold: <span className="font-medium text-foreground">{parseFloat(summary.totalQtySold.toFixed(7)).toString()}</span></span>
                 </>
               )}
             </div>
