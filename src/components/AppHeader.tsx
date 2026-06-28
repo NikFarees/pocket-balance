@@ -19,7 +19,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useBalanceVisibility } from '@/components/BalanceVisibilityProvider'
 
 const standaloneLinks = [
-  { href: '/', label: 'Dashboard' },
+  { href: '/', label: 'Dashboard Penniwuse' },
   { href: '/expenses', label: 'Expenses' },
   { href: '/insights', label: 'Insights' },
   { href: '/debts', label: 'Debts' },

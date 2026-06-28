@@ -9,7 +9,7 @@ export function DashboardHome() {
       <AppHeader />
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         <div>
-          <h2 className="font-heading text-xl font-semibold">Dashboard</h2>
+          <h2 className="font-heading text-xl font-semibold">Dashboard Penniwuse</h2>
           <p className="text-sm text-muted-foreground">Monthly overview</p>
         </div>
         <div className="grid grid-cols-2 gap-3 dashboard-grid">
