@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 const tabs = [
   {
-    label: 'Dashboard',
+    label: 'Dashboard Penniwuse',
     icon: LayoutDashboard,
     href: '/',
     isActive: (pathname: string) => pathname === '/',
