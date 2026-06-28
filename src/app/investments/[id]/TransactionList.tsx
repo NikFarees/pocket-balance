@@ -63,7 +63,7 @@ const CATEGORY_TX_TYPES: Record<Category, TxType[]> = {
 }
 
 function formatPrecise(n: number) {
-  return parseFloat(n.toFixed(8)).toString()
+  return parseFloat(n.toFixed(7)).toString()
 }
 
 export function TransactionList({
@@ -268,7 +268,7 @@ export function TransactionList({
                 )}
                 {showQtyPriceCols && (
                   <TableCell className="text-right text-sm">
-                    {t.price_per_unit != null ? <Amount value={Number(t.price_per_unit)} formatter={n => parseFloat(n.toFixed(8)).toString()} /> : '—'}
+                    {t.price_per_unit != null ? <Amount value={Number(t.price_per_unit)} formatter={n => parseFloat(n.toFixed(7)).toString()} /> : '—'}
                   </TableCell>
                 )}
                 <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{t.notes ?? '—'}</TableCell>
@@ -323,7 +323,7 @@ export function TransactionList({
                 <div className="flex justify-between"><span className="text-sm text-muted-foreground">Quantity</span><span className="text-sm">{formatPrecise(Number(viewItem.quantity))}</span></div>
               )}
               {viewItem.price_per_unit != null && (
-                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Price / Unit</span><span className="text-sm"><Amount value={Number(viewItem.price_per_unit)} formatter={n => parseFloat(n.toFixed(8)).toString()} /></span></div>
+                <div className="flex justify-between"><span className="text-sm text-muted-foreground">Price / Unit</span><span className="text-sm"><Amount value={Number(viewItem.price_per_unit)} formatter={n => parseFloat(n.toFixed(7)).toString()} /></span></div>
               )}
               <div className="flex justify-between"><span className="text-sm text-muted-foreground">Notes</span><span className="text-sm">{viewItem.notes ?? '—'}</span></div>
               <Button variant="outline" className="w-full mt-2" onClick={() => setViewItem(null)}>Close</Button>
