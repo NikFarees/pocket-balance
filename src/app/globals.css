@@ -186,6 +186,12 @@
   }
 }
 
+/* Recharts renders bars/segments focusable for keyboard a11y; suppress the
+   default browser focus outline they'd otherwise pick up from `* { outline-ring/50 }` */
+.recharts-wrapper *:focus {
+  outline: none;
+}
+
 /* Tiptap note editor + rendered note content */
 .tiptap {
   padding: 0.75rem;
