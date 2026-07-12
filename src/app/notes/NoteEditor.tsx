@@ -4,6 +4,7 @@ import { EditorContent, useEditor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { TableKit } from '@tiptap/extension-table'
 import { NoteToolbar } from './NoteToolbar'
+import { useTableColumnTouchResize } from './useTableColumnTouchResize'
 
 export function NoteEditor({
   defaultHtml = '',
@@ -21,6 +22,8 @@ export function NoteEditor({
       onChange(html === '<p></p>' ? '' : html)
     },
   })
+
+  useTableColumnTouchResize(editor)
 
   if (!editor) return null
 
