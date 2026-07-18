@@ -36,6 +36,7 @@ const PAGE_SIZE = 5
 export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage: string }) {
   const [viewItem, setViewItem] = useState<Debt | null>(null)
   const [editItem, setEditItem] = useState<Debt | null>(null)
+  const [editType, setEditType] = useState<'i_owe' | 'they_owe'>('they_owe')
   const [payItem, setPayItem] = useState<Debt | null>(null)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [editLoading, setEditLoading] = useState(false)
@@ -163,7 +164,7 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
                   <Settings2 className="size-3" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setEditItem(d)}>Edit</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setEditType(d.type); setEditItem(d) }}>Edit</DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem variant="destructive" onClick={() => handleDelete(d.id)} disabled={loadingId === d.id}>Delete</DropdownMenuItem>
                 </DropdownMenuContent>
@@ -221,7 +222,7 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
                       <DropdownMenuItem onClick={() => handleSettle(d.id, d.is_settled)} disabled={loadingId === d.id}>
                         {d.is_settled ? 'Undo Settle' : 'Settle'}
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setEditItem(d)}>Edit</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setEditType(d.type); setEditItem(d) }}>Edit</DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem variant="destructive" onClick={() => handleDelete(d.id)} disabled={loadingId === d.id}>Delete</DropdownMenuItem>
                     </DropdownMenuContent>
@@ -307,6 +308,25 @@ export function DebtList({ debts, emptyMessage }: { debts: Debt[]; emptyMessage:
           <DialogHeader><DialogTitle>Edit Debt</DialogTitle></DialogHeader>
           {editItem && (
             <form ref={editFormRef} onSubmit={e => { e.preventDefault(); handleEdit(new FormData(e.currentTarget)) }} className="space-y-4">
+              {/* Type toggle */}
+              <div className="flex rounded-lg border overflow-hidden w-fit">
+                <button
+                  type="button"
+                  onClick={() => setEditType('they_owe')}
+                  className={`px-4 py-1.5 text-sm font-medium transition-colors ${editType === 'they_owe' ? 'bg-success text-success-foreground' : 'hover:bg-muted'}`}
+                >
+                  They Owe Me
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditType('i_owe')}
+                  className={`px-4 py-1.5 text-sm font-medium transition-colors ${editType === 'i_owe' ? 'bg-destructive text-destructive-foreground' : 'hover:bg-muted'}`}
+                >
+                  I Owe
+                </button>
+              </div>
+              <input type="hidden" name="type" value={editType} />
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2 sm:col-span-1">
                   <Label htmlFor="edit_person">Person</Label>

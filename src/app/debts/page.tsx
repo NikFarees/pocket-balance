@@ -1,9 +1,10 @@
 import { getDebts } from '@/app/actions/debts'
 import { Amount } from '@/components/Amount'
 import { AppHeader } from '@/components/AppHeader'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { DebtForm } from './DebtForm'
 import { DebtList } from './DebtList'
+import { DebtSection } from './DebtSection'
 
 export default async function DebtsPage() {
   const data = await getDebts()
@@ -50,31 +51,15 @@ export default async function DebtsPage() {
 
         <DebtForm />
 
-        {/* Owed to Me */}
-        <Card>
-          <CardHeader className="py-4">
-            <CardTitle className="text-base flex items-center justify-between">
-              <span>Owed to Me</span>
-              <span className="text-sm font-normal text-muted-foreground">{theyOwe.length} records</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 overflow-x-auto">
-            <DebtList debts={theyOwe} emptyMessage="No one owes you anything yet." />
-          </CardContent>
-        </Card>
-
         {/* I Owe */}
-        <Card>
-          <CardHeader className="py-4">
-            <CardTitle className="text-base flex items-center justify-between">
-              <span>I Owe</span>
-              <span className="text-sm font-normal text-muted-foreground">{iOwe.length} records</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0 overflow-x-auto">
-            <DebtList debts={iOwe} emptyMessage="You don't owe anyone anything." />
-          </CardContent>
-        </Card>
+        <DebtSection title="I Owe" count={iOwe.length}>
+          <DebtList debts={iOwe} emptyMessage="You don't owe anyone anything." />
+        </DebtSection>
+
+        {/* Owed to Me */}
+        <DebtSection title="Owed to Me" count={theyOwe.length}>
+          <DebtList debts={theyOwe} emptyMessage="No one owes you anything yet." />
+        </DebtSection>
       </main>
     </div>
   )
