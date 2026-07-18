@@ -121,11 +121,13 @@ export async function updateDebt(id: string, formData: FormData) {
   if (!user) return { error: 'Not authenticated' }
   const supabase = await createClient()
 
+  const type = formData.get('type') as string
   const person_name = (formData.get('person_name') as string)?.trim()
   const amount = parseFloat(formData.get('amount') as string)
   const description = (formData.get('description') as string)?.trim() || null
   const due_date = (formData.get('due_date') as string) || null
 
+  if (!['i_owe', 'they_owe'].includes(type)) return { error: 'Invalid type' }
   if (!person_name) return { error: 'Person name is required' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
   if (exceedsLength(person_name, MAX_SHORT_TEXT)) return { error: 'Person name is too long' }
@@ -133,7 +135,7 @@ export async function updateDebt(id: string, formData: FormData) {
 
   const { error } = await supabase
     .from('debts')
-    .update({ person_name, amount, description, due_date })
+    .update({ type, person_name, amount, description, due_date })
     .eq('id', id)
     .eq('user_id', user.id)
 
