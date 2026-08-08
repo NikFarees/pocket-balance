@@ -25,7 +25,7 @@ export async function getDebts() {
       .select('*')
       .eq('user_id', user.id)
       .order('is_settled', { ascending: true })
-      .order('due_date', { ascending: false, nullsFirst: false })
+      .order('due_date', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false }),
     supabase
       .from('debt_payments')
