@@ -100,26 +100,36 @@ export function TransactionList({
 
   async function handleDelete(id: string) {
     setLoadingId(id)
-    const result = await deleteTransaction(id, investmentId)
-    if (result.error) toast.error(result.error)
-    else {
-      toast.success('Transaction deleted')
-      router.refresh()
+    try {
+      const result = await deleteTransaction(id, investmentId)
+      if (result.error) toast.error(result.error)
+      else {
+        toast.success('Transaction deleted')
+        router.refresh()
+      }
+    } catch {
+      toast.error('Something went wrong. Please try again.')
+    } finally {
+      setLoadingId(null)
     }
-    setLoadingId(null)
   }
 
   async function handleEdit(formData: FormData) {
     if (!editItem) return
     setEditLoading(true)
-    const result = await updateTransaction(editItem.id, investmentId, formData)
-    if (result.error) toast.error(result.error)
-    else {
-      toast.success('Transaction updated')
-      setEditItem(null)
-      router.refresh()
+    try {
+      const result = await updateTransaction(editItem.id, investmentId, formData)
+      if (result.error) toast.error(result.error)
+      else {
+        toast.success('Transaction updated')
+        setEditItem(null)
+        router.refresh()
+      }
+    } catch {
+      toast.error('Something went wrong. Please try again.')
+    } finally {
+      setEditLoading(false)
     }
-    setEditLoading(false)
   }
 
   function openEdit(t: Transaction) {
