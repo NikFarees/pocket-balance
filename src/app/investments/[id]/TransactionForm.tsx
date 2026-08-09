@@ -94,21 +94,26 @@ export function TransactionForm({ investmentId, category }: { investmentId: stri
 
   async function handleSubmit(formData: FormData) {
     setLoading(true)
-    const result = await addTransaction(investmentId, formData)
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      toast.success(`${config.successLabel[type]} recorded`)
-      formRef.current?.reset()
-      setAmount('')
-      setFees('')
-      setQty('')
-      setPrice('')
-      setAsset('')
-      setOpen(false)
-      router.refresh()
+    try {
+      const result = await addTransaction(investmentId, formData)
+      if (result.error) {
+        toast.error(result.error)
+      } else {
+        toast.success(`${config.successLabel[type]} recorded`)
+        formRef.current?.reset()
+        setAmount('')
+        setFees('')
+        setQty('')
+        setPrice('')
+        setAsset('')
+        setOpen(false)
+        router.refresh()
+      }
+    } catch {
+      toast.error('Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   if (!open) {
