@@ -178,14 +178,14 @@ export async function addTransaction(investmentId: string, formData: FormData) {
   const amount = parseFloat(formData.get('amount') as string)
   const feesRaw = formData.get('fees') as string
   const fees = feesRaw ? parseFloat(feesRaw) : null
-  const asset = (formData.get('asset') as string).trim() || null
+  const asset = (formData.get('asset') as string | null)?.trim() || null
   const quantityRaw = formData.get('quantity') as string
   const priceRaw = formData.get('price_per_unit') as string
   const noQtyPrice = type === 'dividend' || type === 'wallet_topup'
   const quantity = noQtyPrice ? null : (quantityRaw ? parseFloat(quantityRaw) : null)
   const price_per_unit = noQtyPrice ? null : (priceRaw ? parseFloat(priceRaw) : null)
   const transaction_date = formData.get('transaction_date') as string
-  const notes = (formData.get('notes') as string).trim() || null
+  const notes = (formData.get('notes') as string | null)?.trim() || null
 
   if (!['buy', 'sell', 'dividend', 'wallet_topup'].includes(type)) return { error: 'Invalid type' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
@@ -222,14 +222,14 @@ export async function updateTransaction(id: string, investmentId: string, formDa
   const amount = parseFloat(formData.get('amount') as string)
   const feesRaw = formData.get('fees') as string
   const fees = feesRaw ? parseFloat(feesRaw) : null
-  const asset = (formData.get('asset') as string).trim() || null
+  const asset = (formData.get('asset') as string | null)?.trim() || null
   const quantityRaw = formData.get('quantity') as string
   const priceRaw = formData.get('price_per_unit') as string
   const noQtyPrice = type === 'dividend' || type === 'wallet_topup'
   const quantity = noQtyPrice ? null : (quantityRaw ? parseFloat(quantityRaw) : null)
   const price_per_unit = noQtyPrice ? null : (priceRaw ? parseFloat(priceRaw) : null)
   const transaction_date = formData.get('transaction_date') as string
-  const notes = (formData.get('notes') as string).trim() || null
+  const notes = (formData.get('notes') as string | null)?.trim() || null
 
   if (!['buy', 'sell', 'dividend', 'wallet_topup'].includes(type)) return { error: 'Invalid type' }
   if (isNaN(amount) || amount <= 0) return { error: 'Enter a valid amount' }
