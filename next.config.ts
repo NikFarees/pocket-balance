@@ -31,11 +31,7 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), geolocation=(), microphone=(self)',
           },
-          {
-            key: 'Content-Security-Policy',
-            value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://kulpqqkzmtdqiuyymxyh.supabase.co wss://kulpqqkzmtdqiuyymxyh.supabase.co; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
-          },
+          // Content-Security-Policy is set per request (with a nonce) in src/proxy.ts.
         ],
       },
     ]

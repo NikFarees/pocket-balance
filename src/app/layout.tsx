@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import { Fraunces, Hanken_Grotesk, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -79,11 +80,15 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Per-request CSP nonce from src/proxy.ts. Reading headers() also keeps every
+  // page dynamically rendered, which nonce-based CSP requires.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="en"
@@ -91,7 +96,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col pb-16 md:pb-0">
-        <ThemeProvider>
+        <ThemeProvider nonce={nonce}>
           <BalanceVisibilityProvider>
             <TimezoneSync />
             {children}
