@@ -1,8 +1,29 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { buildCsp, generateNonce } from '@/lib/csp'
 
 export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+  // A fresh nonce per request. It is forwarded on the request headers (Next.js
+  // reads it to nonce its own scripts; the root layout reads `x-nonce`) and set
+  // as the response CSP.
+  const nonce = generateNonce()
+  const csp = buildCsp(nonce)
+
+  // Builds the pass-through response from the *current* request headers, so any
+  // cookies Supabase refreshed via `request.cookies.set` are carried along.
+  const forward = () => {
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set('x-nonce', nonce)
+    requestHeaders.set('Content-Security-Policy', csp)
+    return NextResponse.next({ request: { headers: requestHeaders } })
+  }
+
+  const withCsp = (response: NextResponse) => {
+    response.headers.set('Content-Security-Policy', csp)
+    return response
+  }
+
+  let supabaseResponse = forward()
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,7 +37,7 @@ export async function proxy(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
-          supabaseResponse = NextResponse.next({ request })
+          supabaseResponse = forward()
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -50,7 +71,7 @@ export async function proxy(request: NextRequest) {
   if (!user && !isAuthRoute && !isMfaRoute && !isPublicMarketing) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    return NextResponse.redirect(url)
+    return withCsp(NextResponse.redirect(url))
   }
 
   // Determine whether the signed-in user still has an outstanding MFA challenge.
@@ -65,7 +86,7 @@ export async function proxy(request: NextRequest) {
   if (needsMfa && !isMfaRoute && !pathname.startsWith('/auth/')) {
     const url = request.nextUrl.clone()
     url.pathname = '/mfa'
-    return NextResponse.redirect(url)
+    return withCsp(NextResponse.redirect(url))
   }
 
   // Fully authenticated (no pending MFA): keep them out of sign-in flows and
@@ -74,10 +95,10 @@ export async function proxy(request: NextRequest) {
   if (user && !needsMfa && (isRedirectableAuthPage || isMfaRoute)) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
-    return NextResponse.redirect(url)
+    return withCsp(NextResponse.redirect(url))
   }
 
-  return supabaseResponse
+  return withCsp(supabaseResponse)
 }
 
 export const config = {
